@@ -18,7 +18,7 @@ const reduced = import.meta.client
 </script>
 
 <template>
-  <section class="relative flex min-h-[88vh] items-center justify-center overflow-hidden">
+  <section class="relative flex min-h-[100svh] items-center justify-center overflow-hidden">
     <!-- Full-bleed media -->
     <div class="absolute inset-0 bg-media-surface">
       <video

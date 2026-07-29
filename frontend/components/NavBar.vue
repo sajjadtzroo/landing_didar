@@ -7,9 +7,10 @@ defineEmits<{ order: [] }>()
 const route = useRoute()
 const { y } = import.meta.client ? useWindowScroll() : { y: ref(0) }
 
-// Transparent (light text) only while sitting over the dark hero on the home page;
-// frosted glass (dark text) after scrolling, and on every inner page.
-const overHero = computed(() => route.path === '/' && y.value < 80)
+// Transparent (light text) only while sitting over the dark hero on a landing
+// page; frosted glass (dark text) after scrolling, and on every inner page.
+const onLanding = computed(() => route.path === '/' || route.path.startsWith('/l/'))
+const overHero = computed(() => onLanding.value && y.value < 80)
 </script>
 
 <template>

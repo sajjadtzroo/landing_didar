@@ -25,9 +25,9 @@ function onCall() {
     <div class="mx-auto grid max-w-content gap-x-8 gap-y-10 px-6 py-16 text-right sm:grid-cols-3 sm:px-10">
       <!-- Brand + contact -->
       <div>
-        <div class="flex justify-end">
-          <BrandLogo :height="40" />
-        </div>
+        <!-- inline-block logo right-aligns via the cell's text-right (RTL leading edge);
+             a flex justify-end wrapper would push it the wrong way under RTL. -->
+        <BrandLogo :height="40" />
         <p class="mt-2 max-w-xs text-sm leading-relaxed text-cream/60">
           {{ CONTENT.footer.tagline }}
         </p>

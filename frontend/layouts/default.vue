@@ -10,14 +10,13 @@ const { cartOpen, orderOpen, successRef, openCart, openOrder, onOrderSuccess } =
 <template>
   <div>
     <NavBar @order="openOrder" />
-    <TubelightNav />
+    <TubelightNav @cart="openCart" />
 
     <slot />
 
     <ContactFooter id="footer" />
 
-    <!-- Floating cart + drawer -->
-    <CartBubble @open="openCart" />
+    <!-- Cart lives inside the TubelightNav pill now (no separate floating bubble). -->
     <CartDrawer v-model="cartOpen" @continue="openOrder" />
 
     <!-- Order form sheet -->
