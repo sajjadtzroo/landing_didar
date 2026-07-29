@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     secret_key: str = "change-me-in-prod"  # signs the session cookie
     session_max_age: int = 60 * 60 * 24 * 7  # 7 days
     cookie_secure: bool = False  # True in production (HTTPS)
+    # "lax" for same-origin dev; "none" when the admin SPA and API are on
+    # different sites (e.g. separate Liara subdomains). "none" REQUIRES secure=True.
+    cookie_samesite: str = "lax"
 
     # CORS — the Nuxt origin(s), comma-separated
     frontend_origin: str = "http://localhost:3000"
