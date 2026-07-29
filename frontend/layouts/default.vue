@@ -1,16 +1,22 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { CONTENT } from '~/constants/content'
 
-// Global storefront chrome — nav, footer, cart + order overlays — so they appear
-// on the landing and every product page. Admin pages use layout: 'admin'.
+// Global storefront chrome. One nav per context: the landing (/l/*) uses the
+// bottom tubelight pill; storefront pages (/products, …) use the top glass navbar.
 const { cartOpen, orderOpen, successRef, openCart, openOrder, onOrderSuccess } =
   useUiState()
+const route = useRoute()
+const isLanding = computed(() => route.path.startsWith('/l'))
 </script>
 
 <template>
   <div>
-    <NavBar @order="openOrder" />
-    <TubelightNav @cart="openCart" />
+    <NavBar v-if="!isLanding" @order="openOrder" />
+    <template v-if="isLanding">
+      <TubelightNav />
+      <CartFab @open="openCart" />
+    </template>
 
     <slot />
 

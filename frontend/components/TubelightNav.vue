@@ -2,15 +2,11 @@
 // Vue port of the "tubelight-navbar" (originally React + framer-motion).
 // The sliding "lamp" is a single absolutely-positioned element moved to the
 // active item via CSS transform — measured from the DOM, so no motion library.
-// The cart is a first-class, height-matched button on the leading edge (it also
-// carries id="cart-bubble", the fly-to-cart target) so it reads as ONE control
-// instead of a separate floating bubble colliding with the pill.
-import { HelpCircle, Home, MessageCircle, Package, ShoppingBag } from 'lucide-vue-next'
+// Nav-only: cart lives in a separate top-left fab (CartFab); ordering is reached
+// through the cart drawer.
+import { HelpCircle, Home, MessageCircle, Package } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { CONTENT } from '~/constants/content'
-import { toFa } from '~/utils/format'
-
-defineEmits<{ cart: [] }>()
 
 const items = [
   { name: 'خانه', url: '#top', icon: Home },
@@ -20,17 +16,15 @@ const items = [
 ]
 
 const route = useRoute()
-const cart = useCartStore()
 const { y } = import.meta.client ? useWindowScroll() : { y: ref(0) }
 
 // Dark, translucent chrome + light text while floating over the navy hero;
-// light chrome + navy text once scrolled past it (mirrors the main NavBar).
+// light chrome + navy text once scrolled past it.
 const overHero = computed(() => route.path.startsWith('/l') && y.value < 320)
 
 const active = ref(0)
 const links = ref<HTMLElement[]>([])
 const lamp = ref({ transform: 'translateX(0)', width: '0px' })
-const cartBtn = ref<HTMLElement | null>(null)
 
 function moveLamp() {
   const el = links.value[active.value]
@@ -56,19 +50,6 @@ function select(i: number, url: string) {
   target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-// Pulse the cart on count increase (momentum feel; reduced-motion honored by OS).
-watch(
-  () => cart.itemCount,
-  (n, prev) => {
-    if (import.meta.server || n <= prev || !cartBtn.value) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    cartBtn.value.animate(
-      [{ transform: 'scale(0.9)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }],
-      { duration: 320, easing: 'cubic-bezier(0.2,0,0,1)' },
-    )
-  },
-)
-
 onMounted(() => {
   moveLamp()
   syncActive()
@@ -80,36 +61,15 @@ watch(y, syncActive)
 </script>
 
 <template>
-  <div
-    class="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-20 sm:pt-6"
-  >
+  <!-- Bottom on every viewport (mobile + laptop) -->
+  <div class="fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-6">
+
     <div
       class="relative flex items-center gap-1 rounded-full border p-1.5
         shadow-[0_10px_40px_-12px_rgba(4,30,66,0.45)] backdrop-blur-xl backdrop-saturate-150
         transition-colors duration-300"
       :class="overHero ? 'border-white/15 bg-navy-deep/40' : 'border-line bg-surface'"
     >
-      <!-- Cart: leading (rightmost in RTL), height-matched, one with the pill.
-           Keeps id="cart-bubble" so flyToCart still targets it. -->
-      <button
-        id="cart-bubble"
-        ref="cartBtn"
-        type="button"
-        class="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full
-          bg-navy text-cream transition-colors duration-300 hover:bg-gold"
-        :aria-label="`سبد سفارش، ${toFa(cart.itemCount)} کالا`"
-        @click="$emit('cart')"
-      >
-        <ShoppingBag :size="20" />
-        <span
-          v-if="cart.itemCount"
-          class="tnum absolute -end-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center
-            rounded-full bg-gold px-1 text-[11px] font-bold text-white"
-        >
-          {{ toFa(cart.itemCount) }}
-        </span>
-      </button>
-
       <!-- Sliding lamp (behind the items) -->
       <span
         class="pointer-events-none absolute inset-y-1.5 left-0 z-0 rounded-full bg-gold/15

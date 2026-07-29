@@ -20,9 +20,9 @@ export const CONTENT = {
   },
 
   trust: [
-    { value: '۲۵+', label: 'سال سابقه' },
-    { value: '۴۰۰+', label: 'فروشگاه طرف قرارداد' },
-    { value: '۱۸ عیار', label: 'تضمین اصالت و عیار' },
+    { value: '۲۵+', label: 'سال تجربه و اعتماد' },
+    { value: '۴۰۰+', label: 'فروشگاه همکار' },
+    { value: '۱۸ عیار', label: 'ضمانت اصالت و عیار' },
   ],
 
   products: {
