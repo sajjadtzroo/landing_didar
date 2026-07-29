@@ -47,21 +47,25 @@ const reduced = import.meta.client
     </div>
 
     <div class="relative mx-auto w-full max-w-hero px-6 text-start text-cream sm:px-10">
-      <p class="mb-5 text-[10px] uppercase tracking-[0.28em] text-gold-soft sm:text-sm">
+      <BrandLogo :height="52" color="#F7F3EE" class="mb-8" />
+      <p class="mb-4 text-xs uppercase tracking-[0.24em] text-gold-soft sm:text-sm">
         {{ CONTENT.hero.eyebrow }}
       </p>
       <h1
-        class="max-w-3xl text-[42px] font-medium leading-[1.55] tracking-[-0.02em]
-          sm:text-[58px] lg:text-[68px]"
+        class="max-w-2xl text-balance text-[44px] font-medium leading-[1.18]
+          sm:text-[60px] lg:text-[72px]"
       >
         {{ CONTENT.hero.headline }}
       </h1>
-      <p class="mt-6 max-w-xl text-lg leading-9 text-cream/85 sm:text-xl">
+      <p
+        class="mt-5 max-w-md text-pretty text-base leading-[1.75] text-cream/80
+          sm:mt-6 sm:max-w-xl sm:text-lg"
+      >
         {{ CONTENT.hero.supporting }}
       </p>
       <button
         type="button"
-        class="mt-10 inline-flex h-[58px] w-[220px] items-center justify-center bg-gold
+        class="mt-9 inline-flex h-[58px] w-[220px] items-center justify-center bg-gold
           text-base font-medium text-white transition duration-300 hover:-translate-y-1
           hover:bg-navy"
         @click="$emit('order')"
