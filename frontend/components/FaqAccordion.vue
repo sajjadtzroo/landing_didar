@@ -17,7 +17,7 @@ function toggle(i: number, question: string) {
 </script>
 
 <template>
-  <section class="bg-surface-soft py-16">
+  <section id="faq" class="bg-surface-soft py-16">
     <div class="mx-auto max-w-3xl px-5 sm:px-10">
       <SectionDivider
         :eyebrow="CONTENT.faq.eyebrow"

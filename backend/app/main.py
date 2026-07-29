@@ -10,6 +10,7 @@ from slowapi.errors import RateLimitExceeded
 from app.api.limiter import limiter
 from app.api.v1 import (
     admin_catalog,
+    admin_landings,
     admin_orders,
     admin_stats,
     auth,
@@ -70,4 +71,7 @@ app.include_router(public.router, prefix=API, tags=["public"])
 app.include_router(auth.router, prefix=f"{API}/admin", tags=["auth"])
 app.include_router(admin_orders.router, prefix=f"{API}/admin", tags=["admin:orders"])
 app.include_router(admin_catalog.router, prefix=f"{API}/admin", tags=["admin:catalog"])
+app.include_router(
+    admin_landings.router, prefix=f"{API}/admin", tags=["admin:landings"]
+)
 app.include_router(admin_stats.router, prefix=f"{API}/admin", tags=["admin:stats"])

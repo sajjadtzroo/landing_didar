@@ -28,14 +28,17 @@ from app.api.limiter import limiter
 # Import every model so Base.metadata knows all tables before create_all.
 from app.core.db import Base, get_db
 from app.main import app
-from app.models import faq, order, product  # noqa: F401
+from app.models import faq, landing, order, product  # noqa: F401
 
 TEST_DB_URL = os.getenv(
     "TEST_DATABASE_URL",
     "postgresql+asyncpg://didar:didar@localhost:5434/didar_test",
 )
 
-_TABLES = "order_status_log, order_items, orders, products, faqs"
+_TABLES = (
+    "order_status_log, order_items, orders, "
+    "landing_products, landings, products, faqs"
+)
 
 
 async def _ensure_test_db() -> None:

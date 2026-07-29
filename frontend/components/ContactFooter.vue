@@ -25,7 +25,9 @@ function onCall() {
     <div class="mx-auto grid max-w-content gap-x-8 gap-y-10 px-6 py-16 text-right sm:grid-cols-3 sm:px-10">
       <!-- Brand + contact -->
       <div>
-        <p class="text-2xl font-medium tracking-tight">{{ CONTENT.brand }}</p>
+        <div class="flex justify-end">
+          <BrandLogo :height="40" />
+        </div>
         <p class="mt-2 max-w-xs text-sm leading-relaxed text-cream/60">
           {{ CONTENT.footer.tagline }}
         </p>

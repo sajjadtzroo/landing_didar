@@ -4,10 +4,14 @@ import { CONTENT } from '~/constants/content'
 defineEmits<{ order: [] }>()
 
 // Signature moment: muted looping video, swapped for a static image under
-// reduced-motion. Drop assets into /public/media/. Paths are bound (not static
-// attrs) so the bundler resolves them at runtime, not build time.
-const heroVideo = '/media/hero.mp4'
-const heroPoster = '/media/hero-poster.jpg'
+// reduced-motion. Per-landing video/poster come in as props; fall back to the
+// bundled default so a landing with no video set never renders a broken <video>.
+const props = withDefaults(
+  defineProps<{ videoUrl?: string; posterUrl?: string }>(),
+  { videoUrl: '/media/hero.mp4', posterUrl: '/media/hero-poster.jpg' },
+)
+const heroVideo = computed(() => props.videoUrl)
+const heroPoster = computed(() => props.posterUrl)
 const reduced = import.meta.client
   ? useMediaQuery('(prefers-reduced-motion: reduce)')
   : ref(false)

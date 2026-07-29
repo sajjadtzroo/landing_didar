@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { CONTENT } from '~/constants/content'
 import type { Product } from '~/types'
-import { formatPrice, toFa } from '~/utils/format'
+import { toFa } from '~/utils/format'
 
 const props = defineProps<{ product: Product; index: number }>()
-defineEmits<{ open: [Product] }>()
 
 const cart = useCartStore()
 const selected = computed(() => cart.isSelected(props.product.id))
 const qty = computed(() => cart.quantityOf(props.product.id))
-const priceLabel = computed(() => formatPrice(props.product.price))
 </script>
 
 <template>
@@ -17,11 +15,10 @@ const priceLabel = computed(() => formatPrice(props.product.price))
     class="group relative cursor-pointer border border-line bg-surface-raised transition
       duration-300 hover:-translate-y-2 hover:shadow-xl"
   >
-    <button
-      type="button"
+    <NuxtLink
+      :to="`/products/${product.slug}`"
       class="block w-full text-start"
       :aria-label="`${CONTENT.products.viewDetails}: ${product.name}`"
-      @click="$emit('open', product)"
     >
       <div class="relative aspect-square overflow-hidden bg-media-surface">
         <NuxtImg
@@ -47,20 +44,13 @@ const priceLabel = computed(() => formatPrice(props.product.price))
         <h3 class="text-lg text-ink">{{ product.name }}</h3>
         <p class="mt-1 text-sm text-ink-muted">
           {{ CONTENT.products.sku }} {{ product.sku }}
-          <span v-if="product.weight_grams">
-            · {{ toFa(Number(product.weight_grams)) }} {{ CONTENT.products.gram }}</span
-          >
         </p>
-        <p v-if="priceLabel" class="tnum mt-3 text-sm text-gold-text">{{ priceLabel }}</p>
-        <span
-          v-else
-          class="mt-3 inline-block rounded-full border border-gold-soft px-3 py-1 text-xs
-            text-gold-text"
-        >
-          {{ CONTENT.products.priceOnRequest }}
-        </span>
+        <!-- Weight instead of price on cards -->
+        <p v-if="product.weight_grams" class="tnum mt-3 text-sm text-gold-text">
+          {{ toFa(Number(product.weight_grams)) }} {{ CONTENT.products.gram }}
+        </p>
       </div>
-    </button>
+    </NuxtLink>
     <!-- Signature gold accent: grows from the start edge on hover -->
     <span
       class="pointer-events-none absolute inset-x-0 bottom-0 h-1 origin-right scale-x-[.18]

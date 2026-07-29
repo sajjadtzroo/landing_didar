@@ -38,6 +38,7 @@ export const CONTENT = {
     gram: 'گرم',
     quantity: 'تعداد',
     viewDetails: 'مشاهده جزئیات',
+    related: 'محصولات مرتبط',
   },
 
   cart: {

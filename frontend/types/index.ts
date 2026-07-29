@@ -1,6 +1,7 @@
 export interface Product {
   id: string
   name: string
+  slug: string
   sku: string
   description: string | null
   weight_grams: string | null
@@ -17,6 +18,25 @@ export interface FAQ {
   answer: string
   is_active: boolean
   sort_order: number
+}
+
+// Public landing payload (GET /landings/{slug}).
+export interface Landing {
+  slug: string
+  title: string
+  hero_video_url: string | null
+  hero_poster_url: string | null
+  products: Product[]
+}
+
+// Admin landing payload (GET /admin/landings) — includes ordered assignment.
+export interface AdminLanding {
+  id: string
+  slug: string
+  title: string
+  hero_video_url: string | null
+  hero_poster_url: string | null
+  product_ids: string[]
 }
 
 export interface CartItem {

@@ -13,6 +13,7 @@ const { data: products, refresh } = await useAsyncData('admin-products', () =>
 const blank = () => ({
   id: '',
   name: '',
+  slug: '',
   sku: '',
   weight_grams: '',
   karat: 18,
@@ -33,6 +34,7 @@ function startEdit(p: Product) {
   Object.assign(form, {
     id: p.id,
     name: p.name,
+    slug: p.slug ?? '',
     sku: p.sku,
     weight_grams: p.weight_grams ?? '',
     karat: p.karat ?? 18,
@@ -47,6 +49,7 @@ function startEdit(p: Product) {
 async function save() {
   const body = {
     name: form.name,
+    slug: form.slug || null,
     sku: form.sku,
     weight_grams: form.weight_grams === '' ? null : Number(form.weight_grams),
     karat: form.karat ? Number(form.karat) : null,
@@ -163,6 +166,9 @@ async function move(index: number, dir: -1 | 1) {
     <BaseSheet v-model="panelOpen" :title="editing ? 'ویرایش محصول' : 'محصول جدید'">
       <div class="space-y-4">
         <FormField label="نام" v-slot="{ id }"><input :id="id" v-model="form.name" class="form-control" /></FormField>
+        <FormField label="نامک (slug — آدرس صفحه، مثال: atrin-necklace)" v-slot="{ id }">
+          <input :id="id" v-model="form.slug" dir="ltr" class="form-control" placeholder="atrin-necklace" />
+        </FormField>
         <FormField label="کد (SKU)" v-slot="{ id }"><input :id="id" v-model="form.sku" class="form-control" /></FormField>
         <FormField label="وزن (گرم)" v-slot="{ id }"><input :id="id" v-model="form.weight_grams" type="number" step="0.01" class="form-control" /></FormField>
         <FormField label="عیار" v-slot="{ id }"><input :id="id" v-model="form.karat" type="number" class="form-control" /></FormField>

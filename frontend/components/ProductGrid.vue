@@ -6,10 +6,8 @@ import type { Product } from '~/types'
 defineProps<{ products: Product[] }>()
 
 const { trackEvent } = useAnalytics()
-const sheetProduct = ref<Product | null>(null)
-const sheetOpen = ref(false)
 
-// products.view_list — fires when the section enters the viewport.
+// products.view_list — fires when the grid enters the viewport.
 const section = ref<HTMLElement | null>(null)
 let fired = false
 if (import.meta.client) {
@@ -19,12 +17,6 @@ if (import.meta.client) {
       trackEvent('products', 'view_list')
     }
   })
-}
-
-function open(product: Product) {
-  sheetProduct.value = product
-  sheetOpen.value = true
-  trackEvent('products', 'view_item', product.name)
 }
 </script>
 
@@ -42,11 +34,8 @@ function open(product: Product) {
           :key="product.id"
           :product="product"
           :index="i"
-          @open="open"
         />
       </div>
     </div>
-
-    <ProductSheet v-model="sheetOpen" :product="sheetProduct" />
   </section>
 </template>

@@ -16,11 +16,14 @@ export default defineNuxtConfig({
   // SSR on for SEO; admin is client-only (session-gated, no SEO value).
   routeRules: {
     '/admin/**': { ssr: false },
+    // `/` isn't a landing itself — the 3 live at /l/<slug>. Send it to the first.
+    '/': { redirect: '/l/one' },
   },
 
   app: {
     head: {
       htmlAttrs: { lang: 'fa', dir: 'rtl' },
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'theme-color', content: '#041E42' },

@@ -8,8 +8,10 @@ from app.api.limiter import limiter
 from app.core.config import settings
 from app.core.db import get_db
 from app.models.faq import FAQ
+from app.models.landing import Landing, LandingProduct
 from app.models.product import Product
 from app.schemas.faq import FAQOut
+from app.schemas.landing import LandingDetailOut
 from app.schemas.order import OrderCreate, OrderCreatedOut
 from app.schemas.product import ProductOut
 from app.services import orders as order_service
@@ -24,6 +26,41 @@ async def list_products(db: AsyncSession = Depends(get_db)):
         select(Product).where(Product.is_active).order_by(Product.sort_order)
     )
     return res.scalars().all()
+
+
+@router.get("/products/{slug}", response_model=ProductOut)
+async def get_product(slug: str, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(
+        select(Product).where(Product.slug == slug, Product.is_active)
+    )
+    product = res.scalar_one_or_none()
+    if product is None:
+        raise HTTPException(404, detail="Product not found")
+    return product
+
+
+@router.get("/landings/{slug}", response_model=LandingDetailOut)
+async def get_landing(slug: str, db: AsyncSession = Depends(get_db)):
+    landing = (
+        await db.execute(select(Landing).where(Landing.slug == slug))
+    ).scalar_one_or_none()
+    if landing is None:
+        raise HTTPException(404, detail="Landing not found")
+    products = (
+        await db.execute(
+            select(Product)
+            .join(LandingProduct, LandingProduct.product_id == Product.id)
+            .where(LandingProduct.landing_id == landing.id, Product.is_active)
+            .order_by(LandingProduct.sort_order)
+        )
+    ).scalars().all()
+    return LandingDetailOut(
+        slug=landing.slug,
+        title=landing.title,
+        hero_video_url=landing.hero_video_url,
+        hero_poster_url=landing.hero_poster_url,
+        products=list(products),
+    )
 
 
 @router.get("/faqs", response_model=list[FAQOut])
