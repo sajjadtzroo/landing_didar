@@ -81,7 +81,7 @@ watch(y, syncActive)
 
 <template>
   <div
-    class="fixed inset-x-0 bottom-0 z-50 mb-6 flex justify-center px-4 sm:top-0 sm:bottom-auto sm:mb-0 sm:pt-6"
+    class="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-20 sm:pt-6"
   >
     <div
       class="relative flex items-center gap-1 rounded-full border p-1.5
