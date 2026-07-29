@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Doran (self-hosted). Drop woff2 files into /public/fonts/. ---- */
+/* ponytail: falls back to Vazirmatn/system-ui until the files are added. */
+@font-face {
+  font-family: 'Doran';
+  src: url('/fonts/Doran-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Doran';
+  src: url('/fonts/Doran-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Doran';
+  src: url('/fonts/Doran-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Doran';
+  src: url('/fonts/Doran-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* ---- Theme tokens ---- */
+:root,
+:root[data-theme='light'] {
+  --surface: #f7f3ee;
+  --surface-soft: #f2f0eb;
+  --surface-raised: #fffaf3;
+  --ink: #041e42;
+  --ink-muted: rgba(4, 30, 66, 0.65);
+  --gold-text: #835f26; /* accessible gold text (AA 4.5:1) + focus ring */
+  --line: rgba(176, 138, 87, 0.25);
+  --header: rgba(247, 243, 238, 0.9);
+  --media-surface: #f2f0eb;
+  --footer: #041e42;
+
+  --danger: #b3261e;
+  --danger-soft: #fcebea;
+  --success: #1e7a46;
+  --success-soft: #e7f4ec;
+  --warning: #8a5b00;
+  --warning-soft: #fbf1dd;
+}
+
+:root[data-theme='dark'] {
+  --surface: #07182f;
+  --surface-soft: #0b2342;
+  --surface-raised: #102b4d;
+  --ink: #f7f3ee;
+  --ink-muted: rgba(247, 243, 238, 0.66);
+  --gold-text: #c8a063;
+  --line: rgba(217, 185, 133, 0.26);
+  --header: rgba(4, 30, 66, 0.9);
+  --media-surface: #173454;
+  --footer: #020b17;
+
+  --danger: #ff8a80;
+  --danger-soft: rgba(255, 138, 128, 0.1);
+  --success: #5fd394;
+  --success-soft: rgba(95, 211, 148, 0.12);
+  --warning: #ffc96b;
+  --warning-soft: rgba(255, 201, 107, 0.12);
+}
+
+@layer base {
+  html,
+  body,
+  #__nuxt {
+    font-family: 'Doran', 'Vazirmatn', system-ui, sans-serif;
+    background-color: var(--surface);
+    color: var(--ink);
+  }
+
+  /* Tabular figures so prices/quantities don't jitter. */
+  .tnum {
+    font-feature-settings: 'tnum';
+  }
+
+  ::selection {
+    background: #b08a57;
+    color: #fff;
+  }
+
+  /* Sharp by design: any rounded-* except rounded-full renders square. */
+  [class*='rounded-']:not(.rounded-full) {
+    border-radius: 0 !important;
+  }
+
+  /* Always-visible keyboard focus. */
+  :focus-visible {
+    outline: 2px solid var(--gold-text);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .form-control {
+    @apply h-14 w-full border border-line bg-surface px-4 text-sm text-ink
+      placeholder:text-ink-muted focus:border-gold;
+  }
+
+  /* Signature section divider: gold hairline + ✦ */
+  .divider-star {
+    @apply mt-4 flex items-center justify-center gap-3 text-gold-text;
+  }
+  .divider-star::before,
+  .divider-star::after {
+    content: '';
+    @apply h-px w-12 bg-gold;
+  }
+}
+
+/* Reduced motion: clamp everything, per brand rule. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Frostier chrome when the user asks for less transparency. */
+@media (prefers-reduced-transparency: reduce) {
+  .chrome-blur {
+    backdrop-filter: none !important;
+    background-color: var(--surface) !important;
+  }
+}

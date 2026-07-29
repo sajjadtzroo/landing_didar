@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: didar
+      POSTGRES_PASSWORD: didar
+      POSTGRES_DB: didar
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U didar"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5434:5432"   # 5432 often taken by another local pg; container-internal port unchanged
+
+  backend:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://didar:didar@db:5432/didar
+      FRONTEND_ORIGIN: http://localhost:3001
+      # Dev defaults — override in a real .env. admin/admin123 hash below.
+      ADMIN_USERNAME: admin
+      # Dev bootstrap: entrypoint hashes this at boot. Prod: set ADMIN_PASSWORD_HASH.
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+      COOKIE_SECURE: "false"
+      SMS_PROVIDER: log
+      ADMIN_ORDER_BASE_URL: http://localhost:3001/admin/orders
+    volumes:
+      - media:/app/media
+    ports:
+      - "8001:8000"   # 8000 taken by another local stack
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    environment:
+      # Server-side calls go container→container; browser calls go to localhost.
+      NUXT_PUBLIC_API_BASE: http://localhost:8001/api/v1
+      NUXT_API_BASE_INTERNAL: http://backend:8000/api/v1
+      NUXT_PUBLIC_MATOMO_URL: ${MATOMO_URL:-}
+      NUXT_PUBLIC_MATOMO_SITE_ID: ${MATOMO_SITE_ID:-}
+    ports:
+      - "3001:3000"   # 3000 taken by another local stack
+
+volumes:
+  pgdata:
+  media:

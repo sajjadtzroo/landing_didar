@@ -1,0 +1,82 @@
+export interface Product {
+  id: string
+  name: string
+  sku: string
+  description: string | null
+  weight_grams: string | null
+  karat: number | null
+  price: string | null // null => price on request
+  image_url: string | null
+  is_active: boolean
+  sort_order: number
+}
+
+export interface FAQ {
+  id: string
+  question: string
+  answer: string
+  is_active: boolean
+  sort_order: number
+}
+
+export interface CartItem {
+  productId: string
+  name: string
+  sku: string
+  price: number | null
+  imageUrl: string | null
+  quantity: number
+}
+
+export type OrderStatus =
+  | 'new'
+  | 'contacted'
+  | 'confirmed'
+  | 'shipped'
+  | 'cancelled'
+
+export interface AdminOrder {
+  id: string
+  reference: string
+  full_name: string
+  phone: string
+  store_name: string
+  province: string
+  city: string | null
+  note: string | null // customer note
+  internal_note: string | null // admin-only
+  status: OrderStatus
+  total: string
+  is_read: boolean
+  utm_source: string | null
+  utm_medium: string | null
+  utm_campaign: string | null
+  referrer: string | null
+  created_at: string
+}
+
+export interface OrderItem {
+  product_id: string | null
+  product_name: string
+  unit_price: string | null
+  quantity: number
+}
+
+export interface OrderStatusLogEntry {
+  from_status: OrderStatus | null
+  to_status: OrderStatus
+  created_at: string
+}
+
+export interface AdminOrderDetail extends AdminOrder {
+  items: OrderItem[]
+  status_log: OrderStatusLogEntry[]
+}
+
+export interface OrderListResponse {
+  items: AdminOrder[]
+  total: number
+  page: number
+  page_size: number
+  unread: number
+}

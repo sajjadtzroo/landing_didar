@@ -1,0 +1,28 @@
+[project]
+name = "didar-backend"
+version = "1.0.0"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+
+[tool.coverage.run]
+source = ["app"]
+# SQLAlchemy async bridges via greenlet; without this, post-`await` lines in
+# every endpoint read as uncovered.
+concurrency = ["greenlet", "thread"]
+omit = ["app/seed.py"]  # boot-time CLI script, not request-path code
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]  # FastAPI Depends() in defaults is idiomatic
+
+[tool.ruff.lint.per-file-ignores]
+# Persian seed copy and long connection-string defaults read fine over 88 cols.
+"app/seed.py" = ["E501"]
+"app/core/config.py" = ["E501"]
