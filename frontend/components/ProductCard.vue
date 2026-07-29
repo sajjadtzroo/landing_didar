@@ -12,8 +12,8 @@ const qty = computed(() => cart.quantityOf(props.product.id))
 
 <template>
   <article
-    class="group relative cursor-pointer border border-line bg-surface-raised transition
-      duration-300 hover:-translate-y-2 hover:shadow-xl"
+    class="corner-soft group relative cursor-pointer overflow-hidden border border-line
+      bg-surface-raised transition duration-300 hover:-translate-y-2 hover:shadow-xl"
   >
     <NuxtLink
       :to="`/products/${product.slug}`"

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { Award, ShieldCheck, Store } from 'lucide-vue-next'
+import { BadgeCheck, FileCheck, RefreshCw } from 'lucide-vue-next'
 import { CONTENT } from '~/constants/content'
 
-// Icons align 1:1 with CONTENT.trust (years · retailers · authenticity).
-// Lucide, single stroke width, decorative (aria-hidden) — the number+label
+// Icons align 1:1 with CONTENT.trust (authenticity · warranty · buyback).
+// Lucide, single stroke width, decorative (aria-hidden) — the title+sub
 // carries the meaning for screen readers.
-const icons = [Award, Store, ShieldCheck]
+const icons = [BadgeCheck, FileCheck, RefreshCw]
 </script>
 
 <template>
@@ -15,8 +15,8 @@ const icons = [Award, Store, ShieldCheck]
         <li
           v-for="(item, i) in CONTENT.trust"
           :key="i"
-          class="group flex min-h-[200px] flex-col items-center justify-center gap-4
-            border border-line bg-surface-raised px-6 py-8 text-center shadow-luxury
+          class="corner-soft group flex min-h-[200px] flex-col items-center justify-center
+            gap-4 border border-line bg-surface-raised px-6 py-8 text-center shadow-luxury
             transition duration-300 hover:-translate-y-1"
         >
           <!-- Circular chip: gold-soft outline → inverts to navy on hover -->
@@ -29,15 +29,15 @@ const icons = [Award, Store, ShieldCheck]
             <component :is="icons[i]" :size="26" :stroke-width="1.5" />
           </span>
 
-          <!-- Number is the hero (tabular figures so it never jitters) -->
-          <span class="tnum text-4xl font-medium leading-none text-gold-text sm:text-5xl">
-            {{ item.value }}
+          <!-- Title is the hero -->
+          <span class="text-2xl font-medium leading-snug text-gold-text sm:text-3xl">
+            {{ item.title }}
           </span>
 
-          <!-- Signature gold hairline between figure and label -->
+          <!-- Signature gold hairline between title and sub -->
           <span class="h-px w-8 bg-gold/60" aria-hidden="true" />
 
-          <span class="text-sm leading-6 text-ink-muted sm:text-base">{{ item.label }}</span>
+          <span class="text-sm leading-6 text-ink-muted sm:text-base">{{ item.sub }}</span>
         </li>
       </ul>
     </div>

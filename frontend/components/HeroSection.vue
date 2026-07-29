@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ArrowLeft } from 'lucide-vue-next'
 import { CONTENT } from '~/constants/content'
 
 defineEmits<{ order: [] }>()
@@ -48,9 +49,6 @@ const reduced = import.meta.client
 
     <div class="relative mx-auto w-full max-w-hero px-6 text-start text-cream sm:px-10">
       <BrandLogo :height="52" color="#F7F3EE" class="mb-8" />
-      <p class="mb-4 text-xs uppercase tracking-[0.24em] text-gold-soft sm:text-sm">
-        {{ CONTENT.hero.eyebrow }}
-      </p>
       <h1
         class="max-w-2xl text-balance text-[44px] font-medium leading-[1.18]
           sm:text-[60px] lg:text-[72px]"
@@ -63,14 +61,31 @@ const reduced = import.meta.client
       >
         {{ CONTENT.hero.supporting }}
       </p>
+      <!-- Primary CTA: sharp-cornered to match brand; gold fill + navy text (AA),
+           a gold-soft sweep and a leading arrow that advances on hover/focus. -->
       <button
         type="button"
-        class="mt-9 inline-flex h-[58px] w-[220px] items-center justify-center bg-gold
-          text-base font-medium text-white transition duration-300 hover:-translate-y-1
-          hover:bg-navy"
+        class="group relative mt-9 inline-flex h-[60px] items-center gap-3 overflow-hidden
+          bg-gold px-8 text-base font-semibold text-navy
+          shadow-[0_12px_30px_-10px_rgba(176,138,87,0.65)]
+          transition-[transform,box-shadow] duration-300 ease-out
+          hover:-translate-y-0.5 hover:shadow-[0_18px_44px_-12px_rgba(176,138,87,0.8)]
+          focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+          focus-visible:outline-cream motion-reduce:transition-none motion-reduce:hover:translate-y-0"
         @click="$emit('order')"
       >
-        {{ CONTENT.hero.cta }}
+        <span
+          class="absolute inset-0 z-0 translate-x-full bg-gold-soft transition-transform
+            duration-500 ease-out group-hover:translate-x-0 group-focus-visible:translate-x-0
+            motion-reduce:hidden"
+          aria-hidden="true"
+        />
+        <span class="relative z-10">{{ CONTENT.hero.cta }}</span>
+        <ArrowLeft
+          :size="20"
+          class="relative z-10 transition-transform duration-300 ease-out
+            group-hover:-translate-x-1 group-focus-visible:-translate-x-1 motion-reduce:transition-none"
+        />
       </button>
     </div>
   </section>

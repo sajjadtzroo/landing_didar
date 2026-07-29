@@ -108,6 +108,12 @@
       placeholder:text-ink-muted focus:border-gold;
   }
 
+  /* Soft card corners. Opt-in exception to the global sharp-corner rule — the
+     class name avoids the [class*='rounded-'] override, so 10px sticks. */
+  .corner-soft {
+    border-radius: 10px;
+  }
+
   /* Signature section divider: gold hairline + ✦ */
   .divider-star {
     @apply mt-4 flex items-center justify-center gap-3 text-gold-text;
