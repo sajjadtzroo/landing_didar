@@ -10,7 +10,7 @@ import {
   categoryScales,
   registerCharts,
 } from '~/utils/chart'
-import { formatPrice, toFa } from '~/utils/format'
+import { formatPrice, formatTomanCompact, toFa } from '~/utils/format'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 registerCharts()
@@ -41,7 +41,7 @@ const cards = computed(() => [
   { label: 'این هفته', value: toFa(stats.value?.orders_week ?? 0) },
   { label: 'این ماه', value: toFa(stats.value?.orders_month ?? 0) },
   { label: 'کل سفارش‌ها', value: toFa(stats.value?.total_orders ?? 0) },
-  { label: 'ارزش کل', value: formatPrice(stats.value?.total_value ?? 0) ?? '—' },
+  { label: 'ارزش کل', value: formatTomanCompact(stats.value?.total_value ?? 0) },
   { label: 'خوانده‌نشده', value: toFa(stats.value?.unread ?? 0) },
   {
     label: 'نرخ تبدیل',
