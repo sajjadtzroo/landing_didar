@@ -70,10 +70,11 @@ if (import.meta.client) {
             class="snap-start shrink-0 basis-[72%] sm:basis-[46%] lg:basis-[31%]"
           />
         </div>
-        <!-- Left edge fade: the peeking card melts into the section background -->
+        <!-- Left edge fade: extends to the true viewport edge (the scroller
+             bleeds -mx-5/-mx-10) so the peeking card fully melts into the bg. -->
         <div
-          class="pointer-events-none absolute inset-y-0 left-0 z-10 w-16
-            bg-gradient-to-r from-cream to-transparent sm:w-28"
+          class="pointer-events-none absolute inset-y-0 -left-5 z-10 w-24
+            bg-gradient-to-r from-cream via-cream/90 to-transparent sm:-left-10 sm:w-36"
           aria-hidden="true"
         />
         <button
