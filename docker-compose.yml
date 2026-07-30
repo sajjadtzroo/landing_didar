@@ -45,6 +45,7 @@ services:
       # Server-side calls go container→container; browser calls go to localhost.
       NUXT_PUBLIC_API_BASE: http://localhost:8001/api/v1
       NUXT_API_BASE_INTERNAL: http://backend:8000/api/v1
+      NUXT_PUBLIC_MAUTIC_URL: ${MAUTIC_URL:-https://marketing-auto.liara.run}
       NUXT_PUBLIC_MATOMO_URL: ${MATOMO_URL:-}
       NUXT_PUBLIC_MATOMO_SITE_ID: ${MATOMO_SITE_ID:-}
     ports:

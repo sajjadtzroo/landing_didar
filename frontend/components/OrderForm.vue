@@ -78,6 +78,15 @@ const submit = handleSubmit(async (values) => {
       addEcommerceItem(i.sku, i.name, 'jewelry', i.price ?? 0, i.quantity)
     }
     trackEcommerceOrder(res.reference, total)
+    // Push the lead into Mautic (marketing automation): map to standard fields.
+    useMautic().identify({
+      firstname: values.full_name,
+      phone: values.phone,
+      company: values.store_name,
+      state: values.province,
+      city: values.city,
+      tags: 'didar-lead',
+    })
     emit('success', { reference: res.reference })
   } catch (e: unknown) {
     const detail = (e as { data?: { detail?: string } })?.data?.detail

@@ -36,6 +36,8 @@ export default defineNuxtConfig({
     apiBaseInternal: process.env.NUXT_API_BASE_INTERNAL || 'http://localhost:8000/api/v1',
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api/v1',
+      // Mautic marketing-automation base URL (visitor tracking + lead capture).
+      mauticUrl: process.env.NUXT_PUBLIC_MAUTIC_URL || '',
       matomoUrl: process.env.NUXT_PUBLIC_MATOMO_URL || '',
       matomoSiteId: process.env.NUXT_PUBLIC_MATOMO_SITE_ID || '',
       // Matomo Goal / custom-dimension IDs (created in the Matomo UI).
