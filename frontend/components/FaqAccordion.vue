@@ -50,9 +50,10 @@ function toggle(i: number, question: string) {
               <span class="text-base font-medium text-ink sm:text-lg">
                 {{ faq.question }}
               </span>
-              <!-- Circular +/− chip: fills gold when open (trust-icon language) -->
+              <!-- Diamond +/− chip: rotated square border (matches the brand ✦
+                   motif); fills gold when open. Icon is counter-rotated upright. -->
               <span
-                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border
+                class="flex h-8 w-8 shrink-0 rotate-45 items-center justify-center border
                   transition-colors duration-300"
                 :class="
                   open === i
@@ -61,8 +62,8 @@ function toggle(i: number, question: string) {
                 "
                 aria-hidden="true"
               >
-                <Minus v-if="open === i" :size="16" :stroke-width="2.5" />
-                <Plus v-else :size="16" :stroke-width="2.5" />
+                <Minus v-if="open === i" :size="15" :stroke-width="2.5" class="-rotate-45" />
+                <Plus v-else :size="15" :stroke-width="2.5" class="-rotate-45" />
               </span>
             </button>
           </h3>
