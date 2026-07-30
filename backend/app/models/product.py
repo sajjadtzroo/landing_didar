@@ -24,5 +24,7 @@ class Product(Base):
     # اجرت — making-fee percentage (the customer-facing figure; price is admin-only)
     ojrat_percent: Mapped[float | None] = mapped_column(Numeric(5, 2))
     image_url: Mapped[str | None] = mapped_column(String(500))
+    # "daily" | "luxury" — groups products into the two landing carousels
+    category: Mapped[str] = mapped_column(String(20), default="daily", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

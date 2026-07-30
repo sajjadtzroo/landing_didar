@@ -33,6 +33,7 @@ useHead({
     <template v-if="isLanding">
       <TubelightNav />
       <CartFab @open="openCart" />
+      <PromoPopup />
     </template>
 
     <slot />

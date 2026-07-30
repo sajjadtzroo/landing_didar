@@ -1,7 +1,10 @@
 import uuid
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+Category = Literal["daily", "luxury"]
 
 
 class ProductBase(BaseModel):
@@ -15,6 +18,7 @@ class ProductBase(BaseModel):
     # اجرت (making-fee %)
     ojrat_percent: Decimal | None = Field(default=None, ge=0, le=100)
     image_url: str | None = None
+    category: Category = "daily"
     is_active: bool = True
     sort_order: int = 0
 
@@ -33,6 +37,7 @@ class ProductUpdate(BaseModel):
     price: Decimal | None = None
     ojrat_percent: Decimal | None = Field(default=None, ge=0, le=100)
     image_url: str | None = None
+    category: Category | None = None
     is_active: bool | None = None
     sort_order: int | None = None
 

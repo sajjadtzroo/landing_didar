@@ -116,6 +116,9 @@ async def _seed_catalog(db) -> None:
                 price=price,
                 ojrat_percent=7,  # اجرت — admin can tune per product later
                 image_url=image,
+                # Even 50/50 split so both landing carousels have content on seed;
+                # admins recategorise per product later.
+                category="daily" if i < len(seeded) // 2 else "luxury",
                 is_active=True,
                 sort_order=i,
             )

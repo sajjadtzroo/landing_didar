@@ -4,7 +4,25 @@ import { ref } from 'vue'
 import { CONTENT } from '~/constants/content'
 import type { Product } from '~/types'
 
-defineProps<{ products: Product[]; carousel?: boolean }>()
+// Heading/anchor are props so the landing can render one grid per category.
+// Defaults preserve the /products catalogue page (single grid) untouched.
+withDefaults(
+  defineProps<{
+    products: Product[]
+    carousel?: boolean
+    eyebrow?: string
+    title?: string
+    description?: string
+    anchorId?: string
+    flush?: boolean // stacked carousel: continue the previous section's band
+  }>(),
+  {
+    eyebrow: () => CONTENT.products.eyebrow,
+    title: () => CONTENT.products.title,
+    description: () => CONTENT.products.description,
+    anchorId: 'products',
+  },
+)
 
 const { trackEvent } = useAnalytics()
 
@@ -34,15 +52,17 @@ if (import.meta.client) {
 
 <template>
   <section
-    id="products"
+    :id="anchorId"
     ref="section"
-    class="bg-gradient-to-b from-cream-bright via-cream to-[#EFE6D6] py-16"
+    :class="flush
+      ? 'bg-[#EFE6D6] pb-16 pt-6'
+      : 'bg-gradient-to-b from-cream-bright via-cream to-[#EFE6D6] py-16'"
   >
     <div class="mx-auto max-w-content px-5 sm:px-10">
       <SectionDivider
-        :eyebrow="CONTENT.products.eyebrow"
-        :title="CONTENT.products.title"
-        :description="CONTENT.products.description"
+        :eyebrow="eyebrow"
+        :title="title"
+        :description="description"
       />
       <!-- Grid (default) -->
       <div v-if="!carousel" class="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">

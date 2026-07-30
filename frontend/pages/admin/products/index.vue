@@ -19,6 +19,7 @@ const blank = () => ({
   karat: 18,
   price: '' as string | number,
   ojrat_percent: '' as string | number,
+  category: 'daily' as 'daily' | 'luxury',
   onRequest: false,
   is_active: true,
 })
@@ -41,6 +42,7 @@ function startEdit(p: Product) {
     karat: p.karat ?? 18,
     price: p.price ?? '',
     ojrat_percent: p.ojrat_percent ?? '',
+    category: p.category ?? 'daily',
     onRequest: p.price == null,
     is_active: p.is_active,
   })
@@ -57,6 +59,7 @@ async function save() {
     karat: form.karat ? Number(form.karat) : null,
     price: form.onRequest || form.price === '' ? null : Number(form.price),
     ojrat_percent: form.ojrat_percent === '' ? null : Number(form.ojrat_percent),
+    category: form.category,
     is_active: form.is_active,
     sort_order: editing.value
       ? undefined
@@ -176,6 +179,12 @@ async function move(index: number, dir: -1 | 1) {
         <FormField label="وزن (گرم)" v-slot="{ id }"><input :id="id" v-model="form.weight_grams" type="number" step="0.01" class="form-control" /></FormField>
         <FormField label="عیار" v-slot="{ id }"><input :id="id" v-model="form.karat" type="number" class="form-control" /></FormField>
         <FormField label="اجرت (٪)" v-slot="{ id }"><input :id="id" v-model="form.ojrat_percent" type="number" step="0.5" min="0" max="100" class="form-control" /></FormField>
+        <FormField label="دسته‌بندی" v-slot="{ id }">
+          <select :id="id" v-model="form.category" class="form-control">
+            <option value="daily">روزمره</option>
+            <option value="luxury">لوکس</option>
+          </select>
+        </FormField>
         <label class="flex items-center gap-2 text-sm">
           <input v-model="form.onRequest" type="checkbox" /> استعلام قیمت (بدون قیمت ثابت)
         </label>

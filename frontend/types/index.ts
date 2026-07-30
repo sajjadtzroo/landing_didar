@@ -9,6 +9,7 @@ export interface Product {
   price: string | null // null => price on request
   ojrat_percent: string | null // اجرت (making-fee %)
   image_url: string | null
+  category: 'daily' | 'luxury' // landing carousel grouping
   is_active: boolean
   sort_order: number
 }

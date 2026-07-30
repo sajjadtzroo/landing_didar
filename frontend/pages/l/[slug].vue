@@ -63,6 +63,10 @@ useHead(() => ({
 
 const { trackEvent } = useAnalytics()
 
+// Split the landing's assigned products into the two carousels by category.
+const daily = computed(() => (landing.value?.products || []).filter((p) => p.category === 'daily'))
+const luxury = computed(() => (landing.value?.products || []).filter((p) => p.category === 'luxury'))
+
 function scrollToProducts() {
   document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })
 }
@@ -92,7 +96,25 @@ if (import.meta.client) {
       @order="scrollToProducts"
     />
     <TrustBar />
-    <ProductGrid id="products" :products="landing?.products || []" carousel />
+    <ProductGrid
+      v-if="daily.length"
+      carousel
+      anchor-id="products"
+      :products="daily"
+      :eyebrow="CONTENT.products.daily.eyebrow"
+      :title="CONTENT.products.daily.title"
+      :description="CONTENT.products.daily.description"
+    />
+    <ProductGrid
+      v-if="luxury.length"
+      carousel
+      flush
+      :anchor-id="daily.length ? 'products-luxury' : 'products'"
+      :products="luxury"
+      :eyebrow="CONTENT.products.luxury.eyebrow"
+      :title="CONTENT.products.luxury.title"
+      :description="CONTENT.products.luxury.description"
+    />
     <FaqAccordion id="faq" :faqs="faqs || []" />
   </main>
 </template>
