@@ -70,9 +70,15 @@ if (import.meta.client) {
             class="snap-start shrink-0 basis-[72%] sm:basis-[46%] lg:basis-[31%]"
           />
         </div>
+        <!-- Left edge fade: the peeking card melts into the section background -->
+        <div
+          class="pointer-events-none absolute inset-y-0 left-0 z-10 w-16
+            bg-gradient-to-r from-cream to-transparent sm:w-28"
+          aria-hidden="true"
+        />
         <button
           type="button"
-          class="absolute end-1 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center
+          class="absolute end-1 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center
             justify-center border border-line bg-surface/90 text-ink shadow-luxury backdrop-blur
             hover:text-gold-text lg:flex"
           aria-label="قبلی"
