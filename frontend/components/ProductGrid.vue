@@ -77,25 +77,27 @@ if (import.meta.client) {
             bg-gradient-to-r from-cream via-cream/90 to-transparent sm:-left-10 sm:w-36"
           aria-hidden="true"
         />
+        <!-- RTL: arrows point outward. Left (inline-end) = next ‹ ; right
+             (inline-start) = previous › . The left one sits above the fade. -->
         <button
           type="button"
           class="absolute end-1 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center
-            justify-center border border-line bg-surface/90 text-ink shadow-luxury backdrop-blur
-            hover:text-gold-text lg:flex"
-          aria-label="قبلی"
-          @click="page(-1)"
-        >
-          <ChevronRight :size="20" />
-        </button>
-        <button
-          type="button"
-          class="absolute start-1 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center
             justify-center border border-line bg-surface/90 text-ink shadow-luxury backdrop-blur
             hover:text-gold-text lg:flex"
           aria-label="بعدی"
           @click="page(1)"
         >
           <ChevronLeft :size="20" />
+        </button>
+        <button
+          type="button"
+          class="absolute start-1 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center
+            justify-center border border-line bg-surface/90 text-ink shadow-luxury backdrop-blur
+            hover:text-gold-text lg:flex"
+          aria-label="قبلی"
+          @click="page(-1)"
+        >
+          <ChevronRight :size="20" />
         </button>
       </div>
     </div>
