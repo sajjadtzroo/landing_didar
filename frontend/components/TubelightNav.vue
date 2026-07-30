@@ -68,14 +68,14 @@ watch(y, syncActive)
   >
 
     <div
-      class="relative flex items-center gap-1 rounded-full border p-1.5
+      class="corner-soft relative flex items-center gap-1 border p-1.5
         shadow-[0_10px_40px_-12px_rgba(4,30,66,0.45)] backdrop-blur-xl backdrop-saturate-150
         transition-colors duration-300"
       :class="overHero ? 'border-white/15 bg-navy-deep/40' : 'border-line bg-surface'"
     >
       <!-- Sliding lamp (behind the items) -->
       <span
-        class="pointer-events-none absolute inset-y-1.5 left-0 z-0 rounded-full bg-gold/15
+        class="corner-soft pointer-events-none absolute inset-y-1.5 left-0 z-0 bg-gold/15
           transition-[transform,width] duration-300 ease-out"
         :style="lamp"
       >
@@ -91,7 +91,7 @@ watch(y, syncActive)
         :key="item.name"
         ref="links"
         :href="item.url"
-        class="relative z-10 flex min-h-11 cursor-pointer items-center rounded-full px-4
+        class="corner-soft relative z-10 flex min-h-11 cursor-pointer items-center px-4
           text-sm font-semibold transition-colors sm:px-5"
         :class="
           active === i
