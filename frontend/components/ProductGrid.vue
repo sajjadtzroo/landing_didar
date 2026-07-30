@@ -33,7 +33,11 @@ if (import.meta.client) {
 </script>
 
 <template>
-  <section id="products" ref="section" class="bg-surface py-16">
+  <section
+    id="products"
+    ref="section"
+    class="bg-gradient-to-b from-cream-bright via-cream to-[#EFE6D6] py-16"
+  >
     <div class="mx-auto max-w-content px-5 sm:px-10">
       <SectionDivider
         :eyebrow="CONTENT.products.eyebrow"
