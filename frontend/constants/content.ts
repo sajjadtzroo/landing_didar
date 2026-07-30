@@ -8,7 +8,13 @@ export const CONTENT = {
   telegram: 'https://t.me/didargold',
   instagram: 'https://instagram.com/didargold',
 
-  promo: 'با خرید ۲۰۰ گرم و بیشتر از کالکشن لوکس، یک درصد تخفیف روی کل مبلغ فاکتور دریافت کنید.',
+  // Default banner + per-landing overrides (keyed by /l/<slug>).
+  promo: 'با خرید +۲۰۰ گرم از کالکشن لوکس، ۱٪ تخفیف روی کل فاکتور',
+  promoByLanding: {
+    one: 'با خرید +۲۰۰ گرم از کالکشن لوکس، ۱٪ تخفیف روی کل فاکتور',
+    two: 'با خرید +۲۰۰ گرم از کالکشن روزمره، ۱٪ تخفیف روی کل فاکتور',
+    three: 'با خرید +۲۰۰ گرم از کالکشن‌ها، ۲٪ تخفیف روی کل فاکتور',
+  } as Record<string, string>,
 
   nav: {
     order: 'سفارش',

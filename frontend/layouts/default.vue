@@ -12,6 +12,7 @@ const isLanding = computed(() => route.path.startsWith('/l'))
 
 <template>
   <div>
+    <PromoBanner />
     <NavBar v-if="!isLanding" @order="openOrder" />
     <template v-if="isLanding">
       <TubelightNav />

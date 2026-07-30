@@ -5,6 +5,7 @@ import { CONTENT } from '~/constants/content'
 defineEmits<{ order: [] }>()
 
 const route = useRoute()
+const { open: promoOpen } = usePromo()
 const { y } = import.meta.client ? useWindowScroll() : { y: ref(0) }
 
 // Transparent (light text) only while sitting over the dark hero on a landing
@@ -15,12 +16,13 @@ const overHero = computed(() => onLanding.value && y.value < 80)
 
 <template>
   <header
-    class="chrome-blur fixed inset-x-0 top-0 z-40 transition-colors duration-300"
-    :class="
+    class="chrome-blur fixed inset-x-0 z-40 transition-[colors,top] duration-300"
+    :class="[
       overHero
         ? 'bg-transparent text-cream'
-        : 'border-b border-line bg-surface/70 text-ink backdrop-blur-xl backdrop-saturate-150'
-    "
+        : 'border-b border-line bg-surface/70 text-ink backdrop-blur-xl backdrop-saturate-150',
+      promoOpen ? 'top-20 sm:top-14' : 'top-0',
+    ]"
   >
     <!-- Legibility scrim over the hero (only in the transparent state) -->
     <div

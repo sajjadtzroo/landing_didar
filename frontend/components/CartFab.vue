@@ -9,6 +9,7 @@ import { toFa } from '~/utils/format'
 defineEmits<{ open: [] }>()
 
 const cart = useCartStore()
+const { open: promoOpen } = usePromo()
 const btn = ref<HTMLElement | null>(null)
 
 watch(
@@ -29,9 +30,10 @@ watch(
     id="cart-bubble"
     ref="btn"
     type="button"
-    class="fixed left-4 top-4 z-50 flex h-14 w-14 items-center justify-center rounded-full
-      bg-navy text-cream shadow-[0_10px_40px_-12px_rgba(4,30,66,0.55)] transition-colors
+    class="fixed left-4 z-50 flex h-14 w-14 items-center justify-center rounded-full
+      bg-navy text-cream shadow-[0_10px_40px_-12px_rgba(4,30,66,0.55)] transition-[colors,top]
       duration-300 hover:bg-gold sm:top-auto sm:bottom-6"
+    :class="promoOpen ? 'top-20' : 'top-4'"
     :aria-label="`سبد سفارش، ${toFa(cart.itemCount)} کالا`"
     @click="$emit('open')"
   >

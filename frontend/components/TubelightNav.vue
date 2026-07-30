@@ -16,6 +16,7 @@ const items = [
 ]
 
 const route = useRoute()
+const { open: promoOpen } = usePromo()
 const { y } = import.meta.client ? useWindowScroll() : { y: ref(0) }
 
 // Dark, translucent chrome + light text while floating over the navy hero;
@@ -64,7 +65,8 @@ watch(y, syncActive)
   <!-- Bottom on mobile, top-center on laptop -->
   <div
     class="fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-6
-      sm:bottom-auto sm:top-0 sm:pb-0 sm:pt-6"
+      sm:bottom-auto sm:top-0 sm:pb-0"
+    :class="promoOpen ? 'sm:pt-16' : 'sm:pt-6'"
   >
 
     <div
