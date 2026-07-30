@@ -18,6 +18,7 @@ const blank = () => ({
   weight_grams: '',
   karat: 18,
   price: '' as string | number,
+  ojrat_percent: '' as string | number,
   onRequest: false,
   is_active: true,
 })
@@ -39,6 +40,7 @@ function startEdit(p: Product) {
     weight_grams: p.weight_grams ?? '',
     karat: p.karat ?? 18,
     price: p.price ?? '',
+    ojrat_percent: p.ojrat_percent ?? '',
     onRequest: p.price == null,
     is_active: p.is_active,
   })
@@ -54,6 +56,7 @@ async function save() {
     weight_grams: form.weight_grams === '' ? null : Number(form.weight_grams),
     karat: form.karat ? Number(form.karat) : null,
     price: form.onRequest || form.price === '' ? null : Number(form.price),
+    ojrat_percent: form.ojrat_percent === '' ? null : Number(form.ojrat_percent),
     is_active: form.is_active,
     sort_order: editing.value
       ? undefined
@@ -172,6 +175,7 @@ async function move(index: number, dir: -1 | 1) {
         <FormField label="کد (SKU)" v-slot="{ id }"><input :id="id" v-model="form.sku" class="form-control" /></FormField>
         <FormField label="وزن (گرم)" v-slot="{ id }"><input :id="id" v-model="form.weight_grams" type="number" step="0.01" class="form-control" /></FormField>
         <FormField label="عیار" v-slot="{ id }"><input :id="id" v-model="form.karat" type="number" class="form-control" /></FormField>
+        <FormField label="اجرت (٪)" v-slot="{ id }"><input :id="id" v-model="form.ojrat_percent" type="number" step="0.5" min="0" max="100" class="form-control" /></FormField>
         <label class="flex items-center gap-2 text-sm">
           <input v-model="form.onRequest" type="checkbox" /> استعلام قیمت (بدون قیمت ثابت)
         </label>

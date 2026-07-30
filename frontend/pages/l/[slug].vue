@@ -60,7 +60,7 @@ if (import.meta.client) {
       @order="scrollToProducts"
     />
     <TrustBar />
-    <ProductGrid id="products" :products="landing?.products || []" />
+    <ProductGrid id="products" :products="landing?.products || []" carousel />
     <FaqAccordion id="faq" :faqs="faqs || []" />
   </main>
 </template>

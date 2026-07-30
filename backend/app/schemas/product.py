@@ -12,6 +12,8 @@ class ProductBase(BaseModel):
     weight_grams: Decimal | None = None
     karat: int | None = Field(default=None, ge=1, le=24)
     price: Decimal | None = None  # None => price on request
+    # اجرت (making-fee %)
+    ojrat_percent: Decimal | None = Field(default=None, ge=0, le=100)
     image_url: str | None = None
     is_active: bool = True
     sort_order: int = 0
@@ -29,6 +31,7 @@ class ProductUpdate(BaseModel):
     weight_grams: Decimal | None = None
     karat: int | None = Field(default=None, ge=1, le=24)
     price: Decimal | None = None
+    ojrat_percent: Decimal | None = Field(default=None, ge=0, le=100)
     image_url: str | None = None
     is_active: bool | None = None
     sort_order: int | None = None

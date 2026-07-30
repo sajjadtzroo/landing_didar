@@ -5,7 +5,7 @@ import { onMounted, ref } from 'vue'
 import { CONTENT } from '~/constants/content'
 import { PROVINCES } from '~/constants/provinces'
 import { readAttribution } from '~/plugins/attribution.client'
-import { formatPrice, toFa } from '~/utils/format'
+import { toFa } from '~/utils/format'
 import { orderSchema } from '~/utils/orderSchema'
 
 const emit = defineEmits<{ success: [{ reference: string }] }>()
@@ -106,8 +106,8 @@ function onInvalidField(field: string) {
       <ul class="space-y-1 text-sm text-ink">
         <li v-for="i in cart.items" :key="i.productId" class="flex justify-between">
           <span>{{ i.name }} × {{ toFa(i.quantity) }}</span>
-          <span class="tnum text-gold-text">
-            {{ formatPrice(i.price != null ? i.price * i.quantity : null) ?? '—' }}
+          <span class="text-gold-text">
+            {{ CONTENT.products.priceOnRequest }}
           </span>
         </li>
       </ul>

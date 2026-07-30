@@ -21,6 +21,8 @@ class Product(Base):
     karat: Mapped[int | None] = mapped_column(Integer)
     # NULL price => "price on request" (gold rate moves daily)
     price: Mapped[float | None] = mapped_column(Numeric(12, 0))
+    # اجرت — making-fee percentage (the customer-facing figure; price is admin-only)
+    ojrat_percent: Mapped[float | None] = mapped_column(Numeric(5, 2))
     image_url: Mapped[str | None] = mapped_column(String(500))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

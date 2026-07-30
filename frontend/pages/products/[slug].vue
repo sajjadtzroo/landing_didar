@@ -3,7 +3,7 @@ import { ChevronLeft } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { CONTENT } from '~/constants/content'
 import type { Product } from '~/types'
-import { formatPrice, toFa } from '~/utils/format'
+import { toFa } from '~/utils/format'
 
 const route = useRoute()
 const slug = route.params.slug as string
@@ -36,7 +36,6 @@ const {
 
 const qty = ref(1)
 const imageEl = ref<HTMLElement | null>(null)
-const priceLabel = computed(() => formatPrice(product.value?.price ?? null))
 
 useHead(() => ({
   title: `${product.value?.name} | ${CONTENT.brand}`,
@@ -93,8 +92,12 @@ function addToCart() {
         <div class="flex flex-col">
           <h1 class="text-3xl font-medium text-ink sm:text-4xl">{{ product.name }}</h1>
 
+          <!-- اجرت (making fee) is the customer-facing figure — no Toman price -->
           <p class="tnum mt-4 text-2xl text-gold-text">
-            {{ priceLabel ?? CONTENT.products.priceOnRequest }}
+            <template v-if="product.ojrat_percent">
+              {{ CONTENT.products.ojrat }} {{ toFa(Number(product.ojrat_percent)) }}٪
+            </template>
+            <template v-else>{{ CONTENT.products.priceOnRequest }}</template>
           </p>
 
           <dl class="mt-6 grid grid-cols-2 gap-y-3 border-y border-line py-6 text-sm">

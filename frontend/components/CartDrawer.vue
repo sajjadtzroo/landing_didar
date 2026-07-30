@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Trash2 } from 'lucide-vue-next'
 import { CONTENT } from '~/constants/content'
-import { formatPrice } from '~/utils/format'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [boolean]; continue: [] }>()
@@ -39,8 +38,8 @@ function remove(productId: string, name: string) {
         </div>
         <div class="min-w-0 flex-1">
           <p class="truncate text-ink">{{ item.name }}</p>
-          <p class="tnum mt-1 text-sm text-gold-text">
-            {{ formatPrice(item.price) ?? CONTENT.products.priceOnRequest }}
+          <p class="mt-1 text-sm text-gold-text">
+            {{ CONTENT.products.priceOnRequest }}
           </p>
           <div class="mt-2 flex items-center gap-3">
             <QtyStepper
@@ -63,8 +62,8 @@ function remove(productId: string, name: string) {
     <template v-if="cart.items.length" #footer>
       <div class="mb-4 flex items-center justify-between text-ink">
         <span>{{ CONTENT.cart.total }}</span>
-        <span class="tnum font-medium text-gold-text">
-          {{ formatPrice(cart.total) ?? CONTENT.products.priceOnRequest }}
+        <span class="font-medium text-gold-text">
+          {{ CONTENT.products.priceOnRequest }}
         </span>
       </div>
       <button

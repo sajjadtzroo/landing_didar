@@ -18,6 +18,19 @@ async def test_requires_auth(client):
 
 
 # ---- Products ----
+async def test_ojrat_percent_roundtrips_and_validates(admin_client):
+    created = await admin_client.post(
+        PRODUCTS, json={"name": "Ring", "sku": _sku(), "ojrat_percent": 7}
+    )
+    assert created.status_code == 201
+    assert created.json()["ojrat_percent"] == "7.00"  # Decimal(5,2) serialized
+    # out of the 0–100 range is rejected
+    bad = await admin_client.post(
+        PRODUCTS, json={"name": "Ring", "sku": _sku(), "ojrat_percent": 150}
+    )
+    assert bad.status_code == 422
+
+
 async def test_product_crud(admin_client):
     body = {"name": "Bracelet", "sku": _sku()}
     created = await admin_client.post(PRODUCTS, json=body)

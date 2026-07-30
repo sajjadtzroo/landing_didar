@@ -8,6 +8,8 @@ export const CONTENT = {
   telegram: 'https://t.me/didargold',
   instagram: 'https://instagram.com/didargold',
 
+  promo: 'با خرید ۲۰۰ گرم و بیشتر از کالکشن لوکس، یک درصد تخفیف روی کل مبلغ فاکتور دریافت کنید.',
+
   nav: {
     order: 'سفارش',
   },
@@ -34,6 +36,7 @@ export const CONTENT = {
     added: 'انتخاب‌شده',
     weight: 'وزن',
     karat: 'عیار',
+    ojrat: 'اجرت',
     sku: 'کد',
     gram: 'گرم',
     quantity: 'تعداد',

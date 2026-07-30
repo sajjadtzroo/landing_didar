@@ -7,6 +7,7 @@ export interface Product {
   weight_grams: string | null
   karat: number | null
   price: string | null // null => price on request
+  ojrat_percent: string | null // اجرت (making-fee %)
   image_url: string | null
   is_active: boolean
   sort_order: number

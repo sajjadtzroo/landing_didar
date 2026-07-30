@@ -114,6 +114,7 @@ async def _seed_catalog(db) -> None:
                 weight_grams=wt,
                 karat=18,
                 price=price,
+                ojrat_percent=7,  # اجرت — admin can tune per product later
                 image_url=image,
                 is_active=True,
                 sort_order=i,

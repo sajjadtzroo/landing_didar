@@ -45,9 +45,18 @@ const qty = computed(() => cart.quantityOf(props.product.id))
         <p class="mt-1 text-sm text-ink-muted">
           {{ CONTENT.products.sku }} {{ product.sku }}
         </p>
-        <!-- Weight instead of price on cards -->
-        <p v-if="product.weight_grams" class="tnum mt-3 text-sm text-gold-text">
-          {{ toFa(Number(product.weight_grams)) }} {{ CONTENT.products.gram }}
+        <!-- Weight + اجرت (making fee) instead of price on cards -->
+        <p
+          v-if="product.weight_grams || product.ojrat_percent"
+          class="tnum mt-3 text-sm text-gold-text"
+        >
+          <span v-if="product.weight_grams">
+            {{ toFa(Number(product.weight_grams)) }} {{ CONTENT.products.gram }}
+          </span>
+          <span v-if="product.weight_grams && product.ojrat_percent" class="text-ink-muted"> · </span>
+          <span v-if="product.ojrat_percent">
+            {{ CONTENT.products.ojrat }} {{ toFa(Number(product.ojrat_percent)) }}٪
+          </span>
         </p>
       </div>
     </NuxtLink>
