@@ -9,9 +9,18 @@ const { data: products } = await useFetch<Product[]>('/products', {
   default: () => [],
 })
 
+const canonical = `${useSiteUrl()}/products`
+
 useHead({
   title: `${CONTENT.products.title} | ${CONTENT.brand}`,
-  meta: [{ name: 'description', content: CONTENT.products.description }],
+  meta: [
+    { name: 'description', content: CONTENT.products.description },
+    { property: 'og:title', content: `${CONTENT.products.title} | ${CONTENT.brand}` },
+    { property: 'og:description', content: CONTENT.products.description },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: canonical },
+  ],
+  link: [{ rel: 'canonical', href: canonical }],
 })
 </script>
 

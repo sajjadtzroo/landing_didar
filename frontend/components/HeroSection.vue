@@ -16,6 +16,23 @@ const heroPoster = computed(() => props.posterUrl)
 const reduced = import.meta.client
   ? useMediaQuery('(prefers-reduced-motion: reduce)')
   : ref(false)
+
+// The poster is the LCP element. Defer the video's download until the page is
+// idle so a heavy hero file never competes with first paint (helps mobile LCP
+// regardless of the video's size). Muted autoplay resumes once the source lands.
+const videoEl = ref<HTMLVideoElement | null>(null)
+const showVideo = ref(false)
+onMounted(() => {
+  const start = () => (showVideo.value = true)
+  if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 2000 })
+  else setTimeout(start, 1200)
+})
+watch(showVideo, async (on) => {
+  if (on) {
+    await nextTick()
+    videoEl.value?.load()
+  }
+})
 </script>
 
 <template>
@@ -24,14 +41,16 @@ const reduced = import.meta.client
     <div class="absolute inset-0 bg-media-surface">
       <video
         v-if="!reduced"
+        ref="videoEl"
         class="h-full w-full object-cover"
         autoplay
         muted
         loop
         playsinline
+        preload="none"
         :poster="heroPoster"
       >
-        <source :src="heroVideo" type="video/mp4" />
+        <source v-if="showVideo" :src="heroVideo" type="video/mp4" />
       </video>
       <NuxtImg
         v-else
@@ -50,7 +69,7 @@ const reduced = import.meta.client
     <div class="relative mx-auto w-full max-w-hero px-6 text-start text-cream sm:px-10">
       <BrandLogo :height="52" color="#F7F3EE" class="mb-8" />
       <h1
-        class="max-w-2xl text-balance text-[44px] font-medium leading-[1.18]
+        class="max-w-2xl text-[44px] font-medium leading-[1.18]
           sm:text-[60px] lg:text-[72px]"
       >
         {{ CONTENT.hero.headline }}

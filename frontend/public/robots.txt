@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+
+# ponytail: domain hardcoded (static file can't read env). Keep in sync with
+# NUXT_PUBLIC_SITE_URL; switch to @nuxtjs/sitemap if the origin ever varies.
+Sitemap: https://didargold.com/sitemap.xml

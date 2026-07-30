@@ -93,6 +93,7 @@ watch(y, syncActive)
         :key="item.name"
         ref="links"
         :href="item.url"
+        :aria-label="item.name"
         class="corner-soft relative z-10 flex min-h-11 cursor-pointer items-center px-4
           text-sm font-semibold transition-colors sm:px-5"
         :class="
@@ -103,7 +104,7 @@ watch(y, syncActive)
         @click.prevent="select(i, item.url)"
       >
         <span class="hidden md:inline">{{ item.name }}</span>
-        <component :is="item.icon" :size="18" :stroke-width="2.5" class="md:hidden" />
+        <component :is="item.icon" :size="18" :stroke-width="2.5" class="md:hidden" aria-hidden="true" />
       </a>
     </div>
   </div>

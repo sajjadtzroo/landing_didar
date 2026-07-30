@@ -11,7 +11,7 @@ const id = useId()
       {{ label }}
       <span v-if="required" class="text-danger" aria-hidden="true">*</span>
     </label>
-    <slot :id="id" />
+    <slot :id="id" :described-by="error ? `${id}-error` : undefined" />
     <p
       v-if="error"
       :id="`${id}-error`"

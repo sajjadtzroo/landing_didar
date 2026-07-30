@@ -37,13 +37,33 @@ const {
 const qty = ref(1)
 const imageEl = ref<HTMLElement | null>(null)
 
+const canonical = `${useSiteUrl()}/products/${slug}`
+
 useHead(() => ({
   title: `${product.value?.name} | ${CONTENT.brand}`,
   meta: [
     { name: 'description', content: product.value?.description || '' },
     { property: 'og:image', content: product.value?.image_url || '' },
     { property: 'og:title', content: product.value?.name || '' },
+    { property: 'og:description', content: product.value?.description || '' },
+    { property: 'og:type', content: 'product' },
+    { property: 'og:url', content: canonical },
   ],
+  link: [{ rel: 'canonical', href: canonical }],
+  script: product.value
+    ? [{
+        type: 'application/ld+json',
+        innerHTML: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: product.value.name,
+          sku: product.value.sku,
+          description: product.value.description || undefined,
+          image: product.value.image_url || undefined,
+          brand: { '@type': 'Brand', name: CONTENT.brand },
+        }),
+      }]
+    : [],
 }))
 
 onMounted(() => {
@@ -84,6 +104,8 @@ function addToCart() {
             class="h-full w-full object-cover"
             width="800"
             height="800"
+            format="webp"
+            sizes="(max-width: 1024px) 100vw, 600px"
             fetchpriority="high"
           />
         </div>

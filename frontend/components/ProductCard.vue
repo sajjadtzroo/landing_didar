@@ -28,7 +28,10 @@ const qty = computed(() => cart.quantityOf(props.product.id))
           class="h-full w-full object-cover transition duration-700 group-hover:scale-105"
           width="400"
           height="400"
+          format="webp"
+          sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 280px"
           :loading="index < 4 ? 'eager' : 'lazy'"
+          :fetchpriority="index === 0 ? 'high' : undefined"
         />
         <!-- Selected · qty state (icon+text, never colour-only) -->
         <span

@@ -24,10 +24,42 @@ const { data: faqs } = await useFetch<FAQ[]>('/faqs', {
   default: () => [],
 })
 
-useHead({
-  title: `${CONTENT.brand} — ${CONTENT.hero.headline}`,
-  meta: [{ name: 'description', content: CONTENT.hero.supporting }],
-})
+const canonical = `${useSiteUrl()}/l/${slug}`
+
+useHead(() => ({
+  title: `${landing.value?.title || CONTENT.brand} — ${CONTENT.brand}`,
+  meta: [
+    { name: 'description', content: CONTENT.hero.supporting },
+    { property: 'og:title', content: landing.value?.title || CONTENT.brand },
+    { property: 'og:description', content: CONTENT.hero.supporting },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: canonical },
+    ...(landing.value?.hero_poster_url
+      ? [{ property: 'og:image', content: landing.value.hero_poster_url }]
+      : []),
+  ],
+  link: [
+    { rel: 'canonical', href: canonical },
+    // The hero poster is the LCP candidate — preload it (URL is per-landing).
+    ...(landing.value?.hero_poster_url
+      ? [{ rel: 'preload', as: 'image', href: landing.value.hero_poster_url, fetchpriority: 'high' }]
+      : []),
+  ],
+  script: (faqs.value || []).length
+    ? [{
+        type: 'application/ld+json',
+        innerHTML: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: (faqs.value || []).map((f) => ({
+            '@type': 'Question',
+            name: f.question,
+            acceptedAnswer: { '@type': 'Answer', text: f.answer },
+          })),
+        }),
+      }]
+    : [],
+}))
 
 const { trackEvent } = useAnalytics()
 

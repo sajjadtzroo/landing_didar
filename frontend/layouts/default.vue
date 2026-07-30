@@ -8,6 +8,22 @@ const { cartOpen, orderOpen, successRef, openCart, openOrder, onOrderSuccess } =
   useUiState()
 const route = useRoute()
 const isLanding = computed(() => route.path.startsWith('/l'))
+
+const siteUrl = useSiteUrl()
+useHead({
+  script: [{
+    type: 'application/ld+json',
+    innerHTML: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: CONTENT.brand,
+      url: siteUrl,
+      logo: `${siteUrl}/logo.svg`,
+      telephone: CONTENT.phone,
+      sameAs: [CONTENT.instagram, CONTENT.telegram],
+    }),
+  }],
+})
 </script>
 
 <template>

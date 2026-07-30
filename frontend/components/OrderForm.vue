@@ -132,7 +132,7 @@ function onInvalidField(field: string) {
         :label="CONTENT.form.fullName"
         :error="errors.full_name"
         required
-        v-slot="{ id }"
+        v-slot="{ id, describedBy }"
       >
         <input
           :id="id"
@@ -140,11 +140,12 @@ function onInvalidField(field: string) {
           type="text"
           class="form-control"
           autocomplete="name"
+          :aria-describedby="describedBy"
           @blur="blurName($event); onInvalidField('full_name')"
         />
       </FormField>
 
-      <FormField :label="CONTENT.form.phone" :error="errors.phone" required v-slot="{ id }">
+      <FormField :label="CONTENT.form.phone" :error="errors.phone" required v-slot="{ id, describedBy }">
         <input
           :id="id"
           v-model="phone"
@@ -153,6 +154,7 @@ function onInvalidField(field: string) {
           class="form-control"
           autocomplete="tel"
           dir="ltr"
+          :aria-describedby="describedBy"
           @blur="blurPhone($event); onInvalidField('phone')"
         />
       </FormField>
@@ -161,22 +163,24 @@ function onInvalidField(field: string) {
         :label="CONTENT.form.storeName"
         :error="errors.store_name"
         required
-        v-slot="{ id }"
+        v-slot="{ id, describedBy }"
       >
         <input
           :id="id"
           v-model="store_name"
           type="text"
           class="form-control"
+          :aria-describedby="describedBy"
           @blur="blurStore($event); onInvalidField('store_name')"
         />
       </FormField>
 
-      <FormField :label="CONTENT.form.province" :error="errors.province" required v-slot="{ id }">
+      <FormField :label="CONTENT.form.province" :error="errors.province" required v-slot="{ id, describedBy }">
         <select
           :id="id"
           v-model="province"
           class="form-control"
+          :aria-describedby="describedBy"
           @blur="blurProvince($event); onInvalidField('province')"
         >
           <option value="" disabled>{{ CONTENT.form.provincePlaceholder }}</option>
@@ -184,12 +188,12 @@ function onInvalidField(field: string) {
         </select>
       </FormField>
 
-      <FormField :label="CONTENT.form.city" v-slot="{ id }">
+      <FormField :label="CONTENT.form.city" v-slot="{ id, describedBy }">
         <input :id="id" v-model="city" type="text" class="form-control" />
       </FormField>
 
-      <FormField :label="CONTENT.form.note" :error="errors.note" v-slot="{ id }">
-        <textarea :id="id" v-model="note" rows="3" maxlength="300" class="form-control h-auto py-3" />
+      <FormField :label="CONTENT.form.note" :error="errors.note" v-slot="{ id, describedBy }">
+        <textarea :id="id" v-model="note" :aria-describedby="describedBy" rows="3" maxlength="300" class="form-control h-auto py-3" />
       </FormField>
     </div>
 
