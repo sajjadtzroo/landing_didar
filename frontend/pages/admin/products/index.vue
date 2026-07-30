@@ -19,7 +19,7 @@ const blank = () => ({
   karat: 18,
   price: '' as string | number,
   ojrat_percent: '' as string | number,
-  category: 'daily' as 'daily' | 'luxury',
+  category: 'daily' as 'daily' | 'lux_daily' | 'luxury',
   onRequest: false,
   is_active: true,
 })
@@ -182,6 +182,7 @@ async function move(index: number, dir: -1 | 1) {
         <FormField label="دسته‌بندی" v-slot="{ id }">
           <select :id="id" v-model="form.category" class="form-control">
             <option value="daily">روزمره</option>
+            <option value="lux_daily">لوکس روزمره</option>
             <option value="luxury">لوکس</option>
           </select>
         </FormField>

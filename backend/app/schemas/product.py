@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-Category = Literal["daily", "luxury"]
+Category = Literal["daily", "lux_daily", "luxury"]
 
 
 class ProductBase(BaseModel):

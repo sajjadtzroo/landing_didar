@@ -63,9 +63,14 @@ useHead(() => ({
 
 const { trackEvent } = useAnalytics()
 
-// Split the landing's assigned products into the two carousels by category.
-const daily = computed(() => (landing.value?.products || []).filter((p) => p.category === 'daily'))
-const luxury = computed(() => (landing.value?.products || []).filter((p) => p.category === 'luxury'))
+// Split the landing's assigned products into one carousel per category (in
+// display order). Empty categories are dropped; the first shown owns #products.
+const groups = computed(() => {
+  const all = landing.value?.products || []
+  return (['daily', 'lux_daily', 'luxury'] as const)
+    .map((key) => ({ key, c: CONTENT.products[key], items: all.filter((p) => p.category === key) }))
+    .filter((g) => g.items.length)
+})
 
 function scrollToProducts() {
   document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })
@@ -97,23 +102,15 @@ if (import.meta.client) {
     />
     <TrustBar />
     <ProductGrid
-      v-if="daily.length"
+      v-for="(g, i) in groups"
+      :key="g.key"
       carousel
-      anchor-id="products"
-      :products="daily"
-      :eyebrow="CONTENT.products.daily.eyebrow"
-      :title="CONTENT.products.daily.title"
-      :description="CONTENT.products.daily.description"
-    />
-    <ProductGrid
-      v-if="luxury.length"
-      carousel
-      flush
-      :anchor-id="daily.length ? 'products-luxury' : 'products'"
-      :products="luxury"
-      :eyebrow="CONTENT.products.luxury.eyebrow"
-      :title="CONTENT.products.luxury.title"
-      :description="CONTENT.products.luxury.description"
+      :flush="i > 0"
+      :anchor-id="i === 0 ? 'products' : `products-${g.key}`"
+      :products="g.items"
+      :eyebrow="g.c.eyebrow"
+      :title="g.c.title"
+      :description="g.c.description"
     />
     <FaqAccordion id="faq" :faqs="faqs || []" />
   </main>

@@ -38,11 +38,16 @@ export const CONTENT = {
     title: 'محصولات',
     description: 'گزیده‌ای از طرح‌های طلای ۱۸ عیار، آماده برای سفارش عمده فروشگاه‌ها.',
     priceOnRequest: 'استعلام قیمت',
-    // Two landing carousels, keyed by product.category.
+    // Three landing carousels, keyed by product.category.
     daily: {
       eyebrow: 'کالکشن روزمره',
-      title: 'طلای لوکس روزمره',
+      title: 'طلای روزمره',
       description: 'طرح‌های سبک و کاربردی برای استفاده روزانه، مناسب فروش پرگردش فروشگاه.',
+    },
+    lux_daily: {
+      eyebrow: 'کالکشن لوکس روزمره',
+      title: 'طلای لوکس روزمره',
+      description: 'طرح‌های روزمره با جلوه‌ای لوکس‌تر؛ حد فاصل کاربردی و خاص.',
     },
     luxury: {
       eyebrow: 'کالکشن لوکس',
