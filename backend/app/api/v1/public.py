@@ -1,3 +1,5 @@
+import time
+
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -5,6 +7,7 @@ from fastapi import (
     Header,
     HTTPException,
     Request,
+    Response,
 )
 from loguru import logger
 from sqlalchemy import select
@@ -26,13 +29,36 @@ from app.services.notifications import get_adapter
 
 router = APIRouter()
 
+# Public catalog data changes rarely (admin edits) and is identical per visitor,
+# so a short in-process TTL cache removes the DB round-trip on the hot read paths
+# and collapses tail latency. Staleness ceiling = TTL; per-worker (no shared store
+# needed at this scale). ponytail: dict cache, swap for Redis if we go multi-node.
+_CACHE_TTL = 60.0
+_cache: dict[str, tuple[float, object]] = {}
+_CACHE_CONTROL = "public, max-age=60"
+
+
+def _cache_get(key: str):
+    hit = _cache.get(key)
+    return hit[1] if hit and hit[0] > time.monotonic() else None
+
+
+def _cache_set(key: str, value: object) -> None:
+    _cache[key] = (time.monotonic() + _CACHE_TTL, value)
+
 
 @router.get("/products", response_model=list[ProductOut])
-async def list_products(db: AsyncSession = Depends(get_db)):
+async def list_products(response: Response, db: AsyncSession = Depends(get_db)):
+    response.headers["Cache-Control"] = _CACHE_CONTROL
+    cached = _cache_get("products")
+    if cached is not None:
+        return cached
     res = await db.execute(
         select(Product).where(Product.is_active).order_by(Product.sort_order)
     )
-    return res.scalars().all()
+    items = [ProductOut.model_validate(p) for p in res.scalars().all()]
+    _cache_set("products", items)
+    return items
 
 
 @router.get("/products/{slug}", response_model=ProductOut)
@@ -47,7 +73,13 @@ async def get_product(slug: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/landings/{slug}", response_model=LandingDetailOut)
-async def get_landing(slug: str, db: AsyncSession = Depends(get_db)):
+async def get_landing(
+    slug: str, response: Response, db: AsyncSession = Depends(get_db)
+):
+    response.headers["Cache-Control"] = _CACHE_CONTROL
+    cached = _cache_get(f"landing:{slug}")
+    if cached is not None:
+        return cached
     landing = (
         await db.execute(select(Landing).where(Landing.slug == slug))
     ).scalar_one_or_none()
@@ -61,21 +93,29 @@ async def get_landing(slug: str, db: AsyncSession = Depends(get_db)):
             .order_by(LandingProduct.sort_order)
         )
     ).scalars().all()
-    return LandingDetailOut(
+    out = LandingDetailOut(
         slug=landing.slug,
         title=landing.title,
         hero_video_url=landing.hero_video_url,
         hero_poster_url=landing.hero_poster_url,
         products=list(products),
     )
+    _cache_set(f"landing:{slug}", out)
+    return out
 
 
 @router.get("/faqs", response_model=list[FAQOut])
-async def list_faqs(db: AsyncSession = Depends(get_db)):
+async def list_faqs(response: Response, db: AsyncSession = Depends(get_db)):
+    response.headers["Cache-Control"] = _CACHE_CONTROL
+    cached = _cache_get("faqs")
+    if cached is not None:
+        return cached
     res = await db.execute(
         select(FAQ).where(FAQ.is_active).order_by(FAQ.sort_order)
     )
-    return res.scalars().all()
+    items = [FAQOut.model_validate(f) for f in res.scalars().all()]
+    _cache_set("faqs", items)
+    return items
 
 
 async def _notify(order_id, admin_url: str) -> None:
