@@ -5,7 +5,7 @@ Run `python -m app.core.security <password>` to generate a hash for ADMIN_PASSWO
 
 import sys
 
-from itsdangerous import BadSignature, URLSafeTimedSerializer
+from itsdangerous import URLSafeTimedSerializer
 from passlib.context import CryptContext
 
 from app.core.config import settings
@@ -38,7 +38,7 @@ def read_session(token: str | None) -> str | None:
         return None
     try:
         data = _serializer().loads(token, max_age=settings.session_max_age)
-    except (BadSignature, Exception):  # noqa: BLE001 — any decode failure = no session
+    except Exception:  # noqa: BLE001 — any decode failure = no session
         return None
     return data.get("sub")
 

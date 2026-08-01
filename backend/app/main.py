@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -17,12 +18,35 @@ from app.api.v1 import (
     public,
 )
 from app.core.config import settings
+from app.core.db import engine
 from app.core.logging import setup_logging
 
 # Route everything (app + uvicorn + sqlalchemy) through loguru's single sink.
 setup_logging()
 
-app = FastAPI(title="Didar Gold API", version="1.0.0")
+# Fail fast if a real (HTTPS/secure-cookie) deploy is running on a known default
+# secret — the session cookie is signed with it, so a default = forgeable admin.
+_WEAK_SECRETS = {"", "change-me-in-prod", "dev-secret-change-me"}
+if settings.cookie_secure and settings.secret_key in _WEAK_SECRETS:
+    raise RuntimeError("SECRET_KEY must be set to a strong value in production")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await engine.dispose()  # close the pool cleanly on SIGTERM
+
+
+# Hide the API surface in production (secure cookies == prod); open in dev.
+_prod = settings.cookie_secure
+app = FastAPI(
+    title="Didar Gold API",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url=None if _prod else "/docs",
+    redoc_url=None if _prod else "/redoc",
+    openapi_url=None if _prod else "/openapi.json",
+)
 app.state.limiter = limiter
 
 app.add_middleware(

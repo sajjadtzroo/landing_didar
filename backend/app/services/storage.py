@@ -1,6 +1,7 @@
 """Local media storage with a small interface so it can be swapped for
 S3-compatible object storage in production without touching callers."""
 
+import asyncio
 import os
 import uuid
 from pathlib import Path
@@ -23,7 +24,8 @@ class LocalStorage:
     async def save(self, filename: str, data: bytes) -> str:
         ext = os.path.splitext(filename)[1].lower() or ".bin"
         name = f"{uuid.uuid4().hex}{ext}"
-        (self.root / name).write_bytes(data)
+        # write off the event loop so a slow disk doesn't stall the worker
+        await asyncio.to_thread((self.root / name).write_bytes, data)
         return f"{settings.media_url_prefix}/{name}"
 
 

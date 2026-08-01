@@ -3,6 +3,7 @@ import secrets
 from decimal import Decimal
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import Order, OrderItem, OrderStatus, OrderStatusLog
@@ -81,7 +82,17 @@ async def create_order(
         status_log=[OrderStatusLog(from_status=None, to_status=OrderStatus.new)],
     )
     db.add(order)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        # Concurrent submit with the same Idempotency-Key won the race — the row
+        # exists; return the winner instead of 500-ing on the unique violation.
+        await db.rollback()
+        if idempotency_key:
+            existing = await get_order_by_key(db, idempotency_key)
+            if existing:
+                return existing
+        raise
     await db.refresh(order)
     return order
 

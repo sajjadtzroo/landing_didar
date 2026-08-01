@@ -22,6 +22,10 @@ export default defineNuxtConfig({
   // SSR on for SEO; admin is client-only (session-gated, no SEO value).
   routeRules: {
     '/admin/**': { ssr: false },
+    // Landings are identical per visitor (cart is client-side), so cache the
+    // rendered HTML with stale-while-revalidate — serves instantly, revalidates
+    // in the background. Biggest SSR throughput win. Staleness ceiling: 60s.
+    '/l/**': { swr: 60 },
     // `/` isn't a landing itself — the 3 live at /l/<slug>. Send it to the first.
     '/': { redirect: '/l/one' },
     // Baseline security headers. No strict CSP: Nuxt's inline hydration script

@@ -36,10 +36,6 @@ class Settings(BaseSettings):
     sms_admin_phone: str = ""  # where new-order alerts go
     admin_order_base_url: str = "http://localhost:3000/admin/orders"
 
-    # Telegram / Email stubs (unused unless you switch the primary adapter)
-    telegram_bot_token: str = ""
-    telegram_chat_id: str = ""
-
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.frontend_origin.split(",") if o.strip()]
