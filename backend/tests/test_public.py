@@ -33,6 +33,25 @@ async def test_list_products_hides_inactive_and_sorts(client, admin_client):
     assert names == ["A", "B"]  # inactive excluded, sorted by sort_order
 
 
+# ---- GET /products/{slug} ----
+async def test_get_product_by_slug(client, admin_client):
+    p = await _make_product(admin_client, name="Nova", slug="nova-ring")
+    r = await client.get("/api/v1/products/nova-ring")
+    assert r.status_code == 200
+    assert r.json()["id"] == p["id"]
+
+
+async def test_get_product_unknown_slug_404(client):
+    r = await client.get("/api/v1/products/does-not-exist")
+    assert r.status_code == 404
+
+
+async def test_get_product_inactive_slug_404(client, admin_client):
+    await _make_product(admin_client, name="Ghost", slug="ghost-ring", is_active=False)
+    r = await client.get("/api/v1/products/ghost-ring")
+    assert r.status_code == 404  # inactive products are not publicly reachable
+
+
 # ---- GET /faqs ----
 async def test_list_faqs_hides_inactive(client, admin_client):
     await admin_client.post(
