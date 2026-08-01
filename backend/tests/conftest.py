@@ -92,6 +92,9 @@ async def _wire(_engine, _sessionmaker, monkeypatch):
         return None
 
     monkeypatch.setattr(public, "_notify", _noop)
+    # The public read endpoints keep a module-level TTL cache; clear it so one
+    # test's reads don't serve stale data to the next.
+    public._cache.clear()
     # Clean slate every test.
     async with _engine.begin() as c:
         await c.execute(text(f"TRUNCATE {_TABLES} RESTART IDENTITY CASCADE"))
