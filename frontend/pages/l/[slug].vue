@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { CONTENT } from '~/constants/content'
-import type { FAQ, Landing } from '~/types'
+import type { Landing } from '~/types'
+import { resolveContent } from '~/utils/landingContent'
 
-// One of three landings, keyed by slug. Same layout as the old `/` page; only
-// the hero video and the product set differ (both come from the API).
+// One landing, keyed by slug. Every section's content (hero text/media, trust
+// cards, product groups, faq, footer, promo, section toggles) comes from the
+// landing's `content` blob; `resolveContent` fills any gap from CONTENT defaults.
 const route = useRoute()
 const slug = route.params.slug as string
 const base = useApiBase()
@@ -18,10 +20,18 @@ if (error.value || !landing.value) {
   throw createError({ statusCode: 404, statusMessage: 'Landing not found', fatal: true })
 }
 
-const { data: faqs } = await useFetch<FAQ[]>('/faqs', {
-  baseURL: base,
-  key: 'faqs',
-  default: () => [],
+// Resolved, always-complete content for this landing.
+const c = computed(() => resolveContent(landing.value?.content))
+const groups = computed(() => landing.value?.groups || [])
+
+// Publish promo/footer + section toggles to the shared chrome (layout renders them).
+const chrome = useLandingChrome()
+watchEffect(() => {
+  chrome.value = {
+    sections: c.value.sections,
+    promoText: c.value.promo.text,
+    footer: c.value.footer,
+  }
 })
 
 const canonical = `${useSiteUrl()}/l/${slug}`
@@ -29,9 +39,9 @@ const canonical = `${useSiteUrl()}/l/${slug}`
 useHead(() => ({
   title: `${landing.value?.title || CONTENT.brand} — ${CONTENT.brand}`,
   meta: [
-    { name: 'description', content: CONTENT.hero.supporting },
+    { name: 'description', content: c.value.hero.supporting },
     { property: 'og:title', content: landing.value?.title || CONTENT.brand },
-    { property: 'og:description', content: CONTENT.hero.supporting },
+    { property: 'og:description', content: c.value.hero.supporting },
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: canonical },
     ...(landing.value?.hero_poster_url
@@ -45,13 +55,13 @@ useHead(() => ({
       ? [{ rel: 'preload', as: 'image', href: landing.value.hero_poster_url, fetchpriority: 'high' }]
       : []),
   ],
-  script: (faqs.value || []).length
+  script: c.value.faq.length
     ? [{
         type: 'application/ld+json',
         innerHTML: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
-          mainEntity: (faqs.value || []).map((f) => ({
+          mainEntity: c.value.faq.map((f) => ({
             '@type': 'Question',
             name: f.question,
             acceptedAnswer: { '@type': 'Answer', text: f.answer },
@@ -62,15 +72,6 @@ useHead(() => ({
 }))
 
 const { trackEvent } = useAnalytics()
-
-// Split the landing's assigned products into one carousel per category (in
-// display order). Empty categories are dropped; the first shown owns #products.
-const groups = computed(() => {
-  const all = landing.value?.products || []
-  return (['daily', 'lux_daily', 'luxury'] as const)
-    .map((key) => ({ key, c: CONTENT.products[key], items: all.filter((p) => p.category === key) }))
-    .filter((g) => g.items.length)
-})
 
 function scrollToProducts() {
   document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })
@@ -96,22 +97,29 @@ if (import.meta.client) {
 <template>
   <main>
     <HeroSection
+      v-if="c.sections.hero"
       :video-url="landing?.hero_video_url || undefined"
       :poster-url="landing?.hero_poster_url || undefined"
+      :eyebrow="c.hero.eyebrow"
+      :headline="c.hero.headline"
+      :supporting="c.hero.supporting"
+      :cta="c.hero.cta"
       @order="scrollToProducts"
     />
-    <TrustBar />
-    <ProductGrid
-      v-for="(g, i) in groups"
-      :key="g.key"
-      carousel
-      :flush="i > 0"
-      :anchor-id="i === 0 ? 'products' : `products-${g.key}`"
-      :products="g.items"
-      :eyebrow="g.c.eyebrow"
-      :title="g.c.title"
-      :description="g.c.description"
-    />
-    <FaqAccordion id="faq" :faqs="faqs || []" />
+    <TrustBar v-if="c.sections.trust" :items="c.trust" />
+    <template v-if="c.sections.products">
+      <ProductGrid
+        v-for="(g, i) in groups"
+        :key="i"
+        carousel
+        :flush="i > 0"
+        :anchor-id="i === 0 ? 'products' : `products-${i}`"
+        :products="g.products"
+        :eyebrow="g.eyebrow ?? undefined"
+        :title="g.title"
+        :description="g.description ?? undefined"
+      />
+    </template>
+    <FaqAccordion v-if="c.sections.faq" id="faq" :faqs="c.faq" />
   </main>
 </template>

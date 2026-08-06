@@ -2,17 +2,13 @@
 // Slim top promotion strip, fixed above the nav. Gold on navy so it reads as a
 // distinct announcement band. Dismissible; the navs offset below it while open.
 import { Sparkles, X } from 'lucide-vue-next'
-import { computed } from 'vue'
 import { CONTENT } from '~/constants/content'
 
 const { open } = usePromo()
-const route = useRoute()
 
-// Per-landing promo text (keyed by /l/<slug>); falls back to the default.
-const text = computed(() => {
-  const slug = route.params.slug
-  return (typeof slug === 'string' && CONTENT.promoByLanding[slug]) || CONTENT.promo
-})
+// Text comes from the current landing's content (via the layout); defaults to
+// the site-wide promo on storefront pages.
+withDefaults(defineProps<{ text?: string }>(), { text: () => CONTENT.promo })
 </script>
 
 <template>

@@ -2,9 +2,21 @@
 import { Minus, Plus } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { CONTENT } from '~/constants/content'
-import type { FAQ } from '~/types'
+import type { FaqItem } from '~/utils/landingContent'
 
-defineProps<{ faqs: FAQ[] }>()
+withDefaults(
+  defineProps<{
+    faqs: FaqItem[]
+    eyebrow?: string
+    title?: string
+    description?: string
+  }>(),
+  {
+    eyebrow: () => CONTENT.faq.eyebrow,
+    title: () => CONTENT.faq.title,
+    description: () => CONTENT.faq.description,
+  },
+)
 
 const { trackEvent } = useAnalytics()
 const open = ref(0) // first item open by default
@@ -19,17 +31,13 @@ function toggle(i: number, question: string) {
 <template>
   <section id="faq" class="bg-surface-soft py-16">
     <div class="mx-auto max-w-3xl px-5 sm:px-10">
-      <SectionDivider
-        :eyebrow="CONTENT.faq.eyebrow"
-        :title="CONTENT.faq.title"
-        :description="CONTENT.faq.description"
-      />
+      <SectionDivider :eyebrow="eyebrow" :title="title" :description="description" />
 
       <!-- Each FAQ is an elevated card; the open one lifts with a gold ring. -->
       <div class="space-y-3">
         <div
           v-for="(faq, i) in faqs"
-          :key="faq.id"
+          :key="i"
           class="corner-soft border bg-surface-raised transition-all duration-300"
           :class="
             open === i

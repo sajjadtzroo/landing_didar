@@ -5,11 +5,25 @@ import { CONTENT } from '~/constants/content'
 defineEmits<{ order: [] }>()
 
 // Signature moment: muted looping video, swapped for a static image under
-// reduced-motion. Per-landing video/poster come in as props; fall back to the
-// bundled default so a landing with no video set never renders a broken <video>.
+// reduced-motion. Per-landing video/poster + copy come in as props; each falls
+// back to the bundled default / CONTENT so a bare landing still renders.
 const props = withDefaults(
-  defineProps<{ videoUrl?: string; posterUrl?: string }>(),
-  { videoUrl: '/media/hero.mp4', posterUrl: '/media/hero-poster.jpg' },
+  defineProps<{
+    videoUrl?: string
+    posterUrl?: string
+    eyebrow?: string
+    headline?: string
+    supporting?: string
+    cta?: string
+  }>(),
+  {
+    videoUrl: '/media/hero.mp4',
+    posterUrl: '/media/hero-poster.jpg',
+    eyebrow: () => CONTENT.hero.eyebrow,
+    headline: () => CONTENT.hero.headline,
+    supporting: () => CONTENT.hero.supporting,
+    cta: () => CONTENT.hero.cta,
+  },
 )
 const heroVideo = computed(() => props.videoUrl)
 const heroPoster = computed(() => props.posterUrl)
@@ -67,18 +81,24 @@ watch(showVideo, async (on) => {
     </div>
 
     <div class="relative mx-auto w-full max-w-hero px-6 text-start text-cream sm:px-10">
-      <BrandLogo :height="52" color="#F7F3EE" class="mb-8" />
+      <BrandLogo :height="52" color="#F7F3EE" class="mb-6" />
+      <p
+        v-if="eyebrow"
+        class="mb-4 text-[11px] font-semibold tracking-[0.28em] text-gold-soft sm:text-xs"
+      >
+        {{ eyebrow }}
+      </p>
       <h1
         class="max-w-2xl text-[44px] font-medium leading-[1.18]
           sm:text-[60px] lg:text-[72px]"
       >
-        {{ CONTENT.hero.headline }}
+        {{ headline }}
       </h1>
       <p
         class="mt-5 max-w-md text-pretty text-base leading-[1.75] text-cream/80
           sm:mt-6 sm:max-w-xl sm:text-lg"
       >
-        {{ CONTENT.hero.supporting }}
+        {{ supporting }}
       </p>
       <!-- Primary CTA: sharp-cornered to match brand; gold fill + navy text (AA),
            a gold-soft sweep and a leading arrow that advances on hover/focus. -->
@@ -99,7 +119,7 @@ watch(showVideo, async (on) => {
             motion-reduce:hidden"
           aria-hidden="true"
         />
-        <span class="relative z-10">{{ CONTENT.hero.cta }}</span>
+        <span class="relative z-10">{{ cta }}</span>
         <ArrowLeft
           :size="20"
           class="relative z-10 transition-transform duration-300 ease-out

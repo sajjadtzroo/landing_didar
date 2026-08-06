@@ -12,6 +12,26 @@ from app.services.storage import get_storage
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
+# Generic media upload (landing hero video/poster, section images). Images are
+# small; a hero video is the only heavy case — cap keeps a worker from OOMing on
+# a bad upload (whole file is read into memory by Starlette).
+_ALLOWED_MEDIA = {
+    "image/jpeg", "image/png", "image/webp", "image/gif",
+    "video/mp4", "video/webm",
+}
+_MAX_MEDIA_BYTES = 60 * 1024 * 1024  # 60 MB
+
+
+@router.post("/media")
+async def upload_media(file: UploadFile = File(...)):
+    if file.content_type not in _ALLOWED_MEDIA:
+        raise HTTPException(415, detail="Unsupported media type")
+    data = await file.read()
+    if len(data) > _MAX_MEDIA_BYTES:
+        raise HTTPException(413, detail="File too large (max 60MB)")
+    url = await get_storage().save(file.filename or "upload", data)
+    return {"url": url}
+
 
 # ---- Products ----
 @router.get("/products", response_model=list[ProductOut])

@@ -6,9 +6,10 @@ import asyncio
 
 from sqlalchemy import func, select
 
+from app.core.content_defaults import default_content, groups_from_category_rows
 from app.core.db import SessionLocal
 from app.models.faq import FAQ
-from app.models.landing import Landing, LandingProduct
+from app.models.landing import Landing
 from app.models.product import Product
 
 IMG = "https://didargold.com/images"
@@ -141,19 +142,18 @@ async def _seed_landings(db) -> None:
             select(Product).where(Product.is_active).order_by(Product.sort_order)
         )
     ).scalars().all()
+    # Groups = one carousel per category (in sort order), same as the 0007 backfill.
+    groups = groups_from_category_rows([(p.id, p.category) for p in products])
     for slug, title in LANDINGS:
-        landing = Landing(
-            slug=slug,
-            title=title,
-            hero_video_url="/media/hero.mp4",
-            hero_poster_url="/media/hero-poster.jpg",
-        )
-        db.add(landing)
-        await db.flush()  # assign landing.id before the association rows
-        for i, p in enumerate(products):
-            db.add(
-                LandingProduct(landing_id=landing.id, product_id=p.id, sort_order=i)
+        db.add(
+            Landing(
+                slug=slug,
+                title=title,
+                hero_video_url="/media/hero.mp4",
+                hero_poster_url="/media/hero-poster.jpg",
+                content=default_content(groups),
             )
+        )
     await db.commit()
     print(f"seed: inserted {len(LANDINGS)} landings ({len(products)} products each)")
 

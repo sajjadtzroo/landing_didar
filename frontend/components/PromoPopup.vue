@@ -3,18 +3,14 @@
 // text, gold sparkle) with a CTA. Shows on every landing load; re-opens on
 // client-side navigation between landings. No persistence, by design.
 import { Sparkles, X } from 'lucide-vue-next'
-import { computed, nextTick, ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { CONTENT } from '~/constants/content'
+
+withDefaults(defineProps<{ text?: string }>(), { text: () => CONTENT.promo })
 
 const route = useRoute()
 const open = ref(true)
 const card = ref<HTMLElement | null>(null)
-
-// Same per-landing resolver as PromoBanner.
-const text = computed(() => {
-  const slug = route.params.slug
-  return (typeof slug === 'string' && CONTENT.promoByLanding[slug]) || CONTENT.promo
-})
 
 // Re-show whenever the landing slug changes (SPA nav counts as a "load").
 watch(() => route.params.slug, () => (open.value = true))

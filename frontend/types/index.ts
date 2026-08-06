@@ -28,17 +28,26 @@ export interface Landing {
   title: string
   hero_video_url: string | null
   hero_poster_url: string | null
+  content: Record<string, any>
+  groups: LandingGroup[]
+}
+
+// One product carousel on a landing (backend resolves product_ids → products).
+export interface LandingGroup {
+  title: string
+  eyebrow: string | null
+  description: string | null
   products: Product[]
 }
 
-// Admin landing payload (GET /admin/landings) — includes ordered assignment.
+// Admin landing payload (GET /admin/landings) — raw content (groups hold ids).
 export interface AdminLanding {
   id: string
   slug: string
   title: string
   hero_video_url: string | null
   hero_poster_url: string | null
-  product_ids: string[]
+  content: Record<string, any> | null
 }
 
 export interface CartItem {

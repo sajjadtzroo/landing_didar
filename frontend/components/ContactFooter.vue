@@ -1,16 +1,25 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Clock, Instagram, MapPin, MessageCircle, Phone, Send } from 'lucide-vue-next'
 import { CONTENT } from '~/constants/content'
+import { defaultContent, type LandingFooter } from '~/utils/landingContent'
 import { toFa } from '~/utils/format'
 
 const { trackEvent, trackGoal } = useAnalytics()
 const { public: cfg } = useRuntimeConfig()
 
-const social = [
-  { href: CONTENT.whatsapp, label: 'WhatsApp', icon: MessageCircle },
-  { href: CONTENT.telegram, label: 'Telegram', icon: Send },
-  { href: CONTENT.instagram, label: 'Instagram', icon: Instagram },
-]
+// Per-landing footer; falls back to the CONTENT-derived default on storefront
+// pages (which have no landing content).
+const props = withDefaults(
+  defineProps<{ footer?: LandingFooter }>(),
+  { footer: () => defaultContent().footer },
+)
+
+const social = computed(() => [
+  { href: props.footer.whatsapp, label: 'WhatsApp', icon: MessageCircle },
+  { href: props.footer.telegram, label: 'Telegram', icon: Send },
+  { href: props.footer.instagram, label: 'Instagram', icon: Instagram },
+])
 
 function onCall() {
   trackEvent('contact', 'phone_click', 'footer')
@@ -29,15 +38,15 @@ function onCall() {
              a flex justify-end wrapper would push it the wrong way under RTL. -->
         <BrandLogo :height="40" />
         <p class="mt-2 max-w-xs text-sm leading-relaxed text-cream/60">
-          {{ CONTENT.footer.tagline }}
+          {{ footer.tagline }}
         </p>
         <a
-          :href="`tel:${CONTENT.phone}`"
+          :href="`tel:${footer.phone}`"
           class="mt-5 inline-flex items-center gap-2 text-cream/85 transition-colors hover:text-gold-soft"
           @click="onCall"
         >
           <Phone :size="18" class="shrink-0 text-gold-soft" />
-          <span class="tnum" dir="ltr">{{ CONTENT.phoneDisplay }}</span>
+          <span class="tnum" dir="ltr">{{ footer.phoneDisplay }}</span>
         </a>
       </div>
 
@@ -47,11 +56,11 @@ function onCall() {
         <ul class="mt-4 space-y-3 text-sm text-cream/75">
           <li class="flex items-center gap-2">
             <MapPin :size="18" class="shrink-0 text-gold-soft" />
-            <span>{{ CONTENT.footer.address }}</span>
+            <span>{{ footer.address }}</span>
           </li>
           <li class="flex items-center gap-2">
             <Clock :size="18" class="shrink-0 text-gold-soft" />
-            <span>{{ CONTENT.footer.hours }}</span>
+            <span>{{ footer.hours }}</span>
           </li>
         </ul>
       </div>
@@ -78,7 +87,7 @@ function onCall() {
     <!-- Bottom bar: gold hairline + copyright -->
     <div class="mx-auto max-w-content px-6 sm:px-10">
       <p class="border-t border-gold/15 py-6 text-center text-xs text-cream/50">
-        © {{ toFa(1404) }} — {{ CONTENT.footer.rights }}
+        © {{ toFa(1404) }} — {{ footer.rights }}
       </p>
     </div>
   </footer>

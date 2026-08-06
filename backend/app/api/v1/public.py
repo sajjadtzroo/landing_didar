@@ -1,4 +1,5 @@
 import time
+import uuid
 
 from fastapi import (
     APIRouter,
@@ -17,12 +18,13 @@ from app.api.deps import get_client_ip
 from app.api.limiter import limiter
 from app.core.config import settings
 from app.core.db import get_db
+from app.core.content_defaults import default_content
 from app.models.faq import FAQ
-from app.models.landing import Landing, LandingProduct
+from app.models.landing import Landing
 from app.models.order import Order
 from app.models.product import Product
 from app.schemas.faq import FAQOut
-from app.schemas.landing import LandingDetailOut
+from app.schemas.landing import LandingDetailOut, LandingGroupOut
 from app.schemas.order import OrderCreate, OrderCreatedOut, OrderTrackOut
 from app.schemas.product import ProductOut
 from app.services import orders as order_service
@@ -46,6 +48,19 @@ def _cache_get(key: str):
 
 def _cache_set(key: str, value: object) -> None:
     _cache[key] = (time.monotonic() + _CACHE_TTL, value)
+
+
+def bust_landing_cache(slug: str) -> None:
+    """Drop a landing's cached payload so an admin edit shows immediately instead
+    of after the TTL. Called by admin_landings on mutate."""
+    _cache.pop(f"landing:{slug}", None)
+
+
+def _as_uuid(value: object) -> uuid.UUID | None:
+    try:
+        return uuid.UUID(str(value))
+    except ValueError:
+        return None
 
 
 @router.get("/products", response_model=list[ProductOut])
@@ -86,20 +101,50 @@ async def get_landing(
     ).scalar_one_or_none()
     if landing is None:
         raise HTTPException(404, detail="Landing not found")
-    products = (
-        await db.execute(
-            select(Product)
-            .join(LandingProduct, LandingProduct.product_id == Product.id)
-            .where(LandingProduct.landing_id == landing.id, Product.is_active)
-            .order_by(LandingProduct.sort_order)
+    content = landing.content or default_content()
+
+    # Resolve every group's product ids against the live catalog in one query;
+    # a group's product is dropped if it's missing or inactive (ids live in JSON,
+    # so there's no FK/CASCADE — we filter here instead).
+    raw_groups = content.get("groups") or []
+    wanted = {
+        u
+        for g in raw_groups
+        for pid in (g.get("product_ids") or [])
+        if (u := _as_uuid(pid)) is not None
+    }
+    by_id: dict[uuid.UUID, Product] = {}
+    if wanted:
+        rows = (
+            await db.execute(
+                select(Product).where(Product.id.in_(wanted), Product.is_active)
+            )
+        ).scalars().all()
+        by_id = {p.id: p for p in rows}
+
+    groups: list[LandingGroupOut] = []
+    for g in raw_groups:
+        items = [
+            by_id[_as_uuid(pid)]
+            for pid in (g.get("product_ids") or [])
+            if _as_uuid(pid) in by_id
+        ]
+        groups.append(
+            LandingGroupOut(
+                title=g.get("title") or "",
+                eyebrow=g.get("eyebrow"),
+                description=g.get("description"),
+                products=list(items),
+            )
         )
-    ).scalars().all()
+
     out = LandingDetailOut(
         slug=landing.slug,
         title=landing.title,
         hero_video_url=landing.hero_video_url,
         hero_poster_url=landing.hero_poster_url,
-        products=list(products),
+        content=content,
+        groups=groups,
     )
     _cache_set(f"landing:{slug}", out)
     return out

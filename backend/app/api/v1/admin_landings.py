@@ -1,36 +1,19 @@
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
+from app.api.v1.public import bust_landing_cache
+from app.core.content_defaults import default_content
 from app.core.db import get_db
-from app.models.landing import Landing, LandingProduct
-from app.models.product import Product
-from app.schemas.landing import LandingAdminOut, LandingProductsSet, LandingUpdate
+from app.models.landing import Landing
+from app.schemas.landing import LandingAdminOut, LandingCreate, LandingUpdate
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
 
-async def _product_ids(db: AsyncSession, landing_id: uuid.UUID) -> list[uuid.UUID]:
-    rows = await db.execute(
-        select(LandingProduct.product_id)
-        .where(LandingProduct.landing_id == landing_id)
-        .order_by(LandingProduct.sort_order)
-    )
-    return list(rows.scalars().all())
-
-
-async def _admin_out(db: AsyncSession, landing: Landing) -> LandingAdminOut:
-    return LandingAdminOut(
-        id=landing.id,
-        slug=landing.slug,
-        title=landing.title,
-        hero_video_url=landing.hero_video_url,
-        hero_poster_url=landing.hero_poster_url,
-        product_ids=await _product_ids(db, landing.id),
-    )
+def _admin_out(landing: Landing) -> LandingAdminOut:
+    return LandingAdminOut.model_validate(landing)
 
 
 async def _get_or_404(db: AsyncSession, landing_id: str) -> Landing:
@@ -45,12 +28,26 @@ async def list_landings(db: AsyncSession = Depends(get_db)):
     landings = (
         await db.execute(select(Landing).order_by(Landing.slug))
     ).scalars().all()
-    return [await _admin_out(db, ln) for ln in landings]
+    return [_admin_out(ln) for ln in landings]
+
+
+@router.post("/landings", response_model=LandingAdminOut, status_code=201)
+async def create_landing(payload: LandingCreate, db: AsyncSession = Depends(get_db)):
+    exists = await db.scalar(select(Landing.id).where(Landing.slug == payload.slug))
+    if exists:
+        raise HTTPException(409, detail="A landing with this slug already exists")
+    landing = Landing(
+        slug=payload.slug, title=payload.title, content=default_content()
+    )
+    db.add(landing)
+    await db.commit()
+    await db.refresh(landing)
+    return _admin_out(landing)
 
 
 @router.get("/landings/{landing_id}", response_model=LandingAdminOut)
 async def get_landing(landing_id: str, db: AsyncSession = Depends(get_db)):
-    return await _admin_out(db, await _get_or_404(db, landing_id))
+    return _admin_out(await _get_or_404(db, landing_id))
 
 
 @router.patch("/landings/{landing_id}", response_model=LandingAdminOut)
@@ -62,34 +59,14 @@ async def update_landing(
         setattr(landing, k, v)
     await db.commit()
     await db.refresh(landing)
-    return await _admin_out(db, landing)
+    bust_landing_cache(landing.slug)
+    return _admin_out(landing)
 
 
-@router.put("/landings/{landing_id}/products", response_model=LandingAdminOut)
-async def set_landing_products(
-    landing_id: str, payload: LandingProductsSet, db: AsyncSession = Depends(get_db)
-):
+@router.delete("/landings/{landing_id}", status_code=204)
+async def delete_landing(landing_id: str, db: AsyncSession = Depends(get_db)):
     landing = await _get_or_404(db, landing_id)
-
-    # De-dupe preserving order (composite PK forbids repeats).
-    ids: list[uuid.UUID] = list(dict.fromkeys(payload.product_ids))
-    if ids:
-        found = set(
-            (await db.execute(select(Product.id).where(Product.id.in_(ids)))).scalars()
-        )
-        missing = [str(i) for i in ids if i not in found]
-        if missing:
-            raise HTTPException(
-                422, detail=f"Unknown product ids: {', '.join(missing)}"
-            )
-
-    # Replace the whole assignment; sort_order = position in the list.
-    await db.execute(
-        delete(LandingProduct).where(LandingProduct.landing_id == landing.id)
-    )
-    db.add_all(
-        LandingProduct(landing_id=landing.id, product_id=pid, sort_order=i)
-        for i, pid in enumerate(ids)
-    )
+    slug = landing.slug
+    await db.delete(landing)
     await db.commit()
-    return await _admin_out(db, landing)
+    bust_landing_cache(slug)
