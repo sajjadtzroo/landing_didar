@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { CONTENT } from '~/constants/content'
+import type { Landing } from '~/types'
+import { resolveContent } from '~/utils/landingContent'
 
 // Global storefront chrome. One nav per context: the landing (/l/*) uses the
 // bottom tubelight pill; storefront pages (/products, …) use the top glass navbar.
@@ -9,10 +11,27 @@ const { cartOpen, orderOpen, successRef, openCart, openOrder, onOrderSuccess } =
 const route = useRoute()
 const isLanding = computed(() => route.path.startsWith('/l'))
 
-// Per-landing content for the shared chrome (promo/footer), set by [slug].vue.
-// Reset when leaving landings so storefront pages fall back to CONTENT defaults.
-const chrome = useLandingChrome()
-watch(isLanding, (v) => { if (!v) chrome.value = null }, { immediate: true })
+// The Promo strip + Footer are shared chrome but their content/visibility are
+// per-landing. The layout resolves them itself (rather than reading state the
+// page sets) — on SSR the page is async and its setup runs AFTER the layout's
+// render, so page-set state is never ready in time. This useFetch dedupes against
+// the page's own `landing-<slug>` fetch (same key), so it's not a second request.
+const slug = computed(() => (isLanding.value ? String(route.params.slug || '') : ''))
+const { data: landingChrome } = await useFetch<Landing>(
+  () => `/landings/${slug.value}`,
+  {
+    baseURL: useApiBase(),
+    key: () => `landing-${slug.value}`,
+    immediate: isLanding.value,
+    watch: [slug],
+    default: () => null,
+  },
+)
+const chrome = computed(() => {
+  if (!isLanding.value || !landingChrome.value) return null
+  const c = resolveContent(landingChrome.value.content)
+  return { sections: c.sections, promoText: c.promo.text, footer: c.footer }
+})
 
 const siteUrl = useSiteUrl()
 useHead({
@@ -33,25 +52,18 @@ useHead({
 
 <template>
   <div>
-    <NavBar v-if="!isLanding" @order="openOrder" />
-    <template v-if="isLanding">
-      <TubelightNav />
-      <CartFab @open="openCart" />
-    </template>
-
-    <slot />
-
-    <!-- Promo/footer read per-landing `chrome` set by [slug].vue during its setup.
-         They MUST render after <slot/> so the page has published chrome first
-         (they're fixed/teleported, so DOM order here is visually irrelevant). -->
     <PromoBanner
       v-if="!isLanding || chrome?.sections.promo !== false"
       :text="chrome?.promoText"
     />
-    <PromoPopup
-      v-if="isLanding && chrome?.sections.promo !== false"
-      :text="chrome?.promoText"
-    />
+    <NavBar v-if="!isLanding" @order="openOrder" />
+    <template v-if="isLanding">
+      <TubelightNav />
+      <CartFab @open="openCart" />
+      <PromoPopup v-if="chrome?.sections.promo !== false" :text="chrome?.promoText" />
+    </template>
+
+    <slot />
 
     <ContactFooter
       v-if="!isLanding || chrome?.sections.footer !== false"

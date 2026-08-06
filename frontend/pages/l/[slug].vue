@@ -20,19 +20,10 @@ if (error.value || !landing.value) {
   throw createError({ statusCode: 404, statusMessage: 'Landing not found', fatal: true })
 }
 
-// Resolved, always-complete content for this landing.
+// Resolved, always-complete content for this landing. The layout resolves promo/
+// footer chrome itself (SSR-safe), so this page only drives its own sections.
 const c = computed(() => resolveContent(landing.value?.content))
 const groups = computed(() => landing.value?.groups || [])
-
-// Publish promo/footer + section toggles to the shared chrome (layout renders them).
-const chrome = useLandingChrome()
-watchEffect(() => {
-  chrome.value = {
-    sections: c.value.sections,
-    promoText: c.value.promo.text,
-    footer: c.value.footer,
-  }
-})
 
 const canonical = `${useSiteUrl()}/l/${slug}`
 
