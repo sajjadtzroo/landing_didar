@@ -50,5 +50,8 @@ useHead({
 
     <!-- Success overlay -->
     <SuccessScreen v-if="successRef" :reference="successRef" />
+
+    <!-- Global toast host (aria-live), for add-to-cart / favorite confirmations -->
+    <AppToast />
   </div>
 </template>

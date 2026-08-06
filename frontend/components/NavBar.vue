@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ShoppingBag } from 'lucide-vue-next'
+import { ShoppingBag, User } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { CONTENT } from '~/constants/content'
 import { toFa } from '~/utils/format'
@@ -15,7 +15,7 @@ const { openCart } = useUiState()
 
 const LINKS = [
   { to: '/shop', label: CONTENT.nav.shop },
-  { to: '/track', label: CONTENT.nav.track },
+  { to: '/account', label: CONTENT.nav.account },
 ]
 
 // Transparent (light text) only while sitting over the dark hero on a landing
@@ -65,6 +65,13 @@ const overHero = computed(() => onLanding.value && y.value < 80)
 
       <!-- Actions -->
       <div class="flex items-center gap-2 sm:gap-4">
+        <NuxtLink
+          to="/account"
+          class="flex h-11 w-11 items-center justify-center transition hover:text-gold-text sm:hidden"
+          :aria-label="CONTENT.nav.account"
+        >
+          <User :size="20" aria-hidden="true" />
+        </NuxtLink>
         <button
           type="button"
           class="relative flex h-11 w-11 items-center justify-center transition hover:text-gold-text"

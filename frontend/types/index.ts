@@ -67,6 +67,22 @@ export interface OrderTrack {
   status_log: OrderStatusLogEntry[]
 }
 
+// Customer account (panel).
+export interface Customer {
+  id: string
+  phone: string
+  full_name: string | null
+}
+
+export interface CustomerAddress {
+  id: string
+  title: string
+  province: string
+  city: string | null
+  line: string
+  is_default: boolean
+}
+
 export interface AdminOrder {
   id: string
   reference: string

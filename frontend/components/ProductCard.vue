@@ -1,21 +1,30 @@
 <script setup lang="ts">
-import { Check, Plus } from 'lucide-vue-next'
+import { Check, Heart, Plus } from 'lucide-vue-next'
 import { CONTENT } from '~/constants/content'
 import type { Product } from '~/types'
 import { formatPrice, toFa } from '~/utils/format'
 
-// `shop` mode (storefront /shop) shows price + an add-to-cart button; the default
-// (landing carousels) stays price-free, weight/اجرت only. Same card, one prop.
+// `shop` mode (storefront /shop) shows price + add-to-cart + a favorite heart;
+// the default (landing carousels) stays price-free, weight/اجرت only. One prop.
 const props = defineProps<{ product: Product; index: number; shop?: boolean }>()
 
 const cart = useCartStore()
 const { openCart } = useUiState()
+const { toast } = useToast()
+const { isFav, toggle } = useFavorites()
 const selected = computed(() => cart.isSelected(props.product.id))
 const qty = computed(() => cart.quantityOf(props.product.id))
 
 function addToCart() {
   cart.addItem(props.product)
+  toast(CONTENT.cart.addedToast)
   openCart()
+}
+
+// Favorites work for guests (persisted locally) and sync on login.
+async function onHeart() {
+  const added = await toggle(props.product)
+  toast(added ? CONTENT.account.favAddedToast : CONTENT.account.favRemovedToast)
 }
 </script>
 
@@ -24,6 +33,23 @@ function addToCart() {
     class="corner-soft group relative cursor-pointer overflow-hidden border border-line
       bg-surface-raised transition duration-300 hover:-translate-y-2 hover:shadow-xl"
   >
+    <!-- Favorite heart (shop only). Sibling of the link so it never navigates. -->
+    <button
+      v-if="shop"
+      type="button"
+      class="absolute start-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full
+        bg-surface/80 backdrop-blur transition hover:bg-surface"
+      :aria-label="CONTENT.account.favoritesTitle"
+      :aria-pressed="isFav(product.id)"
+      @click="onHeart"
+    >
+      <Heart
+        :size="18"
+        :class="isFav(product.id) ? 'fill-danger text-danger' : 'text-ink-muted'"
+        aria-hidden="true"
+      />
+    </button>
+
     <NuxtLink
       :to="`/products/${product.slug}`"
       class="block w-full text-start"

@@ -42,6 +42,7 @@ watch(
       v-if="cart.itemCount"
       class="tnum absolute -end-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center
         rounded-full bg-gold px-1 text-[11px] font-bold text-white"
+      aria-live="polite"
     >
       {{ toFa(cart.itemCount) }}
     </span>

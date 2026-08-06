@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { X } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { CONTENT } from '~/constants/content'
 import type { Product } from '~/types'
@@ -20,6 +21,15 @@ const CATEGORIES = [
 const search = ref('')
 const category = ref<string>('') // '' = all
 const sort = ref<'newest' | 'price_asc' | 'price_desc'>('newest')
+
+const hasFilters = computed(() => !!category.value || !!search.value.trim())
+const categoryLabel = computed(
+  () => CATEGORIES.find((c) => c.key === category.value)?.label,
+)
+function clearFilters() {
+  search.value = ''
+  category.value = ''
+}
 
 const filtered = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -107,7 +117,42 @@ useHead({
         </label>
       </div>
 
-      <p class="mb-4 text-sm text-ink-muted">{{ CONTENT.shop.resultCount(filtered.length) }}</p>
+      <!-- Active-filter chips + clear-all -->
+      <div v-if="hasFilters" class="mb-4 flex flex-wrap items-center gap-2">
+        <button
+          v-if="search.trim()"
+          type="button"
+          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
+            text-ink-muted transition hover:border-navy hover:text-ink"
+          :aria-label="`${CONTENT.shop.clearFilters}: ${CONTENT.shop.searchChip(search.trim())}`"
+          @click="search = ''"
+        >
+          {{ CONTENT.shop.searchChip(search.trim()) }}
+          <X :size="13" aria-hidden="true" />
+        </button>
+        <button
+          v-if="category"
+          type="button"
+          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
+            text-ink-muted transition hover:border-navy hover:text-ink"
+          :aria-label="`${CONTENT.shop.clearFilters}: ${categoryLabel}`"
+          @click="category = ''"
+        >
+          {{ categoryLabel }}
+          <X :size="13" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          class="text-xs text-gold-text underline underline-offset-2 hover:no-underline"
+          @click="clearFilters"
+        >
+          {{ CONTENT.shop.clearAll }}
+        </button>
+      </div>
+
+      <p class="mb-4 text-sm text-ink-muted" aria-live="polite">
+        {{ CONTENT.shop.resultCount(filtered.length) }}
+      </p>
 
       <div v-if="filtered.length" class="grid grid-cols-2 gap-4 pb-16 sm:gap-6 lg:grid-cols-4">
         <ProductCard
@@ -118,7 +163,18 @@ useHead({
           shop
         />
       </div>
-      <p v-else class="py-16 text-center text-ink-muted">{{ CONTENT.shop.empty }}</p>
+      <div v-else class="py-16 text-center">
+        <p class="text-ink-muted">{{ CONTENT.shop.empty }}</p>
+        <button
+          v-if="hasFilters"
+          type="button"
+          class="corner-soft mt-4 border border-navy px-4 py-2 text-sm text-ink transition
+            hover:bg-navy hover:text-white"
+          @click="clearFilters"
+        >
+          {{ CONTENT.shop.clearFilters }}
+        </button>
+      </div>
     </div>
   </main>
 </template>

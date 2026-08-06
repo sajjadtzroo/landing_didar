@@ -12,6 +12,7 @@ from app.core.config import settings
 
 _pwd = CryptContext(schemes=["argon2"], deprecated="auto")
 SESSION_COOKIE = "didar_admin"
+CUSTOMER_COOKIE = "didar_customer"
 
 
 def hash_password(password: str) -> str:
@@ -41,6 +42,40 @@ def read_session(token: str | None) -> str | None:
     except Exception:  # noqa: BLE001 — any decode failure = no session
         return None
     return data.get("sub")
+
+
+# --- Customer session (same signing scheme, different salt so the two cookie
+# families can't be swapped) + OTP hashing (argon2, reusing the password ctx) ---
+def _customer_serializer() -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(settings.secret_key, salt="customer-session")
+
+
+def issue_customer_session(customer_id: str) -> str:
+    return _customer_serializer().dumps({"sub": customer_id})
+
+
+def read_customer_session(token: str | None) -> str | None:
+    """Return the customer id if the signed cookie is valid and unexpired."""
+    if not token:
+        return None
+    try:
+        data = _customer_serializer().loads(token, max_age=settings.session_max_age)
+    except Exception:  # noqa: BLE001 — any decode failure = no session
+        return None
+    return data.get("sub")
+
+
+def hash_otp(code: str) -> str:
+    return _pwd.hash(code)
+
+
+def verify_otp(code: str, hashed: str) -> bool:
+    if not hashed:
+        return False
+    try:
+        return _pwd.verify(code, hashed)
+    except Exception:  # noqa: BLE001 — malformed hash = no match
+        return False
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ export const CONTENT = {
     order: 'سفارش',
     home: 'خانه',
     shop: 'فروشگاه',
-    track: 'پیگیری سفارش',
+    account: 'حساب کاربری',
   },
 
   shop: {
@@ -35,28 +35,79 @@ export const CONTENT = {
     empty: 'محصولی با این فیلترها یافت نشد.',
     resultCount: (n: number) => `${n} محصول`,
     inCart: 'در سبد',
+    clearAll: 'پاک کردن همه',
+    clearFilters: 'پاک کردن فیلترها',
+    searchChip: (q: string) => `«${q}»`,
   },
 
-  track: {
-    title: 'پیگیری سفارش',
-    description: 'کد پیگیری و شماره موبایلی که با آن سفارش ثبت کرده‌اید را وارد کنید.',
-    reference: 'کد پیگیری',
-    referencePlaceholder: 'مثال: DG-1A2B3C',
+  // Order status labels (customer-facing), keyed by OrderStatus.
+  orderStatuses: {
+    new: 'ثبت شد',
+    contacted: 'در حال پیگیری',
+    confirmed: 'تأیید شد',
+    shipped: 'ارسال شد',
+    cancelled: 'لغو شد',
+  } as Record<string, string>,
+
+  account: {
+    // Login (OTP)
+    loginTitle: 'ورود / ثبت‌نام',
+    loginSubtitle: 'برای ورود به حساب کاربری، شماره موبایل خود را وارد کنید.',
     phone: 'شماره موبایل',
-    submit: 'پیگیری',
-    submitting: 'در حال بررسی…',
-    notFound: 'سفارشی با این کد و شماره یافت نشد. کد پیگیری و شماره موبایل را بررسی کنید.',
-    generic: 'بررسی سفارش با خطا مواجه شد. دوباره تلاش کنید.',
+    sendCode: 'ارسال کد',
+    sending: 'در حال ارسال…',
+    codeSentTo: (phone: string) => `کد تأیید به شماره ${phone} ارسال شد.`,
+    code: 'کد تأیید',
+    verify: 'ورود',
+    verifying: 'در حال بررسی…',
+    changePhone: 'ویرایش شماره',
+    devCode: (c: string) => `کد تست (فقط در حالت توسعه): ${c}`,
+    errBadPhone: 'شماره موبایل معتبر وارد کنید، مثال: ۰۹۱۲۱۲۳۴۵۶۷.',
+    errBadCode: 'کد واردشده نادرست یا منقضی شده است.',
+    errGeneric: 'خطایی رخ داد. دوباره تلاش کنید.',
+    // Panel chrome
+    panelTitle: 'حساب کاربری',
+    logout: 'خروج',
+    tabs: {
+      overview: 'خلاصه',
+      orders: 'سفارش‌ها',
+      favorites: 'علاقه‌مندی‌ها',
+      profile: 'پروفایل و آدرس‌ها',
+    },
+    // Overview
+    greeting: (name: string) => `سلام${name ? '، ' + name : ''} 👋`,
+    ordersCount: 'سفارش‌ها',
+    favoritesCount: 'علاقه‌مندی‌ها',
+    lastOrder: 'آخرین سفارش',
+    viewAll: 'مشاهده همه',
+    // Orders
+    ordersTitle: 'سفارش‌های من',
+    ordersEmpty: 'هنوز سفارشی ثبت نکرده‌اید.',
     orderedOn: 'تاریخ ثبت',
-    items: 'اقلام سفارش',
+    orderItems: 'اقلام',
     timeline: 'روند سفارش',
-    statuses: {
-      new: 'ثبت شد',
-      contacted: 'در حال پیگیری',
-      confirmed: 'تأیید شد',
-      shipped: 'ارسال شد',
-      cancelled: 'لغو شد',
-    } as Record<string, string>,
+    goShop: 'رفتن به فروشگاه',
+    // Favorites
+    favoritesTitle: 'علاقه‌مندی‌ها',
+    favoritesEmpty: 'فهرست علاقه‌مندی‌های شما خالی است.',
+    favAddedToast: 'به علاقه‌مندی‌ها اضافه شد',
+    favRemovedToast: 'از علاقه‌مندی‌ها حذف شد',
+    // Profile
+    profileTitle: 'پروفایل',
+    fullName: 'نام و نام خانوادگی',
+    save: 'ذخیره',
+    saved: 'ذخیره شد.',
+    addressesTitle: 'آدرس‌های من',
+    addAddress: 'افزودن آدرس',
+    addrTitle: 'عنوان (مثل منزل)',
+    addrProvince: 'استان',
+    addrCity: 'شهر',
+    addrLine: 'نشانی کامل',
+    addrDefault: 'آدرس پیش‌فرض',
+    addressesEmpty: 'هنوز آدرسی ثبت نکرده‌اید.',
+    remove: 'حذف',
+    edit: 'ویرایش',
+    defaultBadge: 'پیش‌فرض',
   },
 
   hero: {
@@ -112,6 +163,7 @@ export const CONTENT = {
     continue: 'ادامه و ثبت سفارش',
     itemsCount: (n: number) => `${n} کالا`,
     total: 'جمع کل',
+    addedToast: 'به سبد اضافه شد',
   },
 
   faq: {

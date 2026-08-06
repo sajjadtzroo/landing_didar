@@ -1,0 +1,277 @@
+"""Customer account panel: phone-OTP login + orders, favorites, addresses, profile.
+
+Session is a signed cookie (didar_customer), mirroring the admin auth scheme with
+a different salt. Orders are linked to a customer by matching phone, so purchases
+made before signup still show up.
+"""
+
+import secrets
+import uuid
+from datetime import UTC, datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from sqlalchemy import delete, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import require_customer
+from app.api.limiter import limiter
+from app.core.config import settings
+from app.core.db import get_db
+from app.core.security import (
+    CUSTOMER_COOKIE,
+    hash_otp,
+    issue_customer_session,
+    verify_otp,
+)
+from app.models.customer import Customer, CustomerAddress, Favorite, OtpCode
+from app.models.order import Order
+from app.models.product import Product
+from app.schemas.customer import (
+    AddressIn,
+    AddressOut,
+    AddressUpdate,
+    CustomerOut,
+    CustomerUpdate,
+    OtpRequestIn,
+    OtpRequestOut,
+    OtpVerifyIn,
+)
+from app.schemas.order import OrderTrackOut
+from app.schemas.product import ProductOut
+from app.services.sms import send_sms
+
+router = APIRouter()
+
+OTP_TTL = 300  # seconds a code stays valid
+OTP_MAX_ATTEMPTS = 5  # wrong tries before a code is dead
+
+
+def _set_customer_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        CUSTOMER_COOKIE,
+        token,
+        max_age=settings.session_max_age,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+        path="/",
+    )
+
+
+# --- Auth ---------------------------------------------------------------------
+@router.post("/otp/request", response_model=OtpRequestOut)
+@limiter.limit("5/hour")
+async def request_otp(
+    request: Request, payload: OtpRequestIn, db: AsyncSession = Depends(get_db)
+):
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    db.add(
+        OtpCode(
+            phone=payload.phone,
+            code_hash=hash_otp(code),
+            expires_at=datetime.now(UTC) + timedelta(seconds=OTP_TTL),
+        )
+    )
+    await db.commit()
+    await send_sms(payload.phone, f"کد ورود دیدار: {code}")
+    # dev_code only outside production so tests/dev log in without a real gateway.
+    return OtpRequestOut(sent=True, dev_code=None if settings.cookie_secure else code)
+
+
+@router.post("/otp/verify", response_model=CustomerOut)
+async def verify_otp_code(
+    payload: OtpVerifyIn, response: Response, db: AsyncSession = Depends(get_db)
+):
+    otp = (
+        await db.execute(
+            select(OtpCode)
+            .where(OtpCode.phone == payload.phone, OtpCode.consumed.is_(False))
+            .order_by(OtpCode.created_at.desc())
+        )
+    ).scalars().first()
+    now = datetime.now(UTC)
+    invalid = HTTPException(400, detail="کد نامعتبر یا منقضی شده است")
+    if otp is None or otp.expires_at < now or otp.attempts >= OTP_MAX_ATTEMPTS:
+        raise invalid
+    if not verify_otp(payload.code, otp.code_hash):
+        otp.attempts += 1
+        await db.commit()
+        raise invalid
+    otp.consumed = True
+    customer = (
+        await db.execute(select(Customer).where(Customer.phone == payload.phone))
+    ).scalar_one_or_none()
+    if customer is None:
+        customer = Customer(phone=payload.phone)
+        db.add(customer)
+    await db.commit()
+    await db.refresh(customer)
+    _set_customer_cookie(response, issue_customer_session(str(customer.id)))
+    return customer
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(CUSTOMER_COOKIE, path="/")
+    return {"detail": "ok"}
+
+
+async def _current(db: AsyncSession, customer_id: uuid.UUID) -> Customer:
+    c = await db.get(Customer, customer_id)
+    if c is None:
+        raise HTTPException(401, detail="Not authenticated")
+    return c
+
+
+@router.get("/me", response_model=CustomerOut)
+async def me(
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    return await _current(db, customer_id)
+
+
+@router.patch("/me", response_model=CustomerOut)
+async def update_me(
+    payload: CustomerUpdate,
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    c = await _current(db, customer_id)
+    c.full_name = payload.full_name
+    await db.commit()
+    await db.refresh(c)
+    return c
+
+
+# --- Orders (read-only; linked by phone) --------------------------------------
+@router.get("/me/orders", response_model=list[OrderTrackOut])
+async def my_orders(
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    c = await _current(db, customer_id)
+    return (
+        await db.execute(
+            select(Order)
+            .where(Order.phone == c.phone)
+            .order_by(Order.created_at.desc())
+        )
+    ).scalars().all()
+
+
+# --- Favorites ----------------------------------------------------------------
+@router.get("/me/favorites", response_model=list[ProductOut])
+async def my_favorites(
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    return (
+        await db.execute(
+            select(Product)
+            .join(Favorite, Favorite.product_id == Product.id)
+            .where(Favorite.customer_id == customer_id)
+            .order_by(Favorite.created_at.desc())
+        )
+    ).scalars().all()
+
+
+@router.put("/me/favorites/{product_id}", status_code=204)
+async def add_favorite(
+    product_id: uuid.UUID,
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    if await db.get(Product, product_id) is None:
+        raise HTTPException(404, detail="Product not found")
+    exists = await db.get(
+        Favorite, {"customer_id": customer_id, "product_id": product_id}
+    )
+    if exists is None:
+        db.add(Favorite(customer_id=customer_id, product_id=product_id))
+        await db.commit()
+
+
+@router.delete("/me/favorites/{product_id}", status_code=204)
+async def remove_favorite(
+    product_id: uuid.UUID,
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    await db.execute(
+        delete(Favorite).where(
+            Favorite.customer_id == customer_id, Favorite.product_id == product_id
+        )
+    )
+    await db.commit()
+
+
+# --- Addresses ----------------------------------------------------------------
+async def _clear_default(db: AsyncSession, customer_id: uuid.UUID) -> None:
+    await db.execute(
+        update(CustomerAddress)
+        .where(CustomerAddress.customer_id == customer_id)
+        .values(is_default=False)
+    )
+
+
+@router.get("/me/addresses", response_model=list[AddressOut])
+async def list_addresses(
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    return (
+        await db.execute(
+            select(CustomerAddress)
+            .where(CustomerAddress.customer_id == customer_id)
+            .order_by(CustomerAddress.created_at)
+        )
+    ).scalars().all()
+
+
+@router.post("/me/addresses", response_model=AddressOut, status_code=201)
+async def create_address(
+    payload: AddressIn,
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    if payload.is_default:
+        await _clear_default(db, customer_id)
+    addr = CustomerAddress(customer_id=customer_id, **payload.model_dump())
+    db.add(addr)
+    await db.commit()
+    await db.refresh(addr)
+    return addr
+
+
+@router.patch("/me/addresses/{address_id}", response_model=AddressOut)
+async def update_address(
+    address_id: uuid.UUID,
+    payload: AddressUpdate,
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    addr = await db.get(CustomerAddress, address_id)
+    if addr is None or addr.customer_id != customer_id:
+        raise HTTPException(404, detail="Address not found")
+    data = payload.model_dump(exclude_unset=True)
+    if data.get("is_default"):
+        await _clear_default(db, customer_id)
+    for k, v in data.items():
+        setattr(addr, k, v)
+    await db.commit()
+    await db.refresh(addr)
+    return addr
+
+
+@router.delete("/me/addresses/{address_id}", status_code=204)
+async def delete_address(
+    address_id: uuid.UUID,
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    addr = await db.get(CustomerAddress, address_id)
+    if addr is None or addr.customer_id != customer_id:
+        raise HTTPException(404, detail="Address not found")
+    await db.delete(addr)
+    await db.commit()
