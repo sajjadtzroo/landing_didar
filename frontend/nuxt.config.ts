@@ -9,6 +9,7 @@ export default defineNuxtConfig({
     'pinia-plugin-persistedstate/nuxt',
     '@nuxt/image',
     '@vueuse/nuxt',
+    '@vite-pwa/nuxt',
   ],
 
   css: ['~/assets/css/main.css'],
@@ -17,6 +18,36 @@ export default defineNuxtConfig({
   // bundles even without a proxy. Liara's ingress gzips dynamic HTML in prod.
   nitro: {
     compressPublicAssets: { gzip: true, brotli: true },
+  },
+
+  // Installable PWA (offline-capable shell + home-screen icon). SSR stays on for
+  // SEO; the service worker precaches build assets and lets the app be installed.
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'دیدار گلد',
+      short_name: 'دیدار گلد',
+      description: 'فروشگاه آنلاین طلای ۱۸ عیار دیدار — بدون پرداخت آنلاین',
+      lang: 'fa',
+      dir: 'rtl',
+      theme_color: '#041E42',
+      background_color: '#041E42',
+      display: 'standalone',
+      start_url: '/',
+      icons: [
+        { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ],
+    },
+    workbox: {
+      // SSR app — don't SPA-fallback navigations; let each route render on the
+      // server. The SW just precaches static build assets + icons/fonts.
+      navigateFallback: undefined,
+      globPatterns: ['**/*.{js,css,svg,png,woff2,ico}'],
+    },
+    // SW off during `nuxt dev` (avoids stale-cache surprises while iterating).
+    devOptions: { enabled: false },
   },
 
   // SSR on for SEO; admin is client-only (session-gated, no SEO value).
@@ -28,8 +59,8 @@ export default defineNuxtConfig({
     // rendered HTML with stale-while-revalidate — serves instantly, revalidates
     // in the background. Biggest SSR throughput win. Staleness ceiling: 60s.
     '/l/**': { swr: 60 },
-    // `/` isn't a landing itself — the 3 live at /l/<slug>. Send it to the first.
-    '/': { redirect: '/l/one' },
+    // Home is the storefront. Campaign landings still live at /l/<slug>.
+    '/': { redirect: '/shop' },
     // Baseline security headers. No strict CSP: Nuxt's inline hydration script
     // would need a nonce and the Lighthouse CSP audit is informative (0 weight).
     '/**': {
@@ -47,6 +78,10 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'fa', dir: 'rtl' },
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+        // PWA manifest — the module registers the SW but doesn't link the
+        // manifest, so link it here to make the app installable.
+        { rel: 'manifest', href: '/manifest.webmanifest' },
         // Preload only the above-the-fold Doran weights (h1=500, body=400).
         // font-display: swap already covers the rest.
         { rel: 'preload', as: 'font', type: 'font/woff2', href: '/fonts/Doran-Regular.woff2', crossorigin: '' },
