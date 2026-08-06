@@ -18,6 +18,45 @@ export const CONTENT = {
 
   nav: {
     order: 'سفارش',
+    home: 'خانه',
+    shop: 'فروشگاه',
+    track: 'پیگیری سفارش',
+  },
+
+  shop: {
+    title: 'فروشگاه دیدار',
+    description: 'مجموعه کامل طلای ۱۸ عیار دیدار؛ انتخاب کنید، به سبد بیفزایید و سفارش خود را بدون پرداخت آنلاین ثبت کنید.',
+    searchPlaceholder: 'جستجوی محصول…',
+    all: 'همه',
+    sortLabel: 'مرتب‌سازی',
+    sortNewest: 'جدیدترین',
+    sortPriceAsc: 'ارزان‌ترین',
+    sortPriceDesc: 'گران‌ترین',
+    empty: 'محصولی با این فیلترها یافت نشد.',
+    resultCount: (n: number) => `${n} محصول`,
+    inCart: 'در سبد',
+  },
+
+  track: {
+    title: 'پیگیری سفارش',
+    description: 'کد پیگیری و شماره موبایلی که با آن سفارش ثبت کرده‌اید را وارد کنید.',
+    reference: 'کد پیگیری',
+    referencePlaceholder: 'مثال: DG-1A2B3C',
+    phone: 'شماره موبایل',
+    submit: 'پیگیری',
+    submitting: 'در حال بررسی…',
+    notFound: 'سفارشی با این کد و شماره یافت نشد. کد پیگیری و شماره موبایل را بررسی کنید.',
+    generic: 'بررسی سفارش با خطا مواجه شد. دوباره تلاش کنید.',
+    orderedOn: 'تاریخ ثبت',
+    items: 'اقلام سفارش',
+    timeline: 'روند سفارش',
+    statuses: {
+      new: 'ثبت شد',
+      contacted: 'در حال پیگیری',
+      confirmed: 'تأیید شد',
+      shipped: 'ارسال شد',
+      cancelled: 'لغو شد',
+    } as Record<string, string>,
   },
 
   hero: {

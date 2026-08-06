@@ -57,6 +57,16 @@ export type OrderStatus =
   | 'shipped'
   | 'cancelled'
 
+// Public order-tracking payload (GET /orders/track). No PII beyond line items.
+export interface OrderTrack {
+  reference: string
+  status: OrderStatus
+  total: string
+  created_at: string
+  items: OrderItem[]
+  status_log: OrderStatusLogEntry[]
+}
+
 export interface AdminOrder {
   id: string
   reference: string

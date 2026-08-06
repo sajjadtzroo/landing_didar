@@ -1,12 +1,22 @@
 <script setup lang="ts">
+import { ShoppingBag } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { CONTENT } from '~/constants/content'
+import { toFa } from '~/utils/format'
 
 defineEmits<{ order: [] }>()
 
 const route = useRoute()
 const { open: promoOpen } = usePromo()
 const { y } = import.meta.client ? useWindowScroll() : { y: ref(0) }
+
+const cart = useCartStore()
+const { openCart } = useUiState()
+
+const LINKS = [
+  { to: '/shop', label: CONTENT.nav.shop },
+  { to: '/track', label: CONTENT.nav.track },
+]
 
 // Transparent (light text) only while sitting over the dark hero on a landing
 // page; frosted glass (dark text) after scrolling, and on every inner page.
@@ -40,8 +50,36 @@ const overHero = computed(() => onLanding.value && y.value < 80)
         <BrandLogo :height="26" />
       </NuxtLink>
 
+      <!-- Section links -->
+      <div class="hidden items-center gap-6 sm:flex">
+        <NuxtLink
+          v-for="l in LINKS"
+          :key="l.to"
+          :to="l.to"
+          class="text-sm transition hover:text-gold-text"
+          active-class="text-gold-text"
+        >
+          {{ l.label }}
+        </NuxtLink>
+      </div>
+
       <!-- Actions -->
       <div class="flex items-center gap-2 sm:gap-4">
+        <button
+          type="button"
+          class="relative flex h-11 w-11 items-center justify-center transition hover:text-gold-text"
+          :aria-label="CONTENT.cart.title"
+          @click="openCart"
+        >
+          <ShoppingBag :size="20" aria-hidden="true" />
+          <span
+            v-if="cart.itemCount"
+            class="tnum absolute -end-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center
+              rounded-full bg-gold px-1 text-[11px] font-bold text-navy-deep"
+          >
+            {{ toFa(cart.itemCount) }}
+          </span>
+        </button>
         <button
           type="button"
           class="flex h-11 items-center justify-center bg-navy px-5 text-sm font-medium

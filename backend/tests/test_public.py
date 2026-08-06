@@ -121,6 +121,41 @@ async def test_create_order_validation(client, order_payload, override):
     assert "detail" in body and "field" in body  # consistent error envelope
 
 
+# ---- GET /orders/track ----
+TRACK = "/api/v1/orders/track"
+
+
+async def test_track_order_matches_reference_and_phone(
+    client, admin_client, order_payload
+):
+    p = await _make_product(admin_client, price=100)
+    ref = (await client.post(
+        ORDERS, json=order_payload(items=[{"product_id": p["id"], "quantity": 2}]),
+    )).json()["reference"]
+
+    r = await client.get(TRACK, params={"reference": ref, "phone": "09121234567"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["reference"] == ref
+    assert body["status"] == "new"
+    assert body["total"] == "200"
+    assert len(body["items"]) == 1
+    assert body["status_log"][0]["to_status"] == "new"
+
+
+async def test_track_order_wrong_phone_is_404(client, order_payload):
+    ref = (await client.post(ORDERS, json=order_payload())).json()["reference"]
+    r = await client.get(TRACK, params={"reference": ref, "phone": "09120000000"})
+    assert r.status_code == 404  # right ref, wrong phone => same 404 (no enumeration)
+
+
+async def test_track_order_unknown_reference_is_404(client):
+    r = await client.get(
+        TRACK, params={"reference": "DG-ZZZZZZ", "phone": "09121234567"}
+    )
+    assert r.status_code == 404
+
+
 async def test_rate_limit_after_five(client, order_payload):
     limiter.enabled = True
     try:

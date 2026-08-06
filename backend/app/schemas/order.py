@@ -62,6 +62,20 @@ class OrderCreatedOut(BaseModel):
     total: Decimal
 
 
+class OrderTrackOut(BaseModel):
+    """Public order-status view (reference + phone lookup). Deliberately omits
+    stored PII (name/address) — the customer already has it; the response only
+    confirms status + line items + the status timeline."""
+
+    model_config = ConfigDict(from_attributes=True)
+    reference: str
+    status: OrderStatus
+    total: Decimal
+    created_at: datetime
+    items: list[OrderItemOut]
+    status_log: list[OrderStatusLogOut]
+
+
 class OrderOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID

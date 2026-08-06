@@ -19,10 +19,11 @@ from app.core.config import settings
 from app.core.db import get_db
 from app.models.faq import FAQ
 from app.models.landing import Landing, LandingProduct
+from app.models.order import Order
 from app.models.product import Product
 from app.schemas.faq import FAQOut
 from app.schemas.landing import LandingDetailOut
-from app.schemas.order import OrderCreate, OrderCreatedOut
+from app.schemas.order import OrderCreate, OrderCreatedOut, OrderTrackOut
 from app.schemas.product import ProductOut
 from app.services import orders as order_service
 from app.services.notifications import get_adapter
@@ -116,6 +117,26 @@ async def list_faqs(response: Response, db: AsyncSession = Depends(get_db)):
     items = [FAQOut.model_validate(f) for f in res.scalars().all()]
     _cache_set("faqs", items)
     return items
+
+
+@router.get("/orders/track", response_model=OrderTrackOut)
+async def track_order(
+    reference: str,
+    phone: str,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
+    """Account-less order tracking. Both reference AND the ordering phone must
+    match — an unknown reference and a wrong phone return the SAME 404 so a
+    reference can't be enumerated without the phone. Never cached (status changes).
+    """
+    response.headers["Cache-Control"] = "no-store"
+    order = (
+        await db.execute(select(Order).where(Order.reference == reference.strip()))
+    ).scalar_one_or_none()
+    if order is None or order.phone != phone.strip():
+        raise HTTPException(404, detail="Order not found")
+    return order
 
 
 async def _notify(order_id, admin_url: str) -> None:

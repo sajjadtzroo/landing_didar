@@ -1,13 +1,22 @@
 <script setup lang="ts">
+import { Check, Plus } from 'lucide-vue-next'
 import { CONTENT } from '~/constants/content'
 import type { Product } from '~/types'
-import { toFa } from '~/utils/format'
+import { formatPrice, toFa } from '~/utils/format'
 
-const props = defineProps<{ product: Product; index: number }>()
+// `shop` mode (storefront /shop) shows price + an add-to-cart button; the default
+// (landing carousels) stays price-free, weight/اجرت only. Same card, one prop.
+const props = defineProps<{ product: Product; index: number; shop?: boolean }>()
 
 const cart = useCartStore()
+const { openCart } = useUiState()
 const selected = computed(() => cart.isSelected(props.product.id))
 const qty = computed(() => cart.quantityOf(props.product.id))
+
+function addToCart() {
+  cart.addItem(props.product)
+  openCart()
+}
 </script>
 
 <template>
@@ -63,6 +72,24 @@ const qty = computed(() => cart.quantityOf(props.product.id))
         </p>
       </div>
     </NuxtLink>
+
+    <!-- Shop mode: price + add-to-cart, OUTSIDE the link so it doesn't navigate -->
+    <div v-if="shop" class="flex items-center justify-between gap-2 px-4 pb-4">
+      <span class="tnum text-sm font-medium text-ink">
+        {{ formatPrice(product.price) ?? CONTENT.products.priceOnRequest }}
+      </span>
+      <button
+        type="button"
+        class="flex h-10 items-center gap-1 bg-navy px-3 text-xs font-medium text-white
+          transition duration-300 hover:bg-gold"
+        :aria-label="`${CONTENT.products.add}: ${product.name}`"
+        @click="addToCart"
+      >
+        <component :is="selected ? Check : Plus" :size="14" aria-hidden="true" />
+        {{ selected ? CONTENT.shop.inCart : CONTENT.products.add }}
+      </button>
+    </div>
+
     <!-- Signature gold accent: grows from the start edge on hover -->
     <span
       class="pointer-events-none absolute inset-x-0 bottom-0 h-1 origin-right scale-x-[.18]
