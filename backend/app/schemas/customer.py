@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -33,6 +34,31 @@ class CustomerOut(BaseModel):
     verification_status: str
     verification_documents: list[dict]
     rejection_reason: str | None
+
+
+class CustomerAdminOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    phone: str
+    full_name: str | None
+    store_name: str | None
+    verification_status: str
+    verification_documents: list[dict]
+    rejection_reason: str | None
+    verified_at: datetime | None
+    created_at: datetime
+
+
+class VerificationUpdate(BaseModel):
+    status: str  # "approved" | "rejected"
+    reason: str | None = Field(default=None, max_length=300)
+
+    @field_validator("status")
+    @classmethod
+    def status_valid(cls, v: str) -> str:
+        if v not in ("approved", "rejected"):
+            raise ValueError("status must be approved or rejected")
+        return v
 
 
 class CustomerUpdate(BaseModel):
