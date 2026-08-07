@@ -99,20 +99,21 @@ async function onHeart() {
       </div>
     </NuxtLink>
 
-    <!-- Shop mode: price + add-to-cart, OUTSIDE the link so it doesn't navigate -->
+    <!-- Shop mode: gold price + round add-button (icon only → equal card heights,
+         no text wrap). OUTSIDE the link so tapping add doesn't navigate. -->
     <div v-if="shop" class="flex items-center justify-between gap-2 px-4 pb-4">
-      <span class="tnum text-sm font-medium text-ink">
+      <span class="tnum text-sm font-bold text-gold-text sm:text-base">
         {{ formatPrice(product.price) ?? CONTENT.products.priceOnRequest }}
       </span>
       <button
         type="button"
-        class="flex h-10 items-center gap-1 bg-navy px-3 text-xs font-medium text-white
-          transition duration-300 hover:bg-gold"
-        :aria-label="`${CONTENT.products.add}: ${product.name}`"
+        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white
+          transition duration-300 active:scale-95"
+        :class="selected ? 'bg-gold' : 'bg-navy hover:bg-gold'"
+        :aria-label="selected ? CONTENT.shop.inCart : `${CONTENT.products.add}: ${product.name}`"
         @click="addToCart"
       >
-        <component :is="selected ? Check : Plus" :size="14" aria-hidden="true" />
-        {{ selected ? CONTENT.shop.inCart : CONTENT.products.add }}
+        <component :is="selected ? Check : Plus" :size="20" aria-hidden="true" />
       </button>
     </div>
 

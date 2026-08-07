@@ -100,6 +100,7 @@ export interface AdminOrder {
   store_name: string
   province: string
   city: string | null
+  contact_method: 'call' | 'agent' | 'whatsapp'
   note: string | null // customer note
   internal_note: string | null // admin-only
   status: OrderStatus

@@ -32,6 +32,7 @@ const { value: phone, handleBlur: blurPhone } = useField<string>('phone', undefi
 const { value: store_name, handleBlur: blurStore } = useField<string>('store_name', undefined, fieldOpts)
 const { value: province, handleBlur: blurProvince } = useField<string>('province', undefined, fieldOpts)
 const { value: city } = useField<string>('city', undefined, fieldOpts)
+const { value: contact_method } = useField<string>('contact_method', undefined, { ...fieldOpts, initialValue: 'call' })
 const { value: note } = useField<string>('note', undefined, fieldOpts)
 
 const honeypot = ref('') // must stay empty
@@ -190,6 +191,14 @@ function onInvalidField(field: string) {
 
       <FormField :label="CONTENT.form.city" v-slot="{ id, describedBy }">
         <input :id="id" v-model="city" type="text" class="form-control" />
+      </FormField>
+
+      <FormField :label="CONTENT.form.contactMethod" required v-slot="{ id }">
+        <select :id="id" v-model="contact_method" class="form-control">
+          <option value="call">{{ CONTENT.form.contactMethods.call }}</option>
+          <option value="agent">{{ CONTENT.form.contactMethods.agent }}</option>
+          <option value="whatsapp">{{ CONTENT.form.contactMethods.whatsapp }}</option>
+        </select>
       </FormField>
 
       <FormField :label="CONTENT.form.note" :error="errors.note" v-slot="{ id, describedBy }">

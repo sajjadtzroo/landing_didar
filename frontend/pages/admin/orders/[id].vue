@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { MessageSquare, Phone } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
+import { CONTENT } from '~/constants/content'
 import { STATUS_FLOW, STATUS_LABEL } from '~/constants/orderStatus'
 import type { AdminOrderDetail, OrderStatus } from '~/types'
 import { formatPrice, toFa } from '~/utils/format'
@@ -85,6 +86,7 @@ function faDateTime(iso: string) {
           <div class="flex justify-between"><dt class="text-ink-muted">فروشگاه</dt><dd>{{ order.store_name }}</dd></div>
           <div class="flex justify-between"><dt class="text-ink-muted">استان</dt><dd>{{ order.province }}</dd></div>
           <div v-if="order.city" class="flex justify-between"><dt class="text-ink-muted">شهر</dt><dd>{{ order.city }}</dd></div>
+          <div class="flex justify-between"><dt class="text-ink-muted">روش پیگیری</dt><dd>{{ CONTENT.form.contactMethods[order.contact_method] }}</dd></div>
           <div class="flex justify-between"><dt class="text-ink-muted">تاریخ</dt><dd class="tnum">{{ faDateTime(order.created_at) }}</dd></div>
           <div v-if="order.utm_source" class="flex justify-between"><dt class="text-ink-muted">منبع</dt><dd>{{ order.utm_source }}</dd></div>
         </dl>

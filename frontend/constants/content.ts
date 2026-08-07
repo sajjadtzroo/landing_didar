@@ -197,6 +197,12 @@ export const CONTENT = {
     province: 'استان',
     provincePlaceholder: 'انتخاب استان',
     city: 'شهر (اختیاری)',
+    contactMethod: 'روش پیگیری سفارش',
+    contactMethods: {
+      call: 'تماس مستقیم',
+      agent: 'کارشناس فروش',
+      whatsapp: 'واتساپ',
+    },
     note: 'توضیحات (اختیاری)',
     submit: 'ثبت سفارش',
     submitting: 'در حال ثبت…',

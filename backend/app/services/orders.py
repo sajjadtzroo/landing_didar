@@ -69,6 +69,7 @@ async def create_order(
         store_name=payload.store_name,
         province=payload.province,
         city=payload.city,
+        contact_method=payload.contact_method,
         note=payload.note,
         status=OrderStatus.new,
         total=total,

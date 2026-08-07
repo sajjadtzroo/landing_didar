@@ -105,11 +105,12 @@ useHead({
 </script>
 
 <template>
-  <main class="pt-32 sm:pt-28">
+  <main class="pt-28 sm:pt-28">
     <div class="mx-auto max-w-content px-5 sm:px-10">
-      <header class="mb-8">
-        <h1 class="text-3xl font-medium text-ink sm:text-4xl">{{ CONTENT.shop.title }}</h1>
-        <p class="mt-3 max-w-2xl text-pretty text-base leading-8 text-ink-muted">
+      <!-- Compact on mobile (h1 kept for SEO); full intro from sm up -->
+      <header class="mb-4 sm:mb-8">
+        <h1 class="text-xl font-medium text-ink sm:text-4xl">{{ CONTENT.shop.title }}</h1>
+        <p class="mt-3 hidden max-w-2xl text-pretty text-base leading-8 text-ink-muted sm:block">
           {{ CONTENT.shop.description }}
         </p>
       </header>
@@ -123,10 +124,13 @@ useHead({
           class="form-control sm:max-w-xs"
           aria-label="جستجو"
         />
-        <div class="flex flex-wrap items-center gap-2">
+        <div
+          class="-mx-5 flex flex-nowrap items-center gap-2 overflow-x-auto px-5
+            [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden"
+        >
           <button
             type="button"
-            class="h-9 border px-3 text-sm transition"
+            class="h-9 shrink-0 whitespace-nowrap border px-3 text-sm transition"
             :class="category === '' ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
             @click="category = ''"
           >
@@ -136,7 +140,7 @@ useHead({
             v-for="c in CATEGORIES"
             :key="c.key"
             type="button"
-            class="h-9 border px-3 text-sm transition"
+            class="h-9 shrink-0 whitespace-nowrap border px-3 text-sm transition"
             :class="category === c.key ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
             @click="category = c.key"
           >

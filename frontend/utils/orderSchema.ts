@@ -19,6 +19,7 @@ export const orderSchema = z.object({
     .max(80, CONTENT.form.errors.storeName),
   province: z.enum(provinceValues, { message: CONTENT.form.errors.province }),
   city: z.string().max(60).optional().or(z.literal('')),
+  contact_method: z.enum(['call', 'agent', 'whatsapp']).default('call'),
   note: z.string().max(300, CONTENT.form.errors.note).optional().or(z.literal('')),
 })
 
