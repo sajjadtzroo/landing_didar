@@ -18,7 +18,7 @@ import asyncpg
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 import app.api.v1.public as public
@@ -48,8 +48,11 @@ async def _ensure_test_db() -> None:
     u = urlparse(TEST_DB_URL.replace("postgresql+asyncpg", "postgresql"))
     dbname = u.path.lstrip("/")
     conn = await asyncpg.connect(
-        host=u.hostname, port=u.port, user=u.username,
-        password=u.password, database="didar",
+        host=u.hostname,
+        port=u.port,
+        user=u.username,
+        password=u.password,
+        database="didar",
     )
     try:
         exists = await conn.fetchval(
@@ -87,6 +90,7 @@ async def _wire(_engine, _sessionmaker, monkeypatch):
     app.dependency_overrides[get_db] = _get_db
     # Rate limiter off by default (one dedicated test flips it on).
     limiter.enabled = False
+
     # The post-commit notification task uses the app's own SessionLocal (prod
     # URL), not the test engine — stub it so it never fires during tests.
     async def _noop(*a, **k):
@@ -119,6 +123,26 @@ async def admin_client():
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
     app.dependency_overrides.pop(require_admin, None)
+
+
+@pytest_asyncio.fixture
+async def approved_client(_sessionmaker):
+    """A logged-in customer who has been admin-approved (can place orders)."""
+    from app.models.customer import Customer, CustomerVerificationStatus
+
+    phone = "09129999999"
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
+        r = await c.post("/api/v1/account/otp/request", json={"phone": phone})
+        code = r.json()["dev_code"]
+        await c.post("/api/v1/account/otp/verify", json={"phone": phone, "code": code})
+        async with _sessionmaker() as db:
+            cust = (
+                await db.execute(select(Customer).where(Customer.phone == phone))
+            ).scalar_one()
+            cust.verification_status = CustomerVerificationStatus.approved
+            await db.commit()
+        yield c
 
 
 @pytest.fixture

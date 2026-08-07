@@ -66,17 +66,19 @@ async def test_list_faqs_hides_inactive(client, admin_client):
 
 
 # ---- POST /orders ----
-async def test_create_order_custom_item(client, order_payload):
-    r = await client.post(ORDERS, json=order_payload())
+async def test_create_order_custom_item(approved_client, order_payload):
+    r = await approved_client.post(ORDERS, json=order_payload())
     assert r.status_code == 201, r.text
     body = r.json()
     assert body["reference"].startswith("DG-")
     assert body["total"] == "0"  # no product_id => "custom item", price unknown
 
 
-async def test_create_order_totals_from_product(client, admin_client, order_payload):
+async def test_create_order_totals_from_product(
+    approved_client, admin_client, order_payload
+):
     p = await _make_product(admin_client, price=100)
-    r = await client.post(
+    r = await approved_client.post(
         ORDERS,
         json=order_payload(items=[{"product_id": p["id"], "quantity": 3}]),
     )
@@ -85,9 +87,9 @@ async def test_create_order_totals_from_product(client, admin_client, order_payl
 
 
 async def test_honeypot_returns_fake_and_persists_nothing(
-    client, admin_client, order_payload
+    approved_client, admin_client, order_payload
 ):
-    r = await client.post(ORDERS, json=order_payload(website="spam"))
+    r = await approved_client.post(ORDERS, json=order_payload(website="spam"))
     assert r.status_code == 201
     assert r.json() == {"reference": "DG-000000", "total": "0"}
     # nothing stored
@@ -95,10 +97,10 @@ async def test_honeypot_returns_fake_and_persists_nothing(
     assert listed.json()["total"] == 0
 
 
-async def test_idempotency_key_dedupes(client, admin_client, order_payload):
+async def test_idempotency_key_dedupes(approved_client, admin_client, order_payload):
     hdr = {"Idempotency-Key": str(uuid.uuid4())}
-    r1 = await client.post(ORDERS, json=order_payload(), headers=hdr)
-    r2 = await client.post(ORDERS, json=order_payload(), headers=hdr)
+    r1 = await approved_client.post(ORDERS, json=order_payload(), headers=hdr)
+    r2 = await approved_client.post(ORDERS, json=order_payload(), headers=hdr)
     assert r1.status_code == 201 and r2.status_code == 201
     assert r1.json()["reference"] == r2.json()["reference"]
     listed = await admin_client.get("/api/v1/admin/orders")
@@ -108,14 +110,14 @@ async def test_idempotency_key_dedupes(client, admin_client, order_payload):
 @pytest.mark.parametrize(
     "override",
     [
-        {"phone": "0912"},            # bad phone
-        {"province": "Atlantis"},     # not an Iran province
-        {"items": []},               # needs >= 1 item
-        {"full_name": "Al"},         # too short
+        {"phone": "0912"},  # bad phone
+        {"province": "Atlantis"},  # not an Iran province
+        {"items": []},  # needs >= 1 item
+        {"full_name": "Al"},  # too short
     ],
 )
-async def test_create_order_validation(client, order_payload, override):
-    r = await client.post(ORDERS, json=order_payload(**override))
+async def test_create_order_validation(approved_client, order_payload, override):
+    r = await approved_client.post(ORDERS, json=order_payload(**override))
     assert r.status_code == 422
     body = r.json()
     assert "detail" in body and "field" in body  # consistent error envelope
@@ -126,14 +128,20 @@ TRACK = "/api/v1/orders/track"
 
 
 async def test_track_order_matches_reference_and_phone(
-    client, admin_client, order_payload
+    approved_client, admin_client, order_payload
 ):
     p = await _make_product(admin_client, price=100)
-    ref = (await client.post(
-        ORDERS, json=order_payload(items=[{"product_id": p["id"], "quantity": 2}]),
-    )).json()["reference"]
+    ref = (
+        await approved_client.post(
+            ORDERS,
+            json=order_payload(items=[{"product_id": p["id"], "quantity": 2}]),
+        )
+    ).json()["reference"]
 
-    r = await client.get(TRACK, params={"reference": ref, "phone": "09121234567"})
+    # phone is bound from the approved session (09129999999), not the payload
+    r = await approved_client.get(
+        TRACK, params={"reference": ref, "phone": "09129999999"}
+    )
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["reference"] == ref
@@ -143,8 +151,8 @@ async def test_track_order_matches_reference_and_phone(
     assert body["status_log"][0]["to_status"] == "new"
 
 
-async def test_track_order_wrong_phone_is_404(client, order_payload):
-    ref = (await client.post(ORDERS, json=order_payload())).json()["reference"]
+async def test_track_order_wrong_phone_is_404(approved_client, client, order_payload):
+    ref = (await approved_client.post(ORDERS, json=order_payload())).json()["reference"]
     r = await client.get(TRACK, params={"reference": ref, "phone": "09120000000"})
     assert r.status_code == 404  # right ref, wrong phone => same 404 (no enumeration)
 
@@ -156,7 +164,7 @@ async def test_track_order_unknown_reference_is_404(client):
     assert r.status_code == 404
 
 
-async def test_rate_limit_after_five(client, order_payload):
+async def test_rate_limit_after_five(approved_client, order_payload):
     limiter.enabled = True
     try:
         limiter.reset()
@@ -164,7 +172,9 @@ async def test_rate_limit_after_five(client, order_payload):
         pass
     codes = []
     for _ in range(6):
-        codes.append((await client.post(ORDERS, json=order_payload())).status_code)
+        codes.append(
+            (await approved_client.post(ORDERS, json=order_payload())).status_code
+        )
     limiter.enabled = False
     assert codes.count(201) == 5
     assert codes[-1] == 429

@@ -69,14 +69,17 @@ async def test_update_profile(client):
 
 
 # ---- Orders (linked by phone) ----
-async def test_my_orders_lists_orders_for_phone(client, admin_client, order_payload):
+async def test_my_orders_lists_orders_for_phone(
+    approved_client, admin_client, order_payload
+):
     p = await _make_product(admin_client, price=100)
-    await client.post(
+    # approved_client is a logged-in, approved customer; the order phone is bound
+    # from its session, so /me/orders (linked by phone) sees exactly this order.
+    await approved_client.post(
         "/api/v1/orders",
         json=order_payload(items=[{"product_id": p["id"], "quantity": 2}]),
     )
-    await _login(client, "09121234567")  # same phone as order_payload default
-    r = await client.get(f"{ACC}/me/orders")
+    r = await approved_client.get(f"{ACC}/me/orders")
     assert r.status_code == 200
     orders = r.json()
     assert len(orders) == 1
