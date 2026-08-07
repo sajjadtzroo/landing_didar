@@ -9,7 +9,15 @@ import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +31,13 @@ from app.core.security import (
     issue_customer_session,
     verify_otp,
 )
-from app.models.customer import Customer, CustomerAddress, Favorite, OtpCode
+from app.models.customer import (
+    Customer,
+    CustomerAddress,
+    CustomerVerificationStatus,
+    Favorite,
+    OtpCode,
+)
 from app.models.order import Order
 from app.models.product import Product
 from app.schemas.customer import (
@@ -39,11 +53,16 @@ from app.schemas.customer import (
 from app.schemas.order import OrderTrackOut
 from app.schemas.product import ProductOut
 from app.services.sms import send_sms
+from app.services.storage import get_storage
 
 router = APIRouter()
 
 OTP_TTL = 300  # seconds a code stays valid
 OTP_MAX_ATTEMPTS = 5  # wrong tries before a code is dead
+
+_ALLOWED_DOC = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
+_MAX_DOC_BYTES = 10 * 1024 * 1024  # 10 MB
+_MAX_DOCS = 5
 
 
 def _set_customer_cookie(response: Response, token: str) -> None:
@@ -144,6 +163,61 @@ async def update_me(
     c = await _current(db, customer_id)
     c.full_name = payload.full_name
     c.store_name = payload.store_name
+    await db.commit()
+    await db.refresh(c)
+    return c
+
+
+# --- Verification documents ---------------------------------------------------
+@router.post("/me/documents", response_model=CustomerOut)
+async def upload_document(
+    file: UploadFile = File(...),
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    if file.content_type not in _ALLOWED_DOC:
+        raise HTTPException(415, detail="فرمت فایل پشتیبانی نمی‌شود")
+    c = await _current(db, customer_id)
+    if len(c.verification_documents) >= _MAX_DOCS:
+        raise HTTPException(400, detail="حداکثر تعداد مدارک بارگذاری شده است")
+    data = await file.read()
+    if len(data) > _MAX_DOC_BYTES:
+        raise HTTPException(413, detail="حجم فایل زیاد است (حداکثر ۱۰ مگابایت)")
+    url = await get_storage().save(file.filename or "document", data)
+    # reassign (not append) so SQLAlchemy flags the JSONB change
+    c.verification_documents = [
+        *c.verification_documents,
+        {
+            "url": url,
+            "filename": file.filename,
+            "uploaded_at": datetime.now(UTC).isoformat(),
+        },
+    ]
+    if c.verification_status in (
+        CustomerVerificationStatus.unverified,
+        CustomerVerificationStatus.rejected,
+    ):
+        c.verification_status = CustomerVerificationStatus.pending
+        c.rejection_reason = None
+    await db.commit()
+    await db.refresh(c)
+    return c
+
+
+@router.delete("/me/documents/{idx}", response_model=CustomerOut)
+async def delete_document(
+    idx: int,
+    customer_id: uuid.UUID = Depends(require_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    c = await _current(db, customer_id)
+    if c.verification_status != CustomerVerificationStatus.pending:
+        raise HTTPException(400, detail="فقط در وضعیت در انتظار بررسی قابل حذف است")
+    if idx < 0 or idx >= len(c.verification_documents):
+        raise HTTPException(404, detail="مدرک یافت نشد")
+    docs = list(c.verification_documents)
+    docs.pop(idx)
+    c.verification_documents = docs
     await db.commit()
     await db.refresh(c)
     return c
