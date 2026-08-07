@@ -49,3 +49,67 @@ def test_format_order_message_lists_items_and_link():
 @pytest.mark.asyncio(loop_scope="session")
 async def test_log_adapter_send_does_not_raise():
     await LogSmsAdapter().send_new_order(_fake_order(), "http://x/admin/orders")
+
+
+# ---- SmsAdapter real HTTP path (mocked httpx, no network) ----
+from app.services.notifications import sms as notif_sms  # noqa: E402
+
+
+class _FakeResp:
+    def __init__(self, raise_exc=None):
+        self._raise = raise_exc
+        self.raise_called = False
+
+    def raise_for_status(self):
+        self.raise_called = True
+        if self._raise:
+            raise self._raise
+
+
+class _FakeClient:
+    last = None
+
+    def __init__(self, resp, *a, **k):
+        self._resp = resp
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        return False
+
+    async def get(self, url, params=None):
+        _FakeClient.last = {"url": url, "params": params}
+        return self._resp
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_sms_adapter_sends_formatted_order(monkeypatch):
+    from app.core.config import settings
+
+    resp = _FakeResp()
+    _FakeClient.last = None
+    monkeypatch.setattr(settings, "sms_api_key", "KEY123")
+    monkeypatch.setattr(settings, "sms_sender", "10004321")
+    monkeypatch.setattr(settings, "sms_admin_phone", "09120000000")
+    monkeypatch.setattr(notif_sms.httpx, "AsyncClient", lambda *a, **k: _FakeClient(resp))
+
+    order = _fake_order()
+    await SmsAdapter().send_new_order(order, "http://x/admin/orders")
+
+    assert "KEY123/sms/send.json" in _FakeClient.last["url"]
+    p = _FakeClient.last["params"]
+    assert p["receptor"] == "09120000000" and p["sender"] == "10004321"
+    assert order.reference in p["message"]  # the formatted message is sent
+    assert resp.raise_called is True
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_sms_adapter_propagates_http_error(monkeypatch):
+    monkeypatch.setattr(
+        notif_sms.httpx,
+        "AsyncClient",
+        lambda *a, **k: _FakeClient(_FakeResp(raise_exc=RuntimeError("boom"))),
+    )
+    with pytest.raises(RuntimeError, match="boom"):
+        await SmsAdapter().send_new_order(_fake_order(), "http://x/admin/orders")
