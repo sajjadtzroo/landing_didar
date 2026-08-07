@@ -2,6 +2,8 @@ import uuid
 
 import pytest
 
+from app.models.customer import Customer
+
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 ACC = "/api/v1/account"
@@ -201,3 +203,67 @@ async def test_delete_document_while_pending(client):
     r = await client.delete(f"{ACC}/me/documents/0")
     assert r.status_code == 200
     assert r.json()["verification_documents"] == []
+
+
+# ---- extra auth / edge cases ----
+async def test_verify_without_prior_request_is_400(client):
+    # No OTP ever issued for this phone => no code row => invalid.
+    r = await client.post(
+        f"{ACC}/otp/verify", json={"phone": "09121234567", "code": "123456"}
+    )
+    assert r.status_code == 400
+
+
+async def test_me_after_customer_row_deleted_is_401(client, _sessionmaker):
+    cust = await _login(client)
+    async with _sessionmaker() as db:
+        row = await db.get(Customer, uuid.UUID(cust["id"]))
+        await db.delete(row)
+        await db.commit()
+    # Cookie is still valid-signed, but the customer no longer exists.
+    assert (await client.get(f"{ACC}/me")).status_code == 401
+
+
+async def _add_address(client, **over):
+    body = {"title": "منزل", "province": "Tehran", "line": "خیابان الف"}
+    body.update(over)
+    r = await client.post(f"{ACC}/me/addresses", json=body)
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+async def test_patch_address_set_default_demotes_previous(client):
+    await _login(client)
+    a = await _add_address(client, title="A", is_default=True)
+    b = await _add_address(client, title="B", is_default=False)
+
+    up = await client.patch(
+        f"{ACC}/me/addresses/{b['id']}",
+        json={"is_default": True, "province": "Tehran"},  # valid province exercises validator
+    )
+    assert up.status_code == 200 and up.json()["is_default"] is True
+    assert up.json()["province"] == "Tehran"
+
+    rows = {x["id"]: x["is_default"] for x in (await client.get(f"{ACC}/me/addresses")).json()}
+    assert rows[a["id"]] is False and rows[b["id"]] is True  # single default enforced
+
+
+async def test_patch_address_bad_province_422(client):
+    await _login(client)
+    a = await _add_address(client)
+    r = await client.patch(
+        f"{ACC}/me/addresses/{a['id']}", json={"province": "Atlantis"}
+    )
+    assert r.status_code == 422
+
+
+async def test_patch_unknown_address_404(client):
+    await _login(client)
+    r = await client.patch(f"{ACC}/me/addresses/{uuid.uuid4()}", json={"title": "x"})
+    assert r.status_code == 404
+
+
+async def test_delete_unknown_address_404(client):
+    await _login(client)
+    r = await client.delete(f"{ACC}/me/addresses/{uuid.uuid4()}")
+    assert r.status_code == 404

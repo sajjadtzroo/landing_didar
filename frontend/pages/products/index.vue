@@ -25,7 +25,7 @@ useHead({
 </script>
 
 <template>
-  <main class="pt-20">
+  <main class="pt-16 sm:pt-20">
     <ProductGrid :products="products || []" />
   </main>
 </template>

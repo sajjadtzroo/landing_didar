@@ -26,7 +26,7 @@ const overHero = computed(() => onLanding.value && y.value < 80)
 
 <template>
   <header
-    class="chrome-blur fixed inset-x-0 z-40 transition-[colors,top] duration-300"
+    class="chrome-blur fixed inset-x-0 z-40 hidden transition-[colors,top] duration-300 sm:block"
     :class="[
       overHero
         ? 'bg-transparent text-cream'

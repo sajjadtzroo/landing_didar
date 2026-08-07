@@ -94,14 +94,14 @@ async def export_orders(
     w = csv.writer(buf)
     w.writerow(
         ["reference", "date", "name", "phone", "store", "province", "city",
-         "status", "total", "items", "source"]
+         "contact_method", "status", "total", "items", "source"]
     )
     for o in rows:
         items = "; ".join(f"{i.product_name} x{i.quantity}" for i in o.items)
         w.writerow(
             [o.reference, o.created_at.isoformat(), o.full_name, o.phone,
-             o.store_name, o.province, o.city or "", o.status.value,
-             int(o.total), items, o.utm_source or ""]
+             o.store_name, o.province, o.city or "", o.contact_method.value,
+             o.status.value, int(o.total), items, o.utm_source or ""]
         )
     buf.seek(0)
     return StreamingResponse(

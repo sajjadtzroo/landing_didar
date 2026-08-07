@@ -50,6 +50,27 @@ export interface AdminLanding {
   content: Record<string, any> | null
 }
 
+// Public portfolio (GET /portfolios) — a curated /shop section; backend resolves
+// each group's product_ids → products. Reuses the landing group shape.
+export interface Portfolio {
+  id: string
+  name: string
+  slug: string
+  cover_image_url: string | null
+  groups: LandingGroup[]
+}
+
+// Admin portfolio payload (GET /admin/portfolios) — raw content (groups hold ids).
+export interface AdminPortfolio {
+  id: string
+  name: string
+  slug: string
+  cover_image_url: string | null
+  is_active: boolean
+  sort_order: number
+  content: Record<string, any> | null
+}
+
 export interface CartItem {
   productId: string
   name: string
@@ -110,6 +131,7 @@ export interface AdminOrder {
   store_name: string
   province: string
   city: string | null
+  contact_method: 'call' | 'agent' | 'whatsapp'
   note: string | null // customer note
   internal_note: string | null // admin-only
   status: OrderStatus

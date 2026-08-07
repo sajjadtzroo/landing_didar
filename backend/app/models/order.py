@@ -27,6 +27,14 @@ class OrderStatus(enum.StrEnum):
     cancelled = "cancelled"
 
 
+class ContactMethod(enum.StrEnum):
+    """How the customer wants sales to follow up."""
+
+    call = "call"  # direct phone call
+    agent = "agent"  # via a sales agent
+    whatsapp = "whatsapp"
+
+
 class Order(Base):
     __tablename__ = "orders"
     __table_args__ = (
@@ -45,6 +53,11 @@ class Order(Base):
     store_name: Mapped[str] = mapped_column(String(80), nullable=False)
     province: Mapped[str] = mapped_column(String(40), nullable=False)
     city: Mapped[str | None] = mapped_column(String(60))
+    contact_method: Mapped[ContactMethod] = mapped_column(
+        SAEnum(ContactMethod, name="contact_method"),
+        default=ContactMethod.call,
+        nullable=False,
+    )
     note: Mapped[str | None] = mapped_column(String(300))  # customer's note
     internal_note: Mapped[str | None] = mapped_column(String(1000))  # admin-only
 

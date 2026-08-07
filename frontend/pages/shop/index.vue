@@ -2,13 +2,20 @@
 import { X } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { CONTENT } from '~/constants/content'
-import type { Product } from '~/types'
+import type { Portfolio, Product } from '~/types'
 
 // Storefront: full catalogue with prices + add-to-cart (no online payment — the
 // cart → order flow captures the order as a lead). Reuses the 'products' payload.
 const { data: products } = await useFetch<Product[]>('/products', {
   baseURL: useApiBase(),
   key: 'products',
+  default: () => [],
+})
+
+// Admin-curated collections shown as sections atop the catalogue.
+const { data: portfolios } = await useFetch<Portfolio[]>('/portfolios', {
+  baseURL: useApiBase(),
+  key: 'portfolios',
   default: () => [],
 })
 
@@ -22,13 +29,46 @@ const search = ref('')
 const category = ref<string>('') // '' = all
 const sort = ref<'newest' | 'price_asc' | 'price_desc'>('newest')
 
-const hasFilters = computed(() => !!category.value || !!search.value.trim())
+// Advanced filters (client-side): weight/making-fee ranges + karat.
+const showAdvanced = ref(false)
+const weightMin = ref('')
+const weightMax = ref('')
+const ojratMin = ref('')
+const ojratMax = ref('')
+const karat = ref<number | ''>('') // '' = all
+
+// Distinct karat values present in the catalogue (sorted). The panel only shows
+// the karat control when there's more than one — most items are 18k.
+const karats = computed(() =>
+  [...new Set((products.value || []).map((p) => p.karat).filter((k): k is number => k != null))]
+    .sort((a, b) => a - b),
+)
+
+const hasAdvanced = computed(
+  () => !!weightMin.value || !!weightMax.value || !!ojratMin.value || !!ojratMax.value || karat.value !== '',
+)
+const hasFilters = computed(() => !!category.value || !!search.value.trim() || hasAdvanced.value)
 const categoryLabel = computed(
   () => CATEGORIES.find((c) => c.key === category.value)?.label,
 )
 function clearFilters() {
   search.value = ''
   category.value = ''
+  weightMin.value = ''
+  weightMax.value = ''
+  ojratMin.value = ''
+  ojratMax.value = ''
+  karat.value = ''
+}
+
+// A nullable numeric field passes only when it's present and inside any active bound.
+function inRange(val: string | null, min: string, max: string) {
+  if (!min && !max) return true
+  if (val == null) return false
+  const n = Number(val)
+  if (min && n < Number(min)) return false
+  if (max && n > Number(max)) return false
+  return true
 }
 
 const filtered = computed(() => {
@@ -36,6 +76,9 @@ const filtered = computed(() => {
   let list = (products.value || []).filter((p) => {
     if (category.value && p.category !== category.value) return false
     if (q && !p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q)) return false
+    if (!inRange(p.weight_grams, weightMin.value, weightMax.value)) return false
+    if (!inRange(p.ojrat_percent, ojratMin.value, ojratMax.value)) return false
+    if (karat.value !== '' && p.karat !== karat.value) return false
     return true
   })
   // Price sorts: nulls ("on request") always sink to the end.
@@ -69,14 +112,23 @@ useHead({
 </script>
 
 <template>
-  <main class="pt-32 sm:pt-28">
+  <main class="pt-16 sm:pt-28">
     <div class="mx-auto max-w-content px-5 sm:px-10">
-      <header class="mb-8">
-        <h1 class="text-3xl font-medium text-ink sm:text-4xl">{{ CONTENT.shop.title }}</h1>
-        <p class="mt-3 max-w-2xl text-pretty text-base leading-8 text-ink-muted">
+      <!-- Compact on mobile (h1 kept for SEO); full intro from sm up -->
+      <header class="mb-4 sm:mb-8">
+        <h1 class="text-xl font-medium text-ink sm:text-4xl">{{ CONTENT.shop.title }}</h1>
+        <p class="mt-3 hidden max-w-2xl text-pretty text-base leading-8 text-ink-muted sm:block">
           {{ CONTENT.shop.description }}
         </p>
       </header>
+
+      <!-- Admin-curated collections (hidden while the user is actively filtering) -->
+      <PortfolioSection
+        v-for="pf in portfolios"
+        v-show="!hasFilters"
+        :key="pf.id"
+        :portfolio="pf"
+      />
 
       <!-- Filter bar -->
       <div class="mb-6 flex flex-col gap-4 border-y border-line py-4 sm:flex-row sm:items-center">
@@ -87,10 +139,13 @@ useHead({
           class="form-control sm:max-w-xs"
           aria-label="جستجو"
         />
-        <div class="flex flex-wrap items-center gap-2">
+        <div
+          class="-mx-5 flex flex-nowrap items-center gap-2 overflow-x-auto px-5
+            [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden"
+        >
           <button
             type="button"
-            class="h-9 border px-3 text-sm transition"
+            class="h-9 shrink-0 whitespace-nowrap border px-3 text-sm transition"
             :class="category === '' ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
             @click="category = ''"
           >
@@ -100,14 +155,23 @@ useHead({
             v-for="c in CATEGORIES"
             :key="c.key"
             type="button"
-            class="h-9 border px-3 text-sm transition"
+            class="h-9 shrink-0 whitespace-nowrap border px-3 text-sm transition"
             :class="category === c.key ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
             @click="category = c.key"
           >
             {{ c.label }}
           </button>
         </div>
-        <label class="flex items-center gap-2 text-sm text-ink-muted sm:ms-auto">
+        <button
+          type="button"
+          class="h-9 border px-3 text-sm transition sm:ms-auto"
+          :class="showAdvanced || hasAdvanced ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
+          :aria-expanded="showAdvanced"
+          @click="showAdvanced = !showAdvanced"
+        >
+          {{ CONTENT.shop.advancedToggle }}
+        </button>
+        <label class="flex items-center gap-2 text-sm text-ink-muted">
           {{ CONTENT.shop.sortLabel }}
           <select v-model="sort" class="form-control h-9 w-auto py-0">
             <option value="newest">{{ CONTENT.shop.sortNewest }}</option>
@@ -115,6 +179,49 @@ useHead({
             <option value="price_desc">{{ CONTENT.shop.sortPriceDesc }}</option>
           </select>
         </label>
+      </div>
+
+      <!-- Advanced filter panel -->
+      <div v-if="showAdvanced" class="mb-6 flex flex-col gap-5 border border-line bg-surface-raised p-4 sm:flex-row sm:flex-wrap sm:items-end">
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm text-ink-muted">{{ CONTENT.shop.weightLabel }}</span>
+          <div class="flex items-center gap-2">
+            <input v-model="weightMin" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.minLabel" class="form-control h-9 w-24" :aria-label="`${CONTENT.shop.weightLabel} ${CONTENT.shop.minLabel}`" />
+            <span class="text-ink-muted">–</span>
+            <input v-model="weightMax" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.maxLabel" class="form-control h-9 w-24" :aria-label="`${CONTENT.shop.weightLabel} ${CONTENT.shop.maxLabel}`" />
+          </div>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm text-ink-muted">{{ CONTENT.shop.ojratLabel }}</span>
+          <div class="flex items-center gap-2">
+            <input v-model="ojratMin" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.minLabel" class="form-control h-9 w-24" :aria-label="`${CONTENT.shop.ojratLabel} ${CONTENT.shop.minLabel}`" />
+            <span class="text-ink-muted">–</span>
+            <input v-model="ojratMax" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.maxLabel" class="form-control h-9 w-24" :aria-label="`${CONTENT.shop.ojratLabel} ${CONTENT.shop.maxLabel}`" />
+          </div>
+        </div>
+        <div v-if="karats.length > 1" class="flex flex-col gap-1.5">
+          <span class="text-sm text-ink-muted">{{ CONTENT.shop.karatLabel }}</span>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              class="h-9 border px-3 text-sm transition"
+              :class="karat === '' ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
+              @click="karat = ''"
+            >
+              {{ CONTENT.shop.all }}
+            </button>
+            <button
+              v-for="k in karats"
+              :key="k"
+              type="button"
+              class="h-9 border px-3 text-sm transition"
+              :class="karat === k ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
+              @click="karat = k"
+            >
+              {{ k }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Active-filter chips + clear-all -->
@@ -139,6 +246,36 @@ useHead({
           @click="category = ''"
         >
           {{ categoryLabel }}
+          <X :size="13" aria-hidden="true" />
+        </button>
+        <button
+          v-if="weightMin || weightMax"
+          type="button"
+          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
+            text-ink-muted transition hover:border-navy hover:text-ink"
+          @click="weightMin = ''; weightMax = ''"
+        >
+          {{ CONTENT.shop.weightChip(weightMin, weightMax) }}
+          <X :size="13" aria-hidden="true" />
+        </button>
+        <button
+          v-if="ojratMin || ojratMax"
+          type="button"
+          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
+            text-ink-muted transition hover:border-navy hover:text-ink"
+          @click="ojratMin = ''; ojratMax = ''"
+        >
+          {{ CONTENT.shop.ojratChip(ojratMin, ojratMax) }}
+          <X :size="13" aria-hidden="true" />
+        </button>
+        <button
+          v-if="karat !== ''"
+          type="button"
+          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
+            text-ink-muted transition hover:border-navy hover:text-ink"
+          @click="karat = ''"
+        >
+          {{ CONTENT.shop.karatChip(karat) }}
           <X :size="13" aria-hidden="true" />
         </button>
         <button

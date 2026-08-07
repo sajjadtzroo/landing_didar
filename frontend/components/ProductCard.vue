@@ -2,10 +2,10 @@
 import { Check, Heart, Plus } from 'lucide-vue-next'
 import { CONTENT } from '~/constants/content'
 import type { Product } from '~/types'
-import { formatPrice, toFa } from '~/utils/format'
+import { toFa } from '~/utils/format'
 
-// `shop` mode (storefront /shop) shows price + add-to-cart + a favorite heart;
-// the default (landing carousels) stays price-free, weight/اجرت only. One prop.
+// `shop` mode (storefront /shop) adds a favorite heart + add-to-cart button.
+// No price anywhere (wholesale gold — the value shown is weight + اجرت only).
 const props = defineProps<{ product: Product; index: number; shop?: boolean }>()
 
 const cart = useCartStore()
@@ -99,20 +99,18 @@ async function onHeart() {
       </div>
     </NuxtLink>
 
-    <!-- Shop mode: price + add-to-cart, OUTSIDE the link so it doesn't navigate -->
-    <div v-if="shop" class="flex items-center justify-between gap-2 px-4 pb-4">
-      <span class="tnum text-sm font-medium text-ink">
-        {{ formatPrice(product.price) ?? CONTENT.products.priceOnRequest }}
-      </span>
+    <!-- Shop mode: add-to-cart only (no price). Weight + اجرت live in the card
+         body above. OUTSIDE the link so tapping add doesn't navigate. -->
+    <div v-if="shop" class="flex items-center justify-end px-4 pb-4">
       <button
         type="button"
-        class="flex h-10 items-center gap-1 bg-navy px-3 text-xs font-medium text-white
-          transition duration-300 hover:bg-gold"
-        :aria-label="`${CONTENT.products.add}: ${product.name}`"
+        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white
+          transition duration-300 active:scale-95"
+        :class="selected ? 'bg-gold' : 'bg-navy hover:bg-gold'"
+        :aria-label="selected ? CONTENT.shop.inCart : `${CONTENT.products.add}: ${product.name}`"
         @click="addToCart"
       >
-        <component :is="selected ? Check : Plus" :size="14" aria-hidden="true" />
-        {{ selected ? CONTENT.shop.inCart : CONTENT.products.add }}
+        <component :is="selected ? Check : Plus" :size="20" aria-hidden="true" />
       </button>
     </div>
 

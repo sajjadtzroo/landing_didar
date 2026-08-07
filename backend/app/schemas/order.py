@@ -5,7 +5,7 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.constants.provinces import IRAN_PROVINCES
-from app.models.order import OrderStatus
+from app.models.order import ContactMethod, OrderStatus
 
 # Mirror of the client Zod rules — server is the source of truth.
 PHONE_RE = r"^09\d{9}$"
@@ -22,6 +22,7 @@ class OrderCreate(BaseModel):
     store_name: str = Field(min_length=2, max_length=80)
     province: str
     city: str | None = Field(default=None, max_length=60)
+    contact_method: ContactMethod = ContactMethod.call
     note: str | None = Field(default=None, max_length=300)
     items: list[OrderItemIn] = Field(min_length=1)
 
@@ -85,6 +86,7 @@ class OrderOut(BaseModel):
     store_name: str
     province: str
     city: str | None
+    contact_method: ContactMethod
     note: str | None
     internal_note: str | None
     status: OrderStatus

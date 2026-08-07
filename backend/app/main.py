@@ -15,6 +15,7 @@ from app.api.v1 import (
     admin_customers,
     admin_landings,
     admin_orders,
+    admin_portfolios,
     admin_stats,
     auth,
     public,
@@ -100,6 +101,9 @@ app.include_router(admin_orders.router, prefix=f"{API}/admin", tags=["admin:orde
 app.include_router(admin_catalog.router, prefix=f"{API}/admin", tags=["admin:catalog"])
 app.include_router(
     admin_landings.router, prefix=f"{API}/admin", tags=["admin:landings"]
+)
+app.include_router(
+    admin_portfolios.router, prefix=f"{API}/admin", tags=["admin:portfolios"]
 )
 app.include_router(admin_stats.router, prefix=f"{API}/admin", tags=["admin:stats"])
 app.include_router(

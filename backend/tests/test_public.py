@@ -2,11 +2,18 @@ import uuid
 
 import pytest
 
+import app.core.db as _db_mod
 from app.api.limiter import limiter
+from app.api.v1 import public as _public
+from app.models.landing import Landing
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 ORDERS = "/api/v1/orders"
+
+# Grab the real _notify at import time — conftest's autouse fixture stubs the
+# module attribute during every test, so this is the only handle to the original.
+_REAL_NOTIFY = _public._notify
 
 
 async def _make_product(admin_client, **over):
@@ -178,3 +185,124 @@ async def test_rate_limit_after_five(approved_client, order_payload):
     limiter.enabled = False
     assert codes.count(201) == 5
     assert codes[-1] == 429
+
+
+# ---- In-process TTL cache (hit branch) ----
+async def test_products_served_from_cache_within_ttl(client, admin_client):
+    await _make_product(admin_client, name="A")
+    assert [p["name"] for p in (await client.get("/api/v1/products")).json()] == ["A"]
+    # Add B AFTER the first read populated the cache; the cached payload wins.
+    await _make_product(admin_client, name="B")
+    assert [p["name"] for p in (await client.get("/api/v1/products")).json()] == ["A"]
+
+
+async def test_faqs_served_from_cache_within_ttl(client, admin_client):
+    await admin_client.post("/api/v1/admin/faqs", json={"question": "Q1", "answer": "A1"})
+    assert len((await client.get("/api/v1/faqs")).json()) == 1
+    await admin_client.post("/api/v1/admin/faqs", json={"question": "Q2", "answer": "A2"})
+    assert len((await client.get("/api/v1/faqs")).json()) == 1  # cached, Q2 hidden
+
+
+# ---- Landing content → resolved product groups ----
+async def _insert_landing(_sessionmaker, slug, content):
+    async with _sessionmaker() as s:
+        s.add(Landing(slug=slug, title="LX", content=content))
+        await s.commit()
+
+
+async def test_landing_groups_resolve_and_drop_inactive_or_bad_ids(
+    client, admin_client, _sessionmaker
+):
+    active = await _make_product(admin_client, name="Live")
+    inactive = await _make_product(admin_client, name="Dead", is_active=False)
+    content = {
+        "groups": [
+            {
+                "title": "G",
+                "eyebrow": "E",
+                "description": "D",
+                # valid+active, valid+inactive (dropped), and a non-uuid (dropped)
+                "product_ids": [active["id"], inactive["id"], "not-a-uuid"],
+            }
+        ]
+    }
+    await _insert_landing(_sessionmaker, "lx", content)
+
+    r = await client.get("/api/v1/landings/lx")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["slug"] == "lx"
+    groups = body["groups"]
+    assert len(groups) == 1 and groups[0]["title"] == "G"
+    assert [p["name"] for p in groups[0]["products"]] == ["Live"]  # only active kept
+
+    # Second GET is served from cache (landing:lx) — still 200 with same payload.
+    assert (await client.get("/api/v1/landings/lx")).json()["groups"][0]["products"]
+
+
+async def test_get_landing_unknown_slug_is_404(client):
+    assert (await client.get("/api/v1/landings/does-not-exist")).status_code == 404
+
+
+async def test_bust_landing_cache_drops_entry(_sessionmaker):
+    _public._cache["landing:z"] = (9e9, "cached")
+    _public.bust_landing_cache("z")
+    assert "landing:z" not in _public._cache
+
+
+async def test_landing_null_content_falls_back_to_defaults(client, _sessionmaker):
+    await _insert_landing(_sessionmaker, "blank", None)
+    body = (await client.get("/api/v1/landings/blank")).json()
+    assert body["slug"] == "blank"
+    assert body["groups"] == []  # default_content has no product groups
+    assert body["content"]["hero"]["headline"]  # default hero present
+
+
+# ---- Background notification task (the real _notify, mocked deps) ----
+class _FakeSession:
+    def __init__(self, order):
+        self._order = order
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        return False
+
+    async def get(self, model, oid):
+        return self._order
+
+
+class _Adapter:
+    def __init__(self, fail=False):
+        self.calls = 0
+        self._fail = fail
+
+    async def send_new_order(self, order, admin_url):
+        self.calls += 1
+        if self._fail:
+            raise RuntimeError("transport down")
+
+
+async def _run_notify(monkeypatch, order, adapter):
+    monkeypatch.setattr(_db_mod, "SessionLocal", lambda: _FakeSession(order))
+    monkeypatch.setattr(_public, "get_adapter", lambda: adapter)
+    await _REAL_NOTIFY("order-id", "http://x/admin/orders")
+
+
+async def test_notify_missing_order_does_not_call_adapter(monkeypatch):
+    adapter = _Adapter()
+    await _run_notify(monkeypatch, None, adapter)  # db.get returns None
+    assert adapter.calls == 0
+
+
+async def test_notify_sends_once_on_success(monkeypatch):
+    adapter = _Adapter()
+    await _run_notify(monkeypatch, object(), adapter)
+    assert adapter.calls == 1  # returns after the first successful send
+
+
+async def test_notify_retries_once_then_gives_up_without_raising(monkeypatch):
+    adapter = _Adapter(fail=True)
+    await _run_notify(monkeypatch, object(), adapter)  # must not raise
+    assert adapter.calls == 2  # two attempts, both logged, swallowed

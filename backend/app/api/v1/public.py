@@ -23,10 +23,12 @@ from app.models.customer import Customer, CustomerVerificationStatus
 from app.models.faq import FAQ
 from app.models.landing import Landing
 from app.models.order import Order
+from app.models.portfolio import Portfolio
 from app.models.product import Product
 from app.schemas.faq import FAQOut
 from app.schemas.landing import LandingDetailOut, LandingGroupOut
 from app.schemas.order import OrderCreate, OrderCreatedOut, OrderTrackOut
+from app.schemas.portfolio import PortfolioPublicOut
 from app.schemas.product import ProductOut
 from app.services import orders as order_service
 from app.services.notifications import get_adapter
@@ -57,11 +59,56 @@ def bust_landing_cache(slug: str) -> None:
     _cache.pop(f"landing:{slug}", None)
 
 
+def bust_portfolios_cache() -> None:
+    """Drop the cached /portfolios payload so an admin edit shows immediately.
+    Called by admin_portfolios on mutate."""
+    _cache.pop("portfolios", None)
+
+
 def _as_uuid(value: object) -> uuid.UUID | None:
     try:
         return uuid.UUID(str(value))
     except ValueError:
         return None
+
+
+async def _resolve_groups(
+    db: AsyncSession, raw_groups: list[dict]
+) -> list[LandingGroupOut]:
+    """Resolve each group's `product_ids` against the live catalog in one query.
+    A product is dropped if it's missing or inactive (ids live in JSON, so there's
+    no FK/CASCADE — we filter here). Shared by landings and portfolios."""
+    wanted = {
+        u
+        for g in raw_groups
+        for pid in (g.get("product_ids") or [])
+        if (u := _as_uuid(pid)) is not None
+    }
+    by_id: dict[uuid.UUID, Product] = {}
+    if wanted:
+        rows = (
+            await db.execute(
+                select(Product).where(Product.id.in_(wanted), Product.is_active)
+            )
+        ).scalars().all()
+        by_id = {p.id: p for p in rows}
+
+    groups: list[LandingGroupOut] = []
+    for g in raw_groups:
+        items = [
+            by_id[_as_uuid(pid)]
+            for pid in (g.get("product_ids") or [])
+            if _as_uuid(pid) in by_id
+        ]
+        groups.append(
+            LandingGroupOut(
+                title=g.get("title") or "",
+                eyebrow=g.get("eyebrow"),
+                description=g.get("description"),
+                products=list(items),
+            )
+        )
+    return groups
 
 
 @router.get("/products", response_model=list[ProductOut])
@@ -103,45 +150,7 @@ async def get_landing(
     if landing is None:
         raise HTTPException(404, detail="Landing not found")
     content = landing.content or default_content()
-
-    # Resolve every group's product ids against the live catalog in one query;
-    # a group's product is dropped if it's missing or inactive (ids live in JSON,
-    # so there's no FK/CASCADE — we filter here instead).
-    raw_groups = content.get("groups") or []
-    wanted = {
-        u
-        for g in raw_groups
-        for pid in (g.get("product_ids") or [])
-        if (u := _as_uuid(pid)) is not None
-    }
-    by_id: dict[uuid.UUID, Product] = {}
-    if wanted:
-        rows = (
-            (
-                await db.execute(
-                    select(Product).where(Product.id.in_(wanted), Product.is_active)
-                )
-            )
-            .scalars()
-            .all()
-        )
-        by_id = {p.id: p for p in rows}
-
-    groups: list[LandingGroupOut] = []
-    for g in raw_groups:
-        items = [
-            by_id[_as_uuid(pid)]
-            for pid in (g.get("product_ids") or [])
-            if _as_uuid(pid) in by_id
-        ]
-        groups.append(
-            LandingGroupOut(
-                title=g.get("title") or "",
-                eyebrow=g.get("eyebrow"),
-                description=g.get("description"),
-                products=list(items),
-            )
-        )
+    groups = await _resolve_groups(db, content.get("groups") or [])
 
     out = LandingDetailOut(
         slug=landing.slug,
@@ -152,6 +161,35 @@ async def get_landing(
         groups=groups,
     )
     _cache_set(f"landing:{slug}", out)
+    return out
+
+
+@router.get("/portfolios", response_model=list[PortfolioPublicOut])
+async def list_portfolios(response: Response, db: AsyncSession = Depends(get_db)):
+    """Active portfolios (curated /shop sections), ordered, with each group's
+    products resolved from the live catalog. Cached like the other public reads."""
+    response.headers["Cache-Control"] = _CACHE_CONTROL
+    cached = _cache_get("portfolios")
+    if cached is not None:
+        return cached
+    portfolios = (
+        await db.execute(
+            select(Portfolio)
+            .where(Portfolio.is_active)
+            .order_by(Portfolio.sort_order)
+        )
+    ).scalars().all()
+    out = [
+        PortfolioPublicOut(
+            id=p.id,
+            name=p.name,
+            slug=p.slug,
+            cover_image_url=p.cover_image_url,
+            groups=await _resolve_groups(db, (p.content or {}).get("groups") or []),
+        )
+        for p in portfolios
+    ]
+    _cache_set("portfolios", out)
     return out
 
 

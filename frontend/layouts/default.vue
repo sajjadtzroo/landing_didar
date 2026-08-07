@@ -71,6 +71,12 @@ useHead({
       :footer="chrome?.footer"
     />
 
+    <!-- Mobile bottom tab bar (storefront only); spacer keeps footer above it -->
+    <template v-if="!isLanding">
+      <div class="h-16 sm:hidden" aria-hidden="true" />
+      <BottomNav />
+    </template>
+
     <!-- Cart lives inside the TubelightNav pill now (no separate floating bubble). -->
     <CartDrawer v-model="cartOpen" @continue="openOrder" />
 
