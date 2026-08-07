@@ -2,13 +2,20 @@
 import { X } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { CONTENT } from '~/constants/content'
-import type { Product } from '~/types'
+import type { Portfolio, Product } from '~/types'
 
 // Storefront: full catalogue with prices + add-to-cart (no online payment — the
 // cart → order flow captures the order as a lead). Reuses the 'products' payload.
 const { data: products } = await useFetch<Product[]>('/products', {
   baseURL: useApiBase(),
   key: 'products',
+  default: () => [],
+})
+
+// Admin-curated collections shown as sections atop the catalogue.
+const { data: portfolios } = await useFetch<Portfolio[]>('/portfolios', {
+  baseURL: useApiBase(),
+  key: 'portfolios',
   default: () => [],
 })
 
@@ -114,6 +121,14 @@ useHead({
           {{ CONTENT.shop.description }}
         </p>
       </header>
+
+      <!-- Admin-curated collections (hidden while the user is actively filtering) -->
+      <PortfolioSection
+        v-for="pf in portfolios"
+        v-show="!hasFilters"
+        :key="pf.id"
+        :portfolio="pf"
+      />
 
       <!-- Filter bar -->
       <div class="mb-6 flex flex-col gap-4 border-y border-line py-4 sm:flex-row sm:items-center">

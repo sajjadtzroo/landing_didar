@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   BarChart3,
+  LayoutGrid,
   LayoutTemplate,
   LogOut,
   Package,
@@ -19,6 +20,7 @@ const nav = [
   { to: '/admin', label: 'داشبورد', icon: BarChart3 },
   { to: '/admin/orders', label: 'سفارش‌ها', icon: ShoppingCart, badge: true },
   { to: '/admin/products', label: 'محصولات', icon: Package },
+  { to: '/admin/portfolios', label: 'پورتفولیوها', icon: LayoutGrid },
   { to: '/admin/landings', label: 'صفحات فرود', icon: LayoutTemplate },
   { to: '/admin/faqs', label: 'سؤالات متداول', icon: ScrollText },
 ]

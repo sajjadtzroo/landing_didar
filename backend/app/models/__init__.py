@@ -2,6 +2,7 @@ from app.models.customer import Customer, CustomerAddress, Favorite, OtpCode
 from app.models.faq import FAQ
 from app.models.landing import Landing, LandingProduct
 from app.models.order import Order, OrderItem, OrderStatus, OrderStatusLog
+from app.models.portfolio import Portfolio
 from app.models.product import Product
 
 __all__ = [
@@ -9,6 +10,7 @@ __all__ = [
     "FAQ",
     "Landing",
     "LandingProduct",
+    "Portfolio",
     "Order",
     "OrderItem",
     "OrderStatus",
