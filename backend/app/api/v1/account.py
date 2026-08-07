@@ -83,12 +83,16 @@ async def verify_otp_code(
     payload: OtpVerifyIn, response: Response, db: AsyncSession = Depends(get_db)
 ):
     otp = (
-        await db.execute(
-            select(OtpCode)
-            .where(OtpCode.phone == payload.phone, OtpCode.consumed.is_(False))
-            .order_by(OtpCode.created_at.desc())
+        (
+            await db.execute(
+                select(OtpCode)
+                .where(OtpCode.phone == payload.phone, OtpCode.consumed.is_(False))
+                .order_by(OtpCode.created_at.desc())
+            )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     now = datetime.now(UTC)
     invalid = HTTPException(400, detail="کد نامعتبر یا منقضی شده است")
     if otp is None or otp.expires_at < now or otp.attempts >= OTP_MAX_ATTEMPTS:
@@ -139,6 +143,7 @@ async def update_me(
 ):
     c = await _current(db, customer_id)
     c.full_name = payload.full_name
+    c.store_name = payload.store_name
     await db.commit()
     await db.refresh(c)
     return c
@@ -152,12 +157,16 @@ async def my_orders(
 ):
     c = await _current(db, customer_id)
     return (
-        await db.execute(
-            select(Order)
-            .where(Order.phone == c.phone)
-            .order_by(Order.created_at.desc())
+        (
+            await db.execute(
+                select(Order)
+                .where(Order.phone == c.phone)
+                .order_by(Order.created_at.desc())
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
 
 # --- Favorites ----------------------------------------------------------------
@@ -167,13 +176,17 @@ async def my_favorites(
     db: AsyncSession = Depends(get_db),
 ):
     return (
-        await db.execute(
-            select(Product)
-            .join(Favorite, Favorite.product_id == Product.id)
-            .where(Favorite.customer_id == customer_id)
-            .order_by(Favorite.created_at.desc())
+        (
+            await db.execute(
+                select(Product)
+                .join(Favorite, Favorite.product_id == Product.id)
+                .where(Favorite.customer_id == customer_id)
+                .order_by(Favorite.created_at.desc())
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
 
 @router.put("/me/favorites/{product_id}", status_code=204)
@@ -221,12 +234,16 @@ async def list_addresses(
     db: AsyncSession = Depends(get_db),
 ):
     return (
-        await db.execute(
-            select(CustomerAddress)
-            .where(CustomerAddress.customer_id == customer_id)
-            .order_by(CustomerAddress.created_at)
+        (
+            await db.execute(
+                select(CustomerAddress)
+                .where(CustomerAddress.customer_id == customer_id)
+                .order_by(CustomerAddress.created_at)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
 
 @router.post("/me/addresses", response_model=AddressOut, status_code=201)

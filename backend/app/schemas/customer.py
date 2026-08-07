@@ -29,10 +29,15 @@ class CustomerOut(BaseModel):
     id: uuid.UUID
     phone: str
     full_name: str | None
+    store_name: str | None
+    verification_status: str
+    verification_documents: list[dict]
+    rejection_reason: str | None
 
 
 class CustomerUpdate(BaseModel):
     full_name: str = Field(min_length=2, max_length=60)
+    store_name: str | None = Field(default=None, max_length=80)
 
 
 class AddressIn(BaseModel):

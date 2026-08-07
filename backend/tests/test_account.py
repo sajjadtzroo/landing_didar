@@ -116,8 +116,10 @@ async def test_address_crud_and_single_default(client):
     a = await client.post(
         f"{ACC}/me/addresses",
         json={
-            "title": "منزل", "province": "Tehran",
-            "line": "خیابان الف", "is_default": True,
+            "title": "منزل",
+            "province": "Tehran",
+            "line": "خیابان الف",
+            "is_default": True,
         },
     )
     assert a.status_code == 201
@@ -127,8 +129,10 @@ async def test_address_crud_and_single_default(client):
     b = await client.post(
         f"{ACC}/me/addresses",
         json={
-            "title": "محل کار", "province": "Tehran",
-            "line": "خیابان ب", "is_default": True,
+            "title": "محل کار",
+            "province": "Tehran",
+            "line": "خیابان ب",
+            "is_default": True,
         },
     )
     assert b.status_code == 201
@@ -153,3 +157,11 @@ async def test_address_bad_province_422(client):
 
 async def test_addresses_require_auth(client):
     assert (await client.get(f"{ACC}/me/addresses")).status_code == 401
+
+
+async def test_new_customer_is_unverified_with_no_docs(client):
+    cust = await _login(client, "09120000010")
+    assert cust["verification_status"] == "unverified"
+    assert cust["verification_documents"] == []
+    assert cust["rejection_reason"] is None
+    assert cust["store_name"] is None
