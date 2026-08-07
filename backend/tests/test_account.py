@@ -71,14 +71,17 @@ async def test_update_profile(client):
 
 
 # ---- Orders (linked by phone) ----
-async def test_my_orders_lists_orders_for_phone(client, admin_client, order_payload):
+async def test_my_orders_lists_orders_for_phone(
+    approved_client, admin_client, order_payload
+):
     p = await _make_product(admin_client, price=100)
-    await client.post(
+    # approved_client is a logged-in, approved customer; the order phone is bound
+    # from its session, so /me/orders (linked by phone) sees exactly this order.
+    await approved_client.post(
         "/api/v1/orders",
         json=order_payload(items=[{"product_id": p["id"], "quantity": 2}]),
     )
-    await _login(client, "09121234567")  # same phone as order_payload default
-    r = await client.get(f"{ACC}/me/orders")
+    r = await approved_client.get(f"{ACC}/me/orders")
     assert r.status_code == 200
     orders = r.json()
     assert len(orders) == 1
@@ -118,8 +121,10 @@ async def test_address_crud_and_single_default(client):
     a = await client.post(
         f"{ACC}/me/addresses",
         json={
-            "title": "منزل", "province": "Tehran",
-            "line": "خیابان الف", "is_default": True,
+            "title": "منزل",
+            "province": "Tehran",
+            "line": "خیابان الف",
+            "is_default": True,
         },
     )
     assert a.status_code == 201
@@ -129,8 +134,10 @@ async def test_address_crud_and_single_default(client):
     b = await client.post(
         f"{ACC}/me/addresses",
         json={
-            "title": "محل کار", "province": "Tehran",
-            "line": "خیابان ب", "is_default": True,
+            "title": "محل کار",
+            "province": "Tehran",
+            "line": "خیابان ب",
+            "is_default": True,
         },
     )
     assert b.status_code == 201
@@ -155,6 +162,47 @@ async def test_address_bad_province_422(client):
 
 async def test_addresses_require_auth(client):
     assert (await client.get(f"{ACC}/me/addresses")).status_code == 401
+
+
+async def test_new_customer_is_unverified_with_no_docs(client):
+    cust = await _login(client, "09120000010")
+    assert cust["verification_status"] == "unverified"
+    assert cust["verification_documents"] == []
+    assert cust["rejection_reason"] is None
+    assert cust["store_name"] is None
+
+
+async def test_upload_document_sets_pending(client):
+    await _login(client, "09120000011")
+    r = await client.post(
+        f"{ACC}/me/documents",
+        files={"file": ("license.png", b"\x89PNG_fake", "image/png")},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["verification_status"] == "pending"
+    assert len(body["verification_documents"]) == 1
+    assert body["verification_documents"][0]["url"].startswith("/media/")
+
+
+async def test_reject_unsupported_document_type(client):
+    await _login(client, "09120000012")
+    r = await client.post(
+        f"{ACC}/me/documents",
+        files={"file": ("x.txt", b"nope", "text/plain")},
+    )
+    assert r.status_code == 415
+
+
+async def test_delete_document_while_pending(client):
+    await _login(client, "09120000013")
+    await client.post(
+        f"{ACC}/me/documents",
+        files={"file": ("l.png", b"x", "image/png")},
+    )
+    r = await client.delete(f"{ACC}/me/documents/0")
+    assert r.status_code == 200
+    assert r.json()["verification_documents"] == []
 
 
 # ---- extra auth / edge cases ----

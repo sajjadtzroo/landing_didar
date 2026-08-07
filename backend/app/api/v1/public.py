@@ -14,11 +14,12 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_client_ip
+from app.api.deps import get_client_ip, require_customer
 from app.api.limiter import limiter
 from app.core.config import settings
-from app.core.db import get_db
 from app.core.content_defaults import default_content
+from app.core.db import get_db
+from app.models.customer import Customer, CustomerVerificationStatus
 from app.models.faq import FAQ
 from app.models.landing import Landing
 from app.models.order import Order
@@ -198,9 +199,7 @@ async def list_faqs(response: Response, db: AsyncSession = Depends(get_db)):
     cached = _cache_get("faqs")
     if cached is not None:
         return cached
-    res = await db.execute(
-        select(FAQ).where(FAQ.is_active).order_by(FAQ.sort_order)
-    )
+    res = await db.execute(select(FAQ).where(FAQ.is_active).order_by(FAQ.sort_order))
     items = [FAQOut.model_validate(f) for f in res.scalars().all()]
     _cache_set("faqs", items)
     return items
@@ -252,8 +251,18 @@ async def create_order(
     payload: OrderCreate,
     background: BackgroundTasks,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    customer_id: uuid.UUID = Depends(require_customer),
     db: AsyncSession = Depends(get_db),
 ):
+    # Only an admin-approved customer may order; bind the phone from the
+    # verified session so a client-supplied phone can never be trusted.
+    customer = await db.get(Customer, customer_id)
+    if customer is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if customer.verification_status != CustomerVerificationStatus.approved:
+        raise HTTPException(status_code=403, detail="حساب شما هنوز تأیید نشده است")
+    payload.phone = customer.phone
+
     # Honeypot: bots fill hidden fields; pretend success without persisting.
     if payload.website:
         return OrderCreatedOut(reference="DG-000000", total=0)

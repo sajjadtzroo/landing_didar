@@ -97,11 +97,21 @@ export interface OrderTrack {
   status_log: OrderStatusLogEntry[]
 }
 
+export interface CustomerDocument {
+  url: string
+  filename: string | null
+  uploaded_at: string
+}
+
 // Customer account (panel).
 export interface Customer {
   id: string
   phone: string
   full_name: string | null
+  store_name: string | null
+  verification_status: 'unverified' | 'pending' | 'approved' | 'rejected'
+  verification_documents: CustomerDocument[]
+  rejection_reason: string | null
 }
 
 export interface CustomerAddress {
@@ -159,3 +169,17 @@ export interface OrderListResponse {
   page_size: number
   unread: number
 }
+
+// Admin customer view — mirrors backend CustomerAdminOut.
+export interface CustomerAdmin {
+  id: string
+  phone: string
+  full_name: string | null
+  store_name: string | null
+  verification_status: 'unverified' | 'pending' | 'approved' | 'rejected'
+  verification_documents: CustomerDocument[]
+  rejection_reason: string | null
+  verified_at: string | null
+  created_at: string
+}
+

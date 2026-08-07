@@ -6,6 +6,7 @@ import {
   LogOut,
   Package,
   ScrollText,
+  ShieldCheck,
   ShoppingCart,
 } from 'lucide-vue-next'
 import { toFa } from '~/utils/format'
@@ -23,6 +24,7 @@ const nav = [
   { to: '/admin/portfolios', label: 'پورتفولیوها', icon: LayoutGrid },
   { to: '/admin/landings', label: 'صفحات فرود', icon: LayoutTemplate },
   { to: '/admin/faqs', label: 'سؤالات متداول', icon: ScrollText },
+  { to: '/admin/customers', label: 'احراز هویت مشتریان', icon: ShieldCheck },
 ]
 
 // Exact match for the dashboard, prefix match for sections.

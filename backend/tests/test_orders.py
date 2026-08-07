@@ -48,6 +48,37 @@ def test_requires_at_least_one_item():
         OrderCreate(**_payload(items=[]))
 
 
+# ---- Order-creation gating (requires an approved, logged-in customer) ----
+_asyncio = pytest.mark.asyncio(loop_scope="session")
+
+
+async def _login(client, phone):
+    r = await client.post("/api/v1/account/otp/request", json={"phone": phone})
+    code = r.json()["dev_code"]
+    await client.post("/api/v1/account/otp/verify", json={"phone": phone, "code": code})
+
+
+@_asyncio
+async def test_order_requires_login(client, order_payload):
+    r = await client.post("/api/v1/orders", json=order_payload())
+    assert r.status_code == 401
+
+
+@_asyncio
+async def test_order_blocked_when_not_approved(client, order_payload):
+    await _login(client, "09128888888")
+    r = await client.post("/api/v1/orders", json=order_payload())
+    assert r.status_code == 403
+
+
+@_asyncio
+async def test_order_allowed_when_approved(approved_client, order_payload):
+    r = await approved_client.post("/api/v1/orders", json=order_payload())
+    assert r.status_code == 201, r.text
+    # phone is bound from the session, not the payload
+    assert r.json()["reference"].startswith("DG-")
+
+
 if __name__ == "__main__":
     assert OrderCreate(**_payload()).phone == "09121234567"
     for bad in ["0912123456", "9121234567", "+989121234567"]:

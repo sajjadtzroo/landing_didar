@@ -19,14 +19,14 @@ async def test_stats_empty(admin_client):
     assert body["by_province"] == []
 
 
-async def test_stats_with_data(client, admin_client, order_payload):
+async def test_stats_with_data(approved_client, admin_client, order_payload):
     p = (
         await admin_client.post(
             "/api/v1/admin/products",
             json={"name": "Chain", "sku": f"C-{uuid.uuid4().hex[:8]}", "price": 50},
         )
     ).json()
-    await client.post(
+    await approved_client.post(
         "/api/v1/orders",
         json=order_payload(items=[{"product_id": p["id"], "quantity": 2}]),
     )

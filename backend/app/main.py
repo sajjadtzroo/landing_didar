@@ -12,6 +12,7 @@ from app.api.limiter import limiter
 from app.api.v1 import (
     account,
     admin_catalog,
+    admin_customers,
     admin_landings,
     admin_orders,
     admin_portfolios,
@@ -105,3 +106,6 @@ app.include_router(
     admin_portfolios.router, prefix=f"{API}/admin", tags=["admin:portfolios"]
 )
 app.include_router(admin_stats.router, prefix=f"{API}/admin", tags=["admin:stats"])
+app.include_router(
+    admin_customers.router, prefix=f"{API}/admin", tags=["admin:customers"]
+)

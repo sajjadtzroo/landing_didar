@@ -1,3 +1,4 @@
+import enum
 import uuid
 from datetime import datetime
 
@@ -8,10 +9,20 @@ from sqlalchemy import (
     Integer,
     String,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import (
+    Enum as SAEnum,
+)
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
+
+
+class CustomerVerificationStatus(enum.StrEnum):
+    unverified = "unverified"
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
 
 
 class Customer(Base):
@@ -27,6 +38,17 @@ class Customer(Base):
         String(20), unique=True, index=True, nullable=False
     )
     full_name: Mapped[str | None] = mapped_column(String(60))
+    store_name: Mapped[str | None] = mapped_column(String(80))
+    verification_status: Mapped[CustomerVerificationStatus] = mapped_column(
+        SAEnum(CustomerVerificationStatus, name="customer_verification_status"),
+        default=CustomerVerificationStatus.unverified,
+        nullable=False,
+    )
+    verification_documents: Mapped[list] = mapped_column(
+        JSONB, default=list, nullable=False
+    )
+    rejection_reason: Mapped[str | None] = mapped_column(String(300))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     addresses: Mapped[list["CustomerAddress"]] = relationship(
         back_populates="customer", cascade="all, delete-orphan", lazy="selectin"
