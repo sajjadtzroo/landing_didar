@@ -28,7 +28,14 @@ from app.api.limiter import limiter
 # Import every model so Base.metadata knows all tables before create_all.
 from app.core.db import Base, get_db
 from app.main import app
-from app.models import customer, faq, landing, order, product  # noqa: F401
+from app.models import (  # noqa: F401
+    customer,
+    faq,
+    landing,
+    order,
+    portfolio,
+    product,
+)
 
 TEST_DB_URL = os.getenv(
     "TEST_DATABASE_URL",
@@ -37,7 +44,7 @@ TEST_DB_URL = os.getenv(
 
 _TABLES = (
     "order_status_log, order_items, orders, "
-    "landing_products, landings, products, faqs, "
+    "landing_products, landings, portfolios, products, faqs, "
     "favorites, customer_addresses, otp_codes, customers"
 )
 
