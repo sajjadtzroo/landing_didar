@@ -51,7 +51,7 @@ useHead({ title: `${CONTENT.account.loginTitle} | ${CONTENT.brand}` })
 </script>
 
 <template>
-  <main class="pt-32 sm:pt-28">
+  <main class="pt-16 sm:pt-28">
     <div class="mx-auto max-w-md px-5 pb-20 sm:px-10">
       <h1 class="text-3xl font-medium text-ink">{{ CONTENT.account.loginTitle }}</h1>
 

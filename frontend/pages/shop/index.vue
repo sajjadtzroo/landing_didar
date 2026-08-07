@@ -105,7 +105,7 @@ useHead({
 </script>
 
 <template>
-  <main class="pt-28 sm:pt-28">
+  <main class="pt-16 sm:pt-28">
     <div class="mx-auto max-w-content px-5 sm:px-10">
       <!-- Compact on mobile (h1 kept for SEO); full intro from sm up -->
       <header class="mb-4 sm:mb-8">

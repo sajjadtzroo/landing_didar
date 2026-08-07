@@ -18,7 +18,7 @@ async function onLogout() {
 </script>
 
 <template>
-  <main class="pt-32 sm:pt-28">
+  <main class="pt-16 sm:pt-28">
     <div class="mx-auto max-w-content px-5 pb-20 sm:px-10">
       <div class="mb-6 flex items-center justify-between">
         <h1 class="text-2xl font-medium text-ink sm:text-3xl">{{ CONTENT.account.panelTitle }}</h1>

@@ -2,10 +2,10 @@
 import { Check, Heart, Plus } from 'lucide-vue-next'
 import { CONTENT } from '~/constants/content'
 import type { Product } from '~/types'
-import { formatPrice, toFa } from '~/utils/format'
+import { toFa } from '~/utils/format'
 
-// `shop` mode (storefront /shop) shows price + add-to-cart + a favorite heart;
-// the default (landing carousels) stays price-free, weight/اجرت only. One prop.
+// `shop` mode (storefront /shop) adds a favorite heart + add-to-cart button.
+// No price anywhere (wholesale gold — the value shown is weight + اجرت only).
 const props = defineProps<{ product: Product; index: number; shop?: boolean }>()
 
 const cart = useCartStore()
@@ -99,12 +99,9 @@ async function onHeart() {
       </div>
     </NuxtLink>
 
-    <!-- Shop mode: gold price + round add-button (icon only → equal card heights,
-         no text wrap). OUTSIDE the link so tapping add doesn't navigate. -->
-    <div v-if="shop" class="flex items-center justify-between gap-2 px-4 pb-4">
-      <span class="tnum text-sm font-bold text-gold-text sm:text-base">
-        {{ formatPrice(product.price) ?? CONTENT.products.priceOnRequest }}
-      </span>
+    <!-- Shop mode: add-to-cart only (no price). Weight + اجرت live in the card
+         body above. OUTSIDE the link so tapping add doesn't navigate. -->
+    <div v-if="shop" class="flex items-center justify-end px-4 pb-4">
       <button
         type="button"
         class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white

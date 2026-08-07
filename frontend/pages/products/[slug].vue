@@ -83,7 +83,7 @@ function addToCart() {
 </script>
 
 <template>
-  <main v-if="product" class="pt-20">
+  <main v-if="product" class="pt-16 sm:pt-20">
     <div class="mx-auto max-w-content px-5 py-10 sm:px-10">
       <!-- Breadcrumb -->
       <nav class="mb-8 flex items-center gap-2 text-sm text-ink-muted" aria-label="مسیر">
