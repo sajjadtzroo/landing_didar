@@ -19,6 +19,13 @@ branch_labels = None
 depends_on = None
 
 
+def _ts(col: str):
+    # created_at/updated_at exist on every table (Base adds them to the model).
+    return sa.Column(
+        col, sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+    )
+
+
 def upgrade() -> None:
     op.create_table(
         "portfolios",
@@ -33,6 +40,8 @@ def upgrade() -> None:
             "sort_order", sa.Integer(), nullable=False, server_default="0"
         ),
         sa.Column("content", JSONB()),
+        _ts("created_at"),
+        _ts("updated_at"),
     )
     op.create_index("ix_portfolios_slug", "portfolios", ["slug"], unique=True)
 
