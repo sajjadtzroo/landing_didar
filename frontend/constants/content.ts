@@ -21,6 +21,9 @@ export const CONTENT = {
     home: 'خانه',
     shop: 'فروشگاه',
     account: 'حساب کاربری',
+    accountShort: 'حساب',
+    cart: 'سبد',
+    favorites: 'علاقه‌مندی',
   },
 
   shop: {
@@ -38,6 +41,19 @@ export const CONTENT = {
     clearAll: 'پاک کردن همه',
     clearFilters: 'پاک کردن فیلترها',
     searchChip: (q: string) => `«${q}»`,
+    // Advanced filter panel
+    advancedToggle: 'فیلتر پیشرفته',
+    weightLabel: 'وزن (گرم)',
+    karatLabel: 'عیار',
+    ojratLabel: 'اجرت (٪)',
+    minLabel: 'از',
+    maxLabel: 'تا',
+    weightChip: (min: string, max: string) =>
+      `وزن ${min || '۰'}${max ? `–${max}` : '+'} گرم`,
+    ojratChip: (min: string, max: string) =>
+      `اجرت ${min || '۰'}${max ? `–${max}` : '+'}٪`,
+    karatChip: (k: number) => `عیار ${k}`,
+    noMatch: 'موردی با این جستجو یافت نشد.',
   },
 
   // Order status labels (customer-facing), keyed by OrderStatus.
