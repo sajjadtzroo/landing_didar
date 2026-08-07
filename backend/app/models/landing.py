@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, Integer, PrimaryKeyConstraint, String
+from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -27,24 +27,3 @@ class Landing(Base):
     hero_poster_url: Mapped[str | None] = mapped_column(String(500))
     # Per-section content; see core.content_defaults.default_content() for shape.
     content: Mapped[dict | None] = mapped_column(JSONB)
-
-
-class LandingProduct(Base):
-    """Ordered many-to-many: which products show on which landing, in what order.
-    Composite PK is the association's identity. product_id CASCADEs so deleting a
-    product (admin) drops its assignments at the DB level."""
-
-    __tablename__ = "landing_products"
-    __table_args__ = (PrimaryKeyConstraint("landing_id", "product_id"),)
-
-    landing_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("landings.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    product_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("products.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
