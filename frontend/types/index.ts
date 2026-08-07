@@ -161,9 +161,3 @@ export interface CustomerAdmin {
   created_at: string
 }
 
-export interface CustomerAdminListResponse {
-  items: CustomerAdmin[]
-  total: number
-  page: number
-  page_size: number
-}

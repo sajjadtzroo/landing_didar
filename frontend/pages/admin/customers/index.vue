@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ShieldCheck, ShieldX } from 'lucide-vue-next'
-import { reactive, ref } from 'vue'
-import type { CustomerAdmin, CustomerAdminListResponse } from '~/types'
+import { reactive, ref, watch } from 'vue'
+import type { CustomerAdmin } from '~/types'
 import { toFa } from '~/utils/format'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
@@ -24,24 +24,20 @@ const STATUS_CLASS: Record<string, string> = {
 
 const filters = reactive({
   status: 'pending' as VerificationStatus,
-  page: 1,
 })
 
 function query() {
   const p = new URLSearchParams()
   if (filters.status) p.set('status', filters.status)
-  p.set('page', String(filters.page))
   return p.toString()
 }
 
 const { data, refresh } = await useAsyncData(
   'admin-customers',
-  () => apiFetch<CustomerAdminListResponse>(`/admin/customers?${query()}`),
-  { watch: [() => filters.page] },
+  () => apiFetch<CustomerAdmin[]>(`/admin/customers?${query()}`),
 )
 
 watch(() => filters.status, () => {
-  filters.page = 1
   refresh()
 })
 
@@ -116,7 +112,7 @@ function faDate(iso: string) {
           </tr>
         </thead>
         <tbody>
-          <template v-for="c in data?.items" :key="c.id">
+          <template v-for="c in data" :key="c.id">
             <tr class="border-t border-line hover:bg-surface-soft">
               <td class="tnum p-3">{{ faDate(c.created_at) }}</td>
               <td class="p-3">{{ c.full_name ?? '—' }}</td>
@@ -214,7 +210,7 @@ function faDate(iso: string) {
     <!-- Mobile cards -->
     <div class="space-y-3 md:hidden">
       <div
-        v-for="c in data?.items"
+        v-for="c in data"
         :key="c.id"
         class="border border-line bg-surface-raised p-4"
       >
@@ -297,25 +293,6 @@ function faDate(iso: string) {
       </div>
     </div>
 
-    <p v-if="!data?.items?.length" class="py-12 text-center text-ink-muted">مشتری‌ای یافت نشد.</p>
-
-    <!-- Pagination -->
-    <div v-if="data && data.total > data.page_size" class="mt-6 flex items-center justify-center gap-4">
-      <button
-        class="h-10 border border-line px-4 text-sm disabled:opacity-50"
-        :disabled="filters.page <= 1"
-        @click="filters.page--"
-      >
-        قبلی
-      </button>
-      <span class="tnum text-sm text-ink-muted">صفحه {{ toFa(filters.page) }}</span>
-      <button
-        class="h-10 border border-line px-4 text-sm disabled:opacity-50"
-        :disabled="filters.page * data.page_size >= data.total"
-        @click="filters.page++"
-      >
-        بعدی
-      </button>
-    </div>
+    <p v-if="!data?.length" class="py-12 text-center text-ink-muted">مشتری‌ای یافت نشد.</p>
   </div>
 </template>
