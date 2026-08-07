@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LayoutDashboard, LogOut, Heart, MapPin, ShoppingBag } from 'lucide-vue-next'
+import { LayoutDashboard, LogOut, Heart, MapPin, ShoppingBag, ShieldCheck } from 'lucide-vue-next'
 import { CONTENT } from '~/constants/content'
 
 const { customer, logout } = useCustomerAuth()
@@ -9,6 +9,7 @@ const TABS = [
   { to: '/account/orders', label: CONTENT.account.tabs.orders, icon: ShoppingBag },
   { to: '/account/favorites', label: CONTENT.account.tabs.favorites, icon: Heart },
   { to: '/account/profile', label: CONTENT.account.tabs.profile, icon: MapPin },
+  { to: '/account/verification', label: 'احراز هویت', icon: ShieldCheck },
 ]
 
 async function onLogout() {
