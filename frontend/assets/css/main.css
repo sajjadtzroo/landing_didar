@@ -114,6 +114,15 @@
     border-radius: 10px;
   }
 
+  /* Shared admin surface: sharp bordered card on the raised cream tone. Add
+     `.admin-card--hover` on interactive cards for a subtle lift. */
+  .admin-card {
+    @apply border border-line bg-surface-raised p-5;
+  }
+  .admin-card--hover {
+    @apply transition-shadow duration-200 hover:shadow-luxury;
+  }
+
   /* Signature section divider: gold hairline + ✦ */
   .divider-star {
     @apply mt-4 flex items-center justify-center gap-3 text-gold-text;
