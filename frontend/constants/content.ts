@@ -20,6 +20,7 @@ export const CONTENT = {
     order: 'سفارش',
     home: 'خانه',
     shop: 'فروشگاه',
+    collections: 'کالکشن‌ها',
     account: 'حساب کاربری',
     accountShort: 'حساب',
     cart: 'سبد',
@@ -29,6 +30,7 @@ export const CONTENT = {
   shop: {
     title: 'فروشگاه دیدار',
     description: 'مجموعه کامل طلای ۱۸ عیار دیدار؛ انتخاب کنید، به سبد بیفزایید و سفارش خود را بدون پرداخت آنلاین ثبت کنید.',
+    viewCollection: 'مشاهده کالکشن',
     searchPlaceholder: 'جستجوی محصول…',
     all: 'همه',
     sortLabel: 'مرتب‌سازی',
@@ -54,6 +56,8 @@ export const CONTENT = {
       `اجرت ${min || '۰'}${max ? `–${max}` : '+'}٪`,
     karatChip: (k: number) => `عیار ${k}`,
     noMatch: 'موردی با این جستجو یافت نشد.',
+    categoriesTitle: 'دسته‌بندی‌ها',
+    heroEyebrow: 'DIDAR GOLD',
   },
 
   // Order status labels (customer-facing), keyed by OrderStatus.

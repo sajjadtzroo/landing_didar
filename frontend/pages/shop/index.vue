@@ -44,6 +44,13 @@ const karats = computed(() =>
     .sort((a, b) => a - b),
 )
 
+// Active-product count per category, for the category cards.
+const categoryCounts = computed(() => {
+  const c: Record<string, number> = { daily: 0, lux_daily: 0, luxury: 0 }
+  for (const p of products.value || []) if (c[p.category] != null) c[p.category]++
+  return c
+})
+
 const hasAdvanced = computed(
   () => !!weightMin.value || !!weightMax.value || !!ojratMin.value || !!ojratMax.value || karat.value !== '',
 )
@@ -113,14 +120,33 @@ useHead({
 
 <template>
   <main class="pt-16 sm:pt-28">
+    <!-- Hero banner (full-bleed showroom image) -->
+    <section class="mb-8 sm:mb-10">
+      <div class="relative aspect-[3/2] w-full overflow-hidden sm:aspect-[21/7]">
+        <NuxtImg
+          src="/shop-hero.jpg"
+          :alt="CONTENT.shop.title"
+          class="h-full w-full object-cover"
+          loading="eager"
+          sizes="100vw"
+        />
+        <div
+          class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent"
+          aria-hidden="true"
+        />
+        <div class="absolute inset-0 flex flex-col items-center justify-end px-5 pb-6 text-center sm:pb-12">
+          <p class="mb-2 text-[11px] tracking-[0.3em] text-gold sm:text-sm">{{ CONTENT.shop.heroEyebrow }}</p>
+          <h1 class="text-2xl font-medium text-white drop-shadow sm:text-5xl">{{ CONTENT.shop.title }}</h1>
+          <p class="mt-3 hidden max-w-2xl text-sm leading-7 text-white/85 sm:block sm:text-base">
+            {{ CONTENT.shop.description }}
+          </p>
+        </div>
+      </div>
+    </section>
+
     <div class="mx-auto max-w-content px-5 sm:px-10">
-      <!-- Compact on mobile (h1 kept for SEO); full intro from sm up -->
-      <header class="mb-4 sm:mb-8">
-        <h1 class="text-xl font-medium text-ink sm:text-4xl">{{ CONTENT.shop.title }}</h1>
-        <p class="mt-3 hidden max-w-2xl text-pretty text-base leading-8 text-ink-muted sm:block">
-          {{ CONTENT.shop.description }}
-        </p>
-      </header>
+      <!-- Shop by category (mirrors the product category enum) -->
+      <ShopCategories v-model="category" :counts="categoryCounts" />
 
       <!-- Admin-curated collections (hidden while the user is actively filtering) -->
       <PortfolioSection
