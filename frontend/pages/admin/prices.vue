@@ -64,20 +64,16 @@ function changeClass(it: PriceItem) {
 
 <template>
   <div>
-    <div class="mb-6 flex items-start justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-medium">قیمت طلا</h1>
-        <p class="mt-1 text-sm text-ink-muted">نرخ لحظه‌ای بازار برای مرجع قیمت‌گذاری.</p>
-      </div>
+    <AdminPageHeader title="قیمت طلا" subtitle="نرخ لحظه‌ای بازار برای مرجع قیمت‌گذاری.">
       <a
         href="https://www.tgju.org/gold-chart"
         target="_blank"
         rel="noopener"
-        class="shrink-0 text-sm text-gold-text underline underline-offset-4 hover:no-underline"
+        class="text-sm text-gold-text underline underline-offset-4 hover:no-underline"
       >
         مشاهده در TGJU
       </a>
-    </div>
+    </AdminPageHeader>
 
     <p
       v-if="errored"
@@ -104,7 +100,7 @@ function changeClass(it: PriceItem) {
     </div>
 
     <!-- Full board -->
-    <div class="mt-8 border border-line bg-surface-raised p-5">
+    <div class="admin-card mt-8">
       <div class="overflow-x-auto">
         <table class="w-full text-start text-sm">
           <thead class="text-ink-muted">
