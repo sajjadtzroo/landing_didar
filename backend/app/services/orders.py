@@ -45,19 +45,20 @@ async def create_order(
         res = await db.execute(select(Product).where(Product.id.in_(product_ids)))
         products = {p.id: p for p in res.scalars()}
 
+    # Order size is total GRAMS (wholesale gold — quantified by weight, not Toman).
     total = Decimal(0)
     items: list[OrderItem] = []
     for it in payload.items:
         p = products.get(it.product_id) if it.product_id else None
         name = p.name if p else "Custom item"
-        unit_price = p.price if p else None
-        if unit_price is not None:
-            total += Decimal(unit_price) * it.quantity
+        unit_weight = p.weight_grams if p else None
+        if unit_weight is not None:
+            total += Decimal(unit_weight) * it.quantity
         items.append(
             OrderItem(
                 product_id=p.id if p else None,
                 product_name=name,
-                unit_price=unit_price,
+                unit_weight_grams=unit_weight,
                 quantity=it.quantity,
             )
         )

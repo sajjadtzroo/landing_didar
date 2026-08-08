@@ -42,13 +42,13 @@ async def test_get_order_by_key_empty_key_returns_none(_sessionmaker):
 
 
 # ---- create_order ----
-async def test_create_order_custom_item_has_no_price(_sessionmaker):
+async def test_create_order_custom_item_has_no_weight(_sessionmaker):
     async with _sessionmaker() as db:
         order = await svc.create_order(db, _payload(), None, "1.2.3.4")
     assert order.reference.startswith("DG-")
-    assert order.total == 0  # unknown price contributes nothing
+    assert order.total == 0  # unknown weight contributes nothing
     assert order.items[0].product_name == "Custom item"
-    assert order.items[0].unit_price is None
+    assert order.items[0].unit_weight_grams is None
     assert order.ip_hash is not None  # ip was hashed
 
 

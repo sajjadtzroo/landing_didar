@@ -47,7 +47,8 @@ class OrderItemOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     product_id: uuid.UUID | None
     product_name: str
-    unit_price: Decimal | None
+    unit_weight_grams: Decimal | None
+    unit_price: Decimal | None  # legacy, no longer populated
     quantity: int
 
 

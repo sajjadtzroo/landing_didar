@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 import pytest
 
@@ -78,19 +79,19 @@ async def test_create_order_custom_item(approved_client, order_payload):
     assert r.status_code == 201, r.text
     body = r.json()
     assert body["reference"].startswith("DG-")
-    assert body["total"] == "0"  # no product_id => "custom item", price unknown
+    assert Decimal(body["total"]) == 0  # no product_id => "custom item", no weight
 
 
-async def test_create_order_totals_from_product(
+async def test_create_order_totals_grams_from_product(
     approved_client, admin_client, order_payload
 ):
-    p = await _make_product(admin_client, price=100)
+    p = await _make_product(admin_client, weight_grams=100)
     r = await approved_client.post(
         ORDERS,
         json=order_payload(items=[{"product_id": p["id"], "quantity": 3}]),
     )
     assert r.status_code == 201
-    assert r.json()["total"] == "300"  # server-trusted price * qty
+    assert Decimal(r.json()["total"]) == 300  # server-trusted weight(g) * qty
 
 
 async def test_honeypot_returns_fake_and_persists_nothing(
@@ -137,7 +138,7 @@ TRACK = "/api/v1/orders/track"
 async def test_track_order_matches_reference_and_phone(
     approved_client, admin_client, order_payload
 ):
-    p = await _make_product(admin_client, price=100)
+    p = await _make_product(admin_client, weight_grams=100)
     ref = (
         await approved_client.post(
             ORDERS,
@@ -153,7 +154,7 @@ async def test_track_order_matches_reference_and_phone(
     body = r.json()
     assert body["reference"] == ref
     assert body["status"] == "new"
-    assert body["total"] == "200"
+    assert Decimal(body["total"]) == 200
     assert len(body["items"]) == 1
     assert body["status_log"][0]["to_status"] == "new"
 

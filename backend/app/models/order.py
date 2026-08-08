@@ -66,7 +66,8 @@ class Order(Base):
         default=OrderStatus.new,
         nullable=False,
     )
-    total: Mapped[float] = mapped_column(Numeric(14, 0), default=0, nullable=False)
+    # Order size in GRAMS (wholesale gold is quantified by weight, not Toman).
+    total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     is_read: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     idempotency_key: Mapped[str | None] = mapped_column(String(64), unique=True)
@@ -98,9 +99,11 @@ class OrderItem(Base):
     product_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("products.id", ondelete="SET NULL")
     )
-    # name + unit_price COPIED at order time (prices change; never join live data)
+    # name + per-unit weight COPIED at order time (weights can change; never join
+    # live data). unit_price is legacy (wholesale gold is quantified by grams).
     product_name: Mapped[str] = mapped_column(String(120), nullable=False)
-    # NULL unit_price => "price on request"
+    unit_weight_grams: Mapped[float | None] = mapped_column(Numeric(8, 2))
+    # Legacy Toman price — no longer populated; kept for old order records.
     unit_price: Mapped[float | None] = mapped_column(Numeric(12, 0))
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
 

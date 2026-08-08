@@ -79,7 +79,7 @@ async def stats(db: AsyncSession = Depends(get_db)):
         "orders_week": await count_since(week),
         "orders_month": await count_since(month),
         "total_orders": int(total_orders),
-        "total_value": int(total_value),
+        "total_value": float(total_value),  # total grams sold
         "unread": int(unread),
         "conversion_rate": round(confirmed / total_orders, 3) if total_orders else 0,
         "orders_by_day": orders_by_day,

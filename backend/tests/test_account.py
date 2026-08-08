@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 import pytest
 
@@ -74,7 +75,7 @@ async def test_update_profile(client):
 async def test_my_orders_lists_orders_for_phone(
     approved_client, admin_client, order_payload
 ):
-    p = await _make_product(admin_client, price=100)
+    p = await _make_product(admin_client, weight_grams=100)
     # approved_client is a logged-in, approved customer; the order phone is bound
     # from its session, so /me/orders (linked by phone) sees exactly this order.
     await approved_client.post(
@@ -85,7 +86,7 @@ async def test_my_orders_lists_orders_for_phone(
     assert r.status_code == 200
     orders = r.json()
     assert len(orders) == 1
-    assert orders[0]["total"] == "200"
+    assert Decimal(orders[0]["total"]) == 200  # total grams
     assert "internal_note" not in orders[0]  # admin-only field never exposed
 
 

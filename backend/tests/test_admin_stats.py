@@ -23,7 +23,7 @@ async def test_stats_with_data(approved_client, admin_client, order_payload):
     p = (
         await admin_client.post(
             "/api/v1/admin/products",
-            json={"name": "Chain", "sku": f"C-{uuid.uuid4().hex[:8]}", "price": 50},
+            json={"name": "Chain", "sku": f"C-{uuid.uuid4().hex[:8]}", "weight_grams": 5},
         )
     ).json()
     await approved_client.post(
