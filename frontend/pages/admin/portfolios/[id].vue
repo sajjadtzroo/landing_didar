@@ -136,7 +136,7 @@ async function removePortfolio() {
 
     <div class="space-y-6">
       <!-- Basics -->
-      <section class="space-y-4 border border-line bg-surface-raised p-5">
+      <section class="admin-card space-y-4">
         <div class="flex items-center justify-between">
           <h2 class="text-lg font-medium">مشخصات</h2>
           <span class="flex items-center gap-2 text-sm text-ink-muted">
@@ -169,7 +169,7 @@ async function removePortfolio() {
       </section>
 
       <!-- Product groups -->
-      <section class="space-y-4 border border-line bg-surface-raised p-5">
+      <section class="admin-card space-y-4">
         <h2 class="text-lg font-medium">گروه‌های محصول</h2>
 
         <div v-for="(g, gi) in content.groups" :key="gi" class="space-y-3 border border-line p-4">

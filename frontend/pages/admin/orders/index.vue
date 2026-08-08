@@ -56,15 +56,14 @@ function faDate(iso: string) {
 
 <template>
   <div>
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-2xl font-medium">سفارش‌ها</h1>
+    <AdminPageHeader title="سفارش‌ها">
       <button
         class="flex h-11 items-center gap-2 border border-line px-4 text-sm hover:border-gold"
         @click="exportCsv"
       >
         <Download :size="16" /> خروجی CSV
       </button>
-    </div>
+    </AdminPageHeader>
 
     <!-- Filters -->
     <div class="mb-4 grid gap-3 sm:grid-cols-3">

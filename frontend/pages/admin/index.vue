@@ -1,4 +1,13 @@
 <script setup lang="ts">
+import {
+  CalendarDays,
+  CalendarRange,
+  Layers,
+  MailOpen,
+  ShoppingCart,
+  TrendingUp,
+  Weight,
+} from 'lucide-vue-next'
 import { computed } from 'vue'
 import { Bar, Doughnut, Line } from 'vue-chartjs'
 import { STATUS_LABEL } from '~/constants/orderStatus'
@@ -37,15 +46,16 @@ const { data: recent } = await useAsyncData('admin-recent-orders', () =>
 )
 
 const cards = computed(() => [
-  { label: 'سفارش امروز', value: toFa(stats.value?.orders_today ?? 0) },
-  { label: 'این هفته', value: toFa(stats.value?.orders_week ?? 0) },
-  { label: 'این ماه', value: toFa(stats.value?.orders_month ?? 0) },
-  { label: 'کل سفارش‌ها', value: toFa(stats.value?.total_orders ?? 0) },
-  { label: 'وزن کل فروش', value: formatGramsCompact(stats.value?.total_value ?? 0) },
-  { label: 'خوانده‌نشده', value: toFa(stats.value?.unread ?? 0) },
+  { label: 'سفارش امروز', value: toFa(stats.value?.orders_today ?? 0), icon: CalendarDays },
+  { label: 'این هفته', value: toFa(stats.value?.orders_week ?? 0), icon: CalendarRange },
+  { label: 'این ماه', value: toFa(stats.value?.orders_month ?? 0), icon: Layers },
+  { label: 'کل سفارش‌ها', value: toFa(stats.value?.total_orders ?? 0), icon: ShoppingCart },
+  { label: 'وزن کل فروش', value: formatGramsCompact(stats.value?.total_value ?? 0), icon: Weight },
+  { label: 'خوانده‌نشده', value: toFa(stats.value?.unread ?? 0), icon: MailOpen },
   {
     label: 'نرخ تبدیل',
     value: `${toFa(Math.round((stats.value?.conversion_rate ?? 0) * 100))}٪`,
+    icon: TrendingUp,
   },
 ])
 
@@ -122,22 +132,21 @@ function faDate(iso: string) {
 
 <template>
   <div>
-    <h1 class="mb-6 text-2xl font-medium">داشبورد</h1>
+    <AdminPageHeader title="داشبورد" subtitle="نمای کلی فروش و سفارش‌ها" />
 
     <!-- KPI cards -->
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
-      <div
+      <AdminStatCard
         v-for="c in cards"
         :key="c.label"
-        class="border border-line bg-surface-raised p-4"
-      >
-        <p class="text-xs text-ink-muted">{{ c.label }}</p>
-        <p class="tnum mt-2 text-xl font-medium text-gold-text">{{ c.value }}</p>
-      </div>
+        :label="c.label"
+        :value="c.value"
+        :icon="c.icon"
+      />
     </div>
 
     <!-- Orders trend -->
-    <div class="mt-8 border border-line bg-surface-raised p-5">
+    <div class="admin-card mt-8">
       <h2 class="mb-4 text-lg font-medium">روند سفارش‌ها (۱۴ روز)</h2>
       <div class="h-64">
         <ClientOnly><Line :data="trendData" :options="lineOpts" /></ClientOnly>
@@ -146,7 +155,7 @@ function faDate(iso: string) {
 
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
       <!-- Status donut -->
-      <div class="border border-line bg-surface-raised p-5">
+      <div class="admin-card">
         <h2 class="mb-4 text-lg font-medium">وضعیت سفارش‌ها</h2>
         <div class="h-64">
           <ClientOnly>
@@ -157,7 +166,7 @@ function faDate(iso: string) {
       </div>
 
       <!-- Province bar -->
-      <div class="border border-line bg-surface-raised p-5">
+      <div class="admin-card">
         <h2 class="mb-4 text-lg font-medium">سفارش‌ها بر اساس استان</h2>
         <div class="h-64">
           <ClientOnly>
@@ -169,7 +178,7 @@ function faDate(iso: string) {
     </div>
 
     <!-- Top products -->
-    <div class="mt-6 border border-line bg-surface-raised p-5">
+    <div class="admin-card mt-6">
       <h2 class="mb-4 text-lg font-medium">پرفروش‌ترین محصولات</h2>
       <div class="h-64">
         <ClientOnly>
@@ -180,7 +189,7 @@ function faDate(iso: string) {
     </div>
 
     <!-- Recent orders -->
-    <div class="mt-6 border border-line bg-surface-raised p-5">
+    <div class="admin-card mt-6">
       <h2 class="mb-4 text-lg font-medium">آخرین سفارش‌ها</h2>
       <div class="overflow-x-auto">
         <table class="w-full text-start text-sm">

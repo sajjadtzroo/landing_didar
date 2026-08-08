@@ -60,20 +60,17 @@ async function remove(ln: AdminLanding) {
 
 <template>
   <div>
-    <div class="mb-6 flex items-start justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-medium">صفحات فرود</h1>
-        <p class="mt-1 text-sm text-ink-muted">
-          صفحه فرود بسازید و محتوای هر بخش (هیرو، اعتماد، محصولات، سؤالات، فوتر) را جداگانه ویرایش کنید.
-        </p>
-      </div>
+    <AdminPageHeader
+      title="صفحات فرود"
+      subtitle="صفحه فرود بسازید و محتوای هر بخش (هیرو، اعتماد، محصولات، سؤالات، فوتر) را جداگانه ویرایش کنید."
+    >
       <button
         class="flex h-11 shrink-0 items-center gap-2 bg-navy px-4 text-sm text-white hover:bg-gold"
         @click="createOpen = true"
       >
         <Plus :size="16" /> صفحه جدید
       </button>
-    </div>
+    </AdminPageHeader>
 
     <ul class="space-y-3">
       <li

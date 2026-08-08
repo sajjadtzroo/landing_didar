@@ -82,9 +82,7 @@ function faDate(iso: string) {
 
 <template>
   <div>
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-2xl font-medium">احراز هویت مشتریان</h1>
-    </div>
+    <AdminPageHeader title="احراز هویت مشتریان" />
 
     <!-- Status filter -->
     <div class="mb-4">

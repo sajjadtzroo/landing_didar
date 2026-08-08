@@ -26,14 +26,18 @@ async function submit() {
 <template>
   <!-- Always-navy login screen (matches the brand's login treatment). -->
   <div class="flex min-h-dvh items-center justify-center bg-navy px-6" data-theme="dark">
-    <form class="w-full max-w-sm" @submit.prevent="submit">
-      <p class="mb-8 text-center text-2xl font-medium text-cream">دیدار گلد — مدیریت</p>
+    <form
+      class="w-full max-w-sm border border-gold/30 bg-navy-deep p-8"
+      @submit.prevent="submit"
+    >
+      <BrandLogo :height="34" class="mx-auto mb-6 block" />
+      <p class="mb-8 text-center text-lg font-medium text-cream">پنل مدیریت دیدار گلد</p>
       <div class="space-y-4">
         <input
           v-model="username"
           type="text"
           placeholder="نام کاربری"
-          class="h-14 w-full border border-gold/40 bg-navy-deep px-4 text-sm text-cream
+          class="h-14 w-full border border-gold/40 bg-navy px-4 text-sm text-cream
             placeholder:text-cream/50 focus:border-gold"
           autocomplete="username"
         />
@@ -41,7 +45,7 @@ async function submit() {
           v-model="password"
           type="password"
           placeholder="رمز عبور"
-          class="h-14 w-full border border-gold/40 bg-navy-deep px-4 text-sm text-cream
+          class="h-14 w-full border border-gold/40 bg-navy px-4 text-sm text-cream
             placeholder:text-cream/50 focus:border-gold"
           autocomplete="current-password"
         />

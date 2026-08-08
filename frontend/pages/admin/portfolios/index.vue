@@ -60,20 +60,17 @@ async function remove(pf: AdminPortfolio) {
 
 <template>
   <div>
-    <div class="mb-6 flex items-start justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-medium">پورتفولیوها</h1>
-        <p class="mt-1 text-sm text-ink-muted">
-          مجموعه‌های محصول بسازید و آن‌ها را به‌صورت بخش‌های ویژه در بالای فروشگاه نمایش دهید.
-        </p>
-      </div>
+    <AdminPageHeader
+      title="پورتفولیوها"
+      subtitle="مجموعه‌های محصول بسازید و آن‌ها را به‌صورت بخش‌های ویژه در بالای فروشگاه نمایش دهید."
+    >
       <button
         class="flex h-11 shrink-0 items-center gap-2 bg-navy px-4 text-sm text-white hover:bg-gold"
         @click="createOpen = true"
       >
         <Plus :size="16" /> پورتفولیوی جدید
       </button>
-    </div>
+    </AdminPageHeader>
 
     <ul class="space-y-3">
       <li

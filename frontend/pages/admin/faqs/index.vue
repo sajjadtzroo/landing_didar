@@ -61,12 +61,11 @@ async function move(index: number, dir: -1 | 1) {
 
 <template>
   <div>
-    <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-medium">سؤالات متداول</h1>
+    <AdminPageHeader title="سؤالات متداول">
       <button class="flex h-11 items-center gap-2 bg-navy px-4 text-sm text-white hover:bg-gold" @click="startCreate">
         <Plus :size="16" /> سؤال جدید
       </button>
-    </div>
+    </AdminPageHeader>
 
     <ul class="space-y-3">
       <li v-for="(f, i) in faqs" :key="f.id" class="flex items-start gap-3 border border-line bg-surface-raised p-4" :class="!f.is_active ? 'opacity-60' : ''">

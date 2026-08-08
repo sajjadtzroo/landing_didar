@@ -173,7 +173,7 @@ async function removeLanding() {
 
     <div class="space-y-6">
       <!-- Basics -->
-      <section class="space-y-4 border border-line bg-surface-raised p-5">
+      <section class="admin-card space-y-4">
         <h2 class="text-lg font-medium">مشخصات</h2>
         <FormField label="عنوان" v-slot="{ id: fid }">
           <input :id="fid" v-model="meta.title" class="form-control" />
@@ -184,7 +184,7 @@ async function removeLanding() {
       </section>
 
       <!-- Hero -->
-      <section class="space-y-4 border border-line bg-surface-raised p-5">
+      <section class="admin-card space-y-4">
         <label class="flex items-center justify-between">
           <h2 class="text-lg font-medium">هیرو</h2>
           <span class="flex items-center gap-2 text-sm text-ink-muted">
@@ -229,7 +229,7 @@ async function removeLanding() {
       </section>
 
       <!-- Promo -->
-      <section class="space-y-4 border border-line bg-surface-raised p-5">
+      <section class="admin-card space-y-4">
         <label class="flex items-center justify-between">
           <h2 class="text-lg font-medium">{{ SECTION_LABELS.promo }}</h2>
           <span class="flex items-center gap-2 text-sm text-ink-muted">
@@ -242,7 +242,7 @@ async function removeLanding() {
       </section>
 
       <!-- Trust -->
-      <section class="space-y-4 border border-line bg-surface-raised p-5">
+      <section class="admin-card space-y-4">
         <label class="flex items-center justify-between">
           <h2 class="text-lg font-medium">{{ SECTION_LABELS.trust }}</h2>
           <span class="flex items-center gap-2 text-sm text-ink-muted">
@@ -282,7 +282,7 @@ async function removeLanding() {
       </section>
 
       <!-- Product groups -->
-      <section class="space-y-4 border border-line bg-surface-raised p-5">
+      <section class="admin-card space-y-4">
         <label class="flex items-center justify-between">
           <h2 class="text-lg font-medium">{{ SECTION_LABELS.products }} (پورتفولیو)</h2>
           <span class="flex items-center gap-2 text-sm text-ink-muted">
@@ -333,7 +333,7 @@ async function removeLanding() {
       </section>
 
       <!-- FAQ -->
-      <section class="space-y-4 border border-line bg-surface-raised p-5">
+      <section class="admin-card space-y-4">
         <label class="flex items-center justify-between">
           <h2 class="text-lg font-medium">{{ SECTION_LABELS.faq }}</h2>
           <span class="flex items-center gap-2 text-sm text-ink-muted">
@@ -356,7 +356,7 @@ async function removeLanding() {
       </section>
 
       <!-- Footer -->
-      <section class="space-y-4 border border-line bg-surface-raised p-5">
+      <section class="admin-card space-y-4">
         <label class="flex items-center justify-between">
           <h2 class="text-lg font-medium">{{ SECTION_LABELS.footer }}</h2>
           <span class="flex items-center gap-2 text-sm text-ink-muted">

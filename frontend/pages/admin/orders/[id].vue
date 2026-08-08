@@ -78,7 +78,7 @@ function faDateTime(iso: string) {
 
     <div class="mt-6 grid gap-6 md:grid-cols-2">
       <!-- Customer -->
-      <section class="border border-line bg-surface-raised p-5">
+      <section class="admin-card">
         <h2 class="mb-4 text-lg font-medium">اطلاعات مشتری</h2>
         <dl class="space-y-2 text-sm">
           <div class="flex justify-between"><dt class="text-ink-muted">نام</dt><dd>{{ order.full_name }}</dd></div>
@@ -93,7 +93,7 @@ function faDateTime(iso: string) {
       </section>
 
       <!-- Status + note -->
-      <section class="border border-line bg-surface-raised p-5">
+      <section class="admin-card">
         <h2 class="mb-4 text-lg font-medium">وضعیت</h2>
         <select
           :value="order.status"
@@ -125,7 +125,7 @@ function faDateTime(iso: string) {
     </div>
 
     <!-- Line items -->
-    <section class="mt-6 border border-line bg-surface-raised p-5">
+    <section class="admin-card mt-6">
       <h2 class="mb-4 text-lg font-medium">اقلام سفارش</h2>
       <ul class="divide-y divide-line">
         <li v-for="(it, i) in order.items" :key="i" class="flex justify-between py-3 text-sm">

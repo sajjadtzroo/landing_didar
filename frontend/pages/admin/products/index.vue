@@ -111,15 +111,14 @@ async function move(index: number, dir: -1 | 1) {
 
 <template>
   <div>
-    <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-medium">محصولات</h1>
+    <AdminPageHeader title="محصولات">
       <button
         class="flex h-11 items-center gap-2 bg-navy px-4 text-sm text-white hover:bg-gold"
         @click="startCreate"
       >
         <Plus :size="16" /> محصول جدید
       </button>
-    </div>
+    </AdminPageHeader>
 
     <ul class="space-y-3">
       <li

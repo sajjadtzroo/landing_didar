@@ -1,12 +1,26 @@
 <script setup lang="ts">
 import { Menu } from 'lucide-vue-next'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 // RTL admin shell: fixed sidebar on the leading (right) edge ≥lg; a slide-in
 // drawer with a hamburger below that. Content is padded to clear the rail.
 const open = ref(false)
 const route = useRoute()
 watch(() => route.path, () => (open.value = false)) // close drawer on navigate
+
+// Current-section label for the mobile top bar (desktop shows the full rail).
+const SECTIONS: [string, string][] = [
+  ['/admin/orders', 'سفارش‌ها'],
+  ['/admin/prices', 'قیمت طلا'],
+  ['/admin/products', 'محصولات'],
+  ['/admin/portfolios', 'پورتفولیوها'],
+  ['/admin/landings', 'صفحات فرود'],
+  ['/admin/faqs', 'سؤالات متداول'],
+  ['/admin/customers', 'احراز هویت مشتریان'],
+]
+const pageTitle = computed(
+  () => SECTIONS.find(([p]) => route.path.startsWith(p))?.[1] ?? 'داشبورد',
+)
 if (import.meta.client) {
   useEventListener(window, 'keydown', (e) => {
     if (e.key === 'Escape') open.value = false
@@ -37,6 +51,9 @@ if (import.meta.client) {
           <Menu :size="24" />
         </button>
         <BrandLogo :height="22" color="#835F26" />
+        <span class="ms-1 border-s border-line ps-3 text-sm font-medium text-ink">
+          {{ pageTitle }}
+        </span>
       </header>
 
       <main class="mx-auto max-w-content p-4 sm:p-6">
