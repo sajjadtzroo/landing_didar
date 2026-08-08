@@ -65,6 +65,12 @@ def bust_portfolios_cache() -> None:
     _cache.pop("portfolios", None)
 
 
+def bust_portfolio_cache(slug: str) -> None:
+    """Drop a single portfolio's cached detail payload. Called by admin_portfolios
+    on mutate (alongside bust_portfolios_cache for the list)."""
+    _cache.pop(f"portfolio:{slug}", None)
+
+
 def _as_uuid(value: object) -> uuid.UUID | None:
     try:
         return uuid.UUID(str(value))
@@ -190,6 +196,34 @@ async def list_portfolios(response: Response, db: AsyncSession = Depends(get_db)
         for p in portfolios
     ]
     _cache_set("portfolios", out)
+    return out
+
+
+@router.get("/portfolios/{slug}", response_model=PortfolioPublicOut)
+async def get_portfolio(
+    slug: str, response: Response, db: AsyncSession = Depends(get_db)
+):
+    """A single curated collection by slug, for its /shop/<slug> page. Inactive
+    portfolios 404 (matching the list). Cached per slug like get_landing."""
+    response.headers["Cache-Control"] = _CACHE_CONTROL
+    cached = _cache_get(f"portfolio:{slug}")
+    if cached is not None:
+        return cached
+    portfolio = (
+        await db.execute(
+            select(Portfolio).where(Portfolio.slug == slug, Portfolio.is_active)
+        )
+    ).scalar_one_or_none()
+    if portfolio is None:
+        raise HTTPException(404, detail="Portfolio not found")
+    out = PortfolioPublicOut(
+        id=portfolio.id,
+        name=portfolio.name,
+        slug=portfolio.slug,
+        cover_image_url=portfolio.cover_image_url,
+        groups=await _resolve_groups(db, (portfolio.content or {}).get("groups") or []),
+    )
+    _cache_set(f"portfolio:{slug}", out)
     return out
 
 

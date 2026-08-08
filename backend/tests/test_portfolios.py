@@ -101,3 +101,52 @@ async def test_public_hides_inactive_and_sorts(client, admin_client):
 
     names = [p["name"] for p in (await client.get(PUB)).json()]
     assert names == ["B", "A"]  # inactive excluded, ordered by sort_order
+
+
+# ---- Public GET /portfolios/{slug} (per-collection page) ----
+async def test_public_by_slug_resolves_groups(client, admin_client):
+    p1 = await _make_product(admin_client, name="First")
+    p2 = await _make_product(admin_client, name="Second")
+    hidden = await _make_product(admin_client, name="Hidden", is_active=False)
+
+    pf = await _create(admin_client, name="Eid Collection", slug="eid-collection")
+    await _set_groups(
+        admin_client,
+        pf["id"],
+        [{"title": "G1", "eyebrow": "e", "description": "d",
+          "product_ids": [p2, p1, hidden]}],
+    )
+
+    body = (await client.get(f"{PUB}/eid-collection")).json()
+    assert body["name"] == "Eid Collection" and body["slug"] == "eid-collection"
+    # inactive dropped, order preserved
+    assert [p["name"] for p in body["groups"][0]["products"]] == ["Second", "First"]
+
+
+async def test_public_by_slug_unknown_404(client):
+    assert (await client.get(f"{PUB}/nope")).status_code == 404
+
+
+async def test_public_by_slug_inactive_404(client, admin_client):
+    pf = await _create(admin_client, name="Hidden", slug="hidden-coll")
+    await _set_groups(admin_client, pf["id"], [], is_active=False)
+    assert (await client.get(f"{PUB}/hidden-coll")).status_code == 404
+
+
+async def test_by_slug_cache_busts_on_edit(client, admin_client):
+    a = await _make_product(admin_client, name="A")
+    b = await _make_product(admin_client, name="B")
+    pf = await _create(admin_client, name="Spring", slug="spring")
+    await _set_groups(
+        admin_client, pf["id"], [{"title": "G", "product_ids": [a]}]
+    )
+
+    first = (await client.get(f"{PUB}/spring")).json()  # caches under portfolio:spring
+    assert [p["name"] for p in first["groups"][0]["products"]] == ["A"]
+
+    # editing busts the per-slug cache, so the next read reflects the change
+    await _set_groups(
+        admin_client, pf["id"], [{"title": "G", "product_ids": [a, b]}]
+    )
+    second = (await client.get(f"{PUB}/spring")).json()
+    assert [p["name"] for p in second["groups"][0]["products"]] == ["A", "B"]

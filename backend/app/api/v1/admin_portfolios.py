@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
-from app.api.v1.public import bust_portfolios_cache
+from app.api.v1.public import bust_portfolio_cache, bust_portfolios_cache
 from app.core.db import get_db
 from app.models.portfolio import Portfolio
 from app.schemas.portfolio import (
@@ -59,6 +59,7 @@ async def update_portfolio(
     portfolio_id: str, payload: PortfolioUpdate, db: AsyncSession = Depends(get_db)
 ):
     portfolio = await _get_or_404(db, portfolio_id)
+    old_slug = portfolio.slug
     data = payload.model_dump(exclude_unset=True)
     # A slug edit must stay unique.
     if "slug" in data and data["slug"] != portfolio.slug:
@@ -72,12 +73,17 @@ async def update_portfolio(
     await db.commit()
     await db.refresh(portfolio)
     bust_portfolios_cache()
+    bust_portfolio_cache(old_slug)  # bust old slug; new slug (if changed) was uncached
+    if portfolio.slug != old_slug:
+        bust_portfolio_cache(portfolio.slug)
     return PortfolioAdminOut.model_validate(portfolio)
 
 
 @router.delete("/portfolios/{portfolio_id}", status_code=204)
 async def delete_portfolio(portfolio_id: str, db: AsyncSession = Depends(get_db)):
     portfolio = await _get_or_404(db, portfolio_id)
+    slug = portfolio.slug
     await db.delete(portfolio)
     await db.commit()
     bust_portfolios_cache()
+    bust_portfolio_cache(slug)
