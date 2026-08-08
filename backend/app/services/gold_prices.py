@@ -7,6 +7,7 @@ TGJU. On a fetch failure we serve the last good snapshot (marked stale).
 ponytail: dict cache; TGJU covers every index the panel shows, so no second source.
 """
 
+import asyncio
 import time
 
 import httpx
@@ -14,6 +15,7 @@ from loguru import logger
 
 TGJU_URL = "https://call.tgju.org/ajax.json"
 _TTL = 90.0  # seconds; TGJU updates every few seconds but the panel polls ~60s
+REFRESH_INTERVAL = 120  # background refresh cadence (see refresh_loop)
 _HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 # (tgju key, Persian label, unit). Order = display order. unit 'toman' => Rial/10.
@@ -86,3 +88,28 @@ async def get_gold_prices(force: bool = False) -> dict:
         if _cache["items"]:
             return {"items": _cache["items"], "source": "tgju", "cached": True, "stale": True}
         return {"items": [], "source": "tgju", "error": True}
+
+
+async def refresh_loop() -> None:
+    """Background task (started by the app lifespan): force-scrape TGJU every
+    REFRESH_INTERVAL seconds so the board stays warm and scraper failures surface
+    in the logs — the "check every 2 minutes" baked into the running app.
+    ponytail: one loop per worker (gunicorn -w 2 => 2 scrapes/interval), fine at
+    this volume; gate to a single worker if the call rate ever matters.
+    """
+    while True:
+        try:
+            d = await get_gold_prices(force=True)
+            if d.get("error"):
+                logger.warning("gold refresh: scraper returned no data")
+            else:
+                logger.info(
+                    "gold refresh: {} symbols (stale={})",
+                    len(d["items"]),
+                    d.get("stale", False),
+                )
+        except asyncio.CancelledError:
+            raise  # clean shutdown
+        except Exception:  # noqa: BLE001 — a bad iteration must not kill the loop
+            logger.exception("gold refresh loop iteration failed")
+        await asyncio.sleep(REFRESH_INTERVAL)

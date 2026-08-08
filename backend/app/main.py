@@ -1,4 +1,5 @@
-from contextlib import asynccontextmanager
+import asyncio
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -24,6 +25,7 @@ from app.api.v1 import (
 from app.core.config import settings
 from app.core.db import engine
 from app.core.logging import setup_logging
+from app.services.gold_prices import refresh_loop
 
 # Route everything (app + uvicorn + sqlalchemy) through loguru's single sink.
 setup_logging()
@@ -37,8 +39,15 @@ if settings.cookie_secure and settings.secret_key in _WEAK_SECRETS:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    yield
-    await engine.dispose()  # close the pool cleanly on SIGTERM
+    # Background: refresh the gold-price board every REFRESH_INTERVAL (2 min).
+    gold_task = asyncio.create_task(refresh_loop())
+    try:
+        yield
+    finally:
+        gold_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await gold_task
+        await engine.dispose()  # close the pool cleanly on SIGTERM
 
 
 # Hide the API surface in production (secure cookies == prod); open in dev.
