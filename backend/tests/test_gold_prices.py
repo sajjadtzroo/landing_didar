@@ -1,6 +1,8 @@
 """Unit tests for the TGJU gold-price scraper. httpx is mocked — no network."""
 
 import pytest
+import pytest_asyncio
+from sqlalchemy import text
 
 import app.services.gold_prices as mod
 
@@ -50,6 +52,17 @@ def _reset_cache():
     mod._cache.update({"at": 0.0, "items": None})
 
 
+@pytest_asyncio.fixture(autouse=True)
+async def _snapshot_db(_sessionmaker, monkeypatch):
+    """Point the service's own sessions at the test DB and start each test with an
+    empty snapshot table, so persistence writes/reads don't touch the dev DB."""
+    monkeypatch.setattr(mod, "SessionLocal", _sessionmaker)
+    async with _sessionmaker() as s:
+        await s.execute(text("DELETE FROM gold_price_snapshots"))
+        await s.commit()
+    yield
+
+
 async def test_parses_and_converts_rial_to_toman(monkeypatch):
     monkeypatch.setattr(mod.httpx, "AsyncClient", lambda *a, **k: _Client(_SAMPLE))
     out = await mod.get_gold_prices(force=True)
@@ -95,3 +108,20 @@ async def test_error_with_cache_serves_stale(monkeypatch):
     )
     out = await mod.get_gold_prices(force=True)  # force a refetch that fails
     assert out.get("stale") is True and out["items"]  # last good snapshot
+
+
+async def test_persists_snapshot_and_falls_back_after_restart(monkeypatch):
+    # A good scrape persists the board to the DB...
+    monkeypatch.setattr(mod.httpx, "AsyncClient", lambda *a, **k: _Client(_SAMPLE))
+    live = await mod.get_gold_prices(force=True)
+    assert live["items"] and not live.get("error")
+    snap = await mod._load_snapshot()
+    assert snap and len(snap["items"]) == len(live["items"])  # written to the DB
+
+    # ...so a cold start (empty cache) with TGJU down serves the DB snapshot, stale.
+    mod._cache.update({"at": 0.0, "items": None})
+    monkeypatch.setattr(
+        mod.httpx, "AsyncClient", lambda *a, **k: _Client(exc=RuntimeError("down"))
+    )
+    out = await mod.get_gold_prices(force=True)
+    assert out["items"] and out.get("stale") is True and not out.get("error")

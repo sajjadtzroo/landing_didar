@@ -9,9 +9,14 @@ ponytail: dict cache; TGJU covers every index the panel shows, so no second sour
 
 import asyncio
 import time
+from datetime import datetime, timezone
 
 import httpx
 from loguru import logger
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+from app.core.db import SessionLocal
+from app.models.gold_price import GoldPriceSnapshot
 
 TGJU_URL = "https://call.tgju.org/ajax.json"
 _TTL = 90.0  # seconds; TGJU updates every few seconds but the panel polls ~60s
@@ -33,6 +38,43 @@ SYMBOLS: list[tuple[str, str, str]] = [
 ]
 
 _cache: dict = {"at": 0.0, "items": None}
+
+
+async def _save_snapshot(items: list[dict], source: str = "tgju") -> None:
+    """Upsert the single last-good row (id=1). Never raises — a DB hiccup must not
+    break serving live prices."""
+    try:
+        async with SessionLocal() as s:
+            stmt = pg_insert(GoldPriceSnapshot).values(
+                id=1, items=items, source=source, fetched_at=datetime.now(timezone.utc)
+            )
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["id"],
+                # subscript access: the column is named "items", which shadows the
+                # ColumnCollection.items() method under attribute access.
+                set_={
+                    "items": stmt.excluded["items"],
+                    "source": stmt.excluded["source"],
+                    "fetched_at": stmt.excluded["fetched_at"],
+                    "updated_at": datetime.now(timezone.utc),
+                },
+            )
+            await s.execute(stmt)
+            await s.commit()
+    except Exception:  # noqa: BLE001
+        logger.exception("gold prices: failed to persist snapshot")
+
+
+async def _load_snapshot() -> dict | None:
+    """Return {items, fetched_at} from the persisted last-good row, or None."""
+    try:
+        async with SessionLocal() as s:
+            row = await s.get(GoldPriceSnapshot, 1)
+            if row and row.items:
+                return {"items": row.items, "fetched_at": row.fetched_at.isoformat()}
+    except Exception:  # noqa: BLE001
+        logger.exception("gold prices: failed to load snapshot")
+    return None
 
 
 def _num(value) -> float | None:
@@ -82,11 +124,23 @@ async def get_gold_prices(force: bool = False) -> dict:
         if not items:
             raise ValueError("no known symbols in TGJU payload")
         _cache["at"], _cache["items"] = now, items
+        await _save_snapshot(items)  # persist last-good so restarts survive
         return {"items": items, "source": "tgju", "cached": False}
     except Exception as e:  # noqa: BLE001 — never break the admin panel on a scrape error
         logger.warning("gold prices fetch failed: {}", e)
         if _cache["items"]:
             return {"items": _cache["items"], "source": "tgju", "cached": True, "stale": True}
+        # Cold start / no in-process cache: fall back to the DB last-good snapshot.
+        snap = await _load_snapshot()
+        if snap:
+            _cache["at"], _cache["items"] = now, snap["items"]  # warm the cache too
+            return {
+                "items": snap["items"],
+                "source": "tgju",
+                "cached": True,
+                "stale": True,
+                "fetched_at": snap["fetched_at"],
+            }
         return {"items": [], "source": "tgju", "error": True}
 
 
