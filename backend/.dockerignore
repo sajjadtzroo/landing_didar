@@ -1,0 +1,15 @@
+# Never bake local secrets or the mac virtualenv into the prod image.
+# Prod config comes from Liara env vars, not this .env file.
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.git/
