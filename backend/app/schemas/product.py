@@ -45,3 +45,4 @@ class ProductUpdate(BaseModel):
 class ProductOut(ProductBase):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
+    images: list[str] = []  # gallery paths imported from MinIO; [] until imported

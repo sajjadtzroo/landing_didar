@@ -37,6 +37,15 @@ const {
 const qty = ref(1)
 const imageEl = ref<HTMLElement | null>(null)
 
+// Gallery: MinIO-imported photos, falling back to the single image_url.
+const active = ref(0)
+const gallery = computed(() => {
+  const imgs = product.value?.images ?? []
+  if (imgs.length) return imgs
+  return product.value?.image_url ? [product.value.image_url] : []
+})
+const mainSrc = computed(() => gallery.value[active.value] ?? null)
+
 const canonical = `${useSiteUrl()}/products/${slug}`
 
 useHead(() => ({
@@ -95,19 +104,42 @@ function addToCart() {
       </nav>
 
       <div class="grid gap-10 lg:grid-cols-2">
-        <!-- Image -->
-        <div ref="imageEl" class="aspect-square overflow-hidden border border-line bg-media-surface">
-          <NuxtImg
-            v-if="product.image_url"
-            :src="product.image_url"
-            :alt="product.name"
-            class="h-full w-full object-cover"
-            width="800"
-            height="800"
-            format="webp"
-            sizes="(max-width: 1024px) 100vw, 600px"
-            fetchpriority="high"
-          />
+        <!-- Gallery: main image + thumbnail strip (photos imported from MinIO) -->
+        <div class="flex flex-col gap-3">
+          <div ref="imageEl" class="aspect-square overflow-hidden border border-line bg-media-surface">
+            <NuxtImg
+              v-if="mainSrc"
+              :src="mainSrc"
+              :alt="product.name"
+              class="h-full w-full object-cover"
+              width="800"
+              height="800"
+              format="webp"
+              sizes="(max-width: 1024px) 100vw, 600px"
+              fetchpriority="high"
+            />
+          </div>
+          <div v-if="gallery.length > 1" class="grid grid-cols-5 gap-2">
+            <button
+              v-for="(src, i) in gallery"
+              :key="src"
+              type="button"
+              class="aspect-square overflow-hidden border bg-media-surface transition"
+              :class="i === active ? 'border-gold' : 'border-line hover:border-navy'"
+              :aria-label="`نمایش تصویر ${toFa(i + 1)}`"
+              :aria-current="i === active"
+              @click="active = i"
+            >
+              <NuxtImg
+                :src="src"
+                :alt="`${product.name} — ${toFa(i + 1)}`"
+                class="h-full w-full object-cover"
+                width="120"
+                height="120"
+                format="webp"
+              />
+            </button>
+          </div>
         </div>
 
         <!-- Details -->

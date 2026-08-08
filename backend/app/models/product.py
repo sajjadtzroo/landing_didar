@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import Boolean, Integer, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -24,6 +24,11 @@ class Product(Base):
     # اجرت — making-fee percentage (the customer-facing figure; price is admin-only)
     ojrat_percent: Mapped[float | None] = mapped_column(Numeric(5, 2))
     image_url: Mapped[str | None] = mapped_column(String(500))
+    # Gallery: served media paths imported from MinIO (folder {sku}/). image_url
+    # stays the primary/thumbnail (= images[0] after an import).
+    images: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, server_default="[]", default=list
+    )
     # "daily" | "luxury" — groups products into the two landing carousels
     category: Mapped[str] = mapped_column(String(20), default="daily", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

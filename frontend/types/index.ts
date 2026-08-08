@@ -8,7 +8,8 @@ export interface Product {
   karat: number | null
   price: string | null // null => price on request
   ojrat_percent: string | null // اجرت (making-fee %)
-  image_url: string | null
+  image_url: string | null // primary/thumbnail (= images[0] after a MinIO import)
+  images: string[] // gallery paths imported from MinIO; [] until imported
   category: 'daily' | 'lux_daily' | 'luxury' // landing carousel grouping
   is_active: boolean
   sort_order: number
