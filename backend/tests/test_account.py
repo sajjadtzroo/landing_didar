@@ -267,3 +267,30 @@ async def test_delete_unknown_address_404(client):
     await _login(client)
     r = await client.delete(f"{ACC}/me/addresses/{uuid.uuid4()}")
     assert r.status_code == 404
+
+
+async def test_otp_test_phone_reveals_code_in_prod(client, monkeypatch):
+    """An allowlisted test phone gets dev_code back (and skips the real SMS) even
+    when cookie_secure=True (production); other phones don't."""
+    import app.api.v1.account as account
+    from app.core.config import settings
+
+    sent: list[str] = []
+
+    async def _spy_sms(phone, msg):
+        sent.append(phone)
+
+    monkeypatch.setattr(account, "send_sms", _spy_sms)
+    monkeypatch.setattr(settings, "cookie_secure", True)  # simulate prod
+    monkeypatch.setattr(settings, "otp_test_phones", "09028068820")
+
+    # Normal phone in prod: no dev_code, real SMS attempted.
+    r = await client.post(f"{ACC}/otp/request", json={"phone": "09121234567"})
+    assert r.status_code == 200 and r.json()["dev_code"] is None
+    assert "09121234567" in sent
+
+    # Test phone in prod: dev_code returned, SMS skipped.
+    r = await client.post(f"{ACC}/otp/request", json={"phone": "09028068820"})
+    assert r.status_code == 200
+    assert r.json()["dev_code"] and len(r.json()["dev_code"]) == 6
+    assert "09028068820" not in sent

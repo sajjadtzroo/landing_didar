@@ -92,9 +92,14 @@ async def request_otp(
         )
     )
     await db.commit()
-    await send_sms(payload.phone, f"کد ورود دیدار: {code}")
-    # dev_code only outside production so tests/dev log in without a real gateway.
-    return OtpRequestOut(sent=True, dev_code=None if settings.cookie_secure else code)
+    # Allowlisted test phones skip the real gateway and get the code back directly
+    # (QA / app-review logins in prod). Everyone else gets a real SMS.
+    is_test = payload.phone in settings.otp_test_phone_set
+    if not is_test:
+        await send_sms(payload.phone, f"کد ورود دیدار: {code}")
+    # dev_code outside production, or for test phones even in production.
+    reveal = is_test or not settings.cookie_secure
+    return OtpRequestOut(sent=True, dev_code=code if reveal else None)
 
 
 @router.post("/otp/verify", response_model=CustomerOut)

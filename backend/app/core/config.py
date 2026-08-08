@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     media_root: str = "media"
     media_url_prefix: str = "/media"
 
+    # MinIO / S3 — SOURCE for the product-photo import job only
+    # (python -m app.import_images). Not touched at request time. Blank = disabled.
+    minio_endpoint: str = ""  # host:port, e.g. "minio.example.com:9000"
+    minio_access_key: str = ""
+    minio_secret_key: str = ""
+    minio_bucket: str = ""
+    minio_secure: bool = True  # https
+
     # SMS notification (primary). Kavenegar-style HTTP by default; provider-swappable.
     sms_provider: str = "kavenegar"  # kavenegar | log
     sms_api_key: str = ""
@@ -36,9 +44,17 @@ class Settings(BaseSettings):
     sms_admin_phone: str = ""  # where new-order alerts go
     admin_order_base_url: str = "http://localhost:3000/admin/orders"
 
+    # Test phones: OTP dev_code is returned (and the real SMS skipped) for these
+    # even in production — for QA / app-review logins without a live gateway.
+    otp_test_phones: str = ""  # comma-separated, e.g. "09028068820"
+
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.frontend_origin.split(",") if o.strip()]
+
+    @property
+    def otp_test_phone_set(self) -> set[str]:
+        return {p.strip() for p in self.otp_test_phones.split(",") if p.strip()}
 
 
 @lru_cache
