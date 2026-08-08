@@ -83,7 +83,7 @@ const submit = handleSubmit(async (values) => {
     trackGoal(Number(cfg.matomoGoalOrder), total)
     // Ecommerce order (converts the abandoned cart into a completed order).
     for (const i of cart.items) {
-      addEcommerceItem(i.sku, i.name, 'jewelry', i.price ?? 0, i.quantity)
+      addEcommerceItem(i.sku, i.name, 'jewelry', i.weightGrams ?? 0, i.quantity)
     }
     trackEcommerceOrder(res.reference, total)
     // Push the lead into Mautic (marketing automation): map to standard fields.

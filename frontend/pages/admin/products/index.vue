@@ -2,7 +2,7 @@
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2, Upload } from 'lucide-vue-next'
 import { reactive, ref } from 'vue'
 import type { Product } from '~/types'
-import { formatPrice, toFa } from '~/utils/format'
+import { toFa } from '~/utils/format'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -17,10 +17,8 @@ const blank = () => ({
   sku: '',
   weight_grams: '',
   karat: 18,
-  price: '' as string | number,
   ojrat_percent: '' as string | number,
   category: 'daily' as 'daily' | 'lux_daily' | 'luxury',
-  onRequest: false,
   is_active: true,
 })
 const form = reactive(blank())
@@ -40,10 +38,8 @@ function startEdit(p: Product) {
     sku: p.sku,
     weight_grams: p.weight_grams ?? '',
     karat: p.karat ?? 18,
-    price: p.price ?? '',
     ojrat_percent: p.ojrat_percent ?? '',
     category: p.category ?? 'daily',
-    onRequest: p.price == null,
     is_active: p.is_active,
   })
   editing.value = true
@@ -57,7 +53,6 @@ async function save() {
     sku: form.sku,
     weight_grams: form.weight_grams === '' ? null : Number(form.weight_grams),
     karat: form.karat ? Number(form.karat) : null,
-    price: form.onRequest || form.price === '' ? null : Number(form.price),
     ojrat_percent: form.ojrat_percent === '' ? null : Number(form.ojrat_percent),
     category: form.category,
     is_active: form.is_active,
@@ -149,7 +144,9 @@ async function move(index: number, dir: -1 | 1) {
         <div class="min-w-0 flex-1">
           <p class="truncate text-ink">{{ p.name }}</p>
           <p class="tnum text-xs text-ink-muted">
-            {{ p.sku }} · {{ formatPrice(p.price) ?? 'استعلام قیمت' }}
+            {{ p.sku }}
+            <template v-if="p.weight_grams"> · {{ toFa(Number(p.weight_grams)) }} گرم</template>
+            <template v-if="p.ojrat_percent"> · اجرت {{ toFa(Number(p.ojrat_percent)) }}٪</template>
           </p>
         </div>
 
@@ -185,12 +182,6 @@ async function move(index: number, dir: -1 | 1) {
             <option value="lux_daily">لوکس روزمره</option>
             <option value="luxury">لوکس</option>
           </select>
-        </FormField>
-        <label class="flex items-center gap-2 text-sm">
-          <input v-model="form.onRequest" type="checkbox" /> استعلام قیمت (بدون قیمت ثابت)
-        </label>
-        <FormField v-if="!form.onRequest" label="قیمت (تومان)" v-slot="{ id }">
-          <input :id="id" v-model="form.price" type="number" class="form-control" />
         </FormField>
         <label class="flex items-center gap-2 text-sm"><input v-model="form.is_active" type="checkbox" /> فعال</label>
       </div>

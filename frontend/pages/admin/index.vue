@@ -10,7 +10,7 @@ import {
   categoryScales,
   registerCharts,
 } from '~/utils/chart'
-import { formatPrice, formatTomanCompact, toFa } from '~/utils/format'
+import { formatGrams, formatGramsCompact, toFa } from '~/utils/format'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 registerCharts()
@@ -41,7 +41,7 @@ const cards = computed(() => [
   { label: 'این هفته', value: toFa(stats.value?.orders_week ?? 0) },
   { label: 'این ماه', value: toFa(stats.value?.orders_month ?? 0) },
   { label: 'کل سفارش‌ها', value: toFa(stats.value?.total_orders ?? 0) },
-  { label: 'ارزش کل', value: formatTomanCompact(stats.value?.total_value ?? 0) },
+  { label: 'وزن کل فروش', value: formatGramsCompact(stats.value?.total_value ?? 0) },
   { label: 'خوانده‌نشده', value: toFa(stats.value?.unread ?? 0) },
   {
     label: 'نرخ تبدیل',
@@ -189,7 +189,7 @@ function faDate(iso: string) {
               <th class="p-2 text-start">تاریخ</th>
               <th class="p-2 text-start">نام</th>
               <th class="p-2 text-start">فروشگاه</th>
-              <th class="p-2 text-start">مبلغ</th>
+              <th class="p-2 text-start">وزن</th>
               <th class="p-2 text-start">وضعیت</th>
             </tr>
           </thead>
@@ -203,7 +203,7 @@ function faDate(iso: string) {
               <td class="tnum p-2">{{ faDate(o.created_at) }}</td>
               <td class="p-2">{{ o.full_name }}</td>
               <td class="p-2">{{ o.store_name }}</td>
-              <td class="tnum p-2">{{ formatPrice(o.total) ?? '—' }}</td>
+              <td class="tnum p-2">{{ formatGrams(o.total) ?? '—' }}</td>
               <td class="p-2">{{ STATUS_LABEL[o.status] }}</td>
             </tr>
             <tr v-if="!recent?.items?.length">

@@ -85,7 +85,7 @@ function addToCart() {
   flyToCart(imageEl.value, product.value.image_url)
   trackEvent('cart', 'add', product.value.name, qty.value)
   for (const i of cart.items) {
-    addEcommerceItem(i.sku, i.name, 'jewelry', i.price ?? 0, i.quantity)
+    addEcommerceItem(i.sku, i.name, 'jewelry', i.weightGrams ?? 0, i.quantity)
   }
   trackEcommerceCartUpdate(cart.total)
 }

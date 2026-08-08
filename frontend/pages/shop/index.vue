@@ -27,7 +27,7 @@ const CATEGORIES = [
 
 const search = ref('')
 const category = ref<string>('') // '' = all
-const sort = ref<'newest' | 'price_asc' | 'price_desc'>('newest')
+const sort = ref<'newest' | 'weight_asc' | 'weight_desc'>('newest')
 
 // Advanced filters (client-side): weight/making-fee ranges + karat.
 const showAdvanced = ref(false)
@@ -88,12 +88,12 @@ const filtered = computed(() => {
     if (karat.value !== '' && p.karat !== karat.value) return false
     return true
   })
-  // Price sorts: nulls ("on request") always sink to the end.
-  const price = (p: Product) => (p.price == null ? null : Number(p.price))
-  if (sort.value === 'price_asc' || sort.value === 'price_desc') {
-    const dir = sort.value === 'price_asc' ? 1 : -1
+  // Weight sorts: nulls (unknown weight) always sink to the end.
+  const weight = (p: Product) => (p.weight_grams == null ? null : Number(p.weight_grams))
+  if (sort.value === 'weight_asc' || sort.value === 'weight_desc') {
+    const dir = sort.value === 'weight_asc' ? 1 : -1
     list = [...list].sort((a, b) => {
-      const pa = price(a); const pb = price(b)
+      const pa = weight(a); const pb = weight(b)
       if (pa == null) return 1
       if (pb == null) return -1
       return (pa - pb) * dir
@@ -203,8 +203,8 @@ useHead({
           {{ CONTENT.shop.sortLabel }}
           <select v-model="sort" class="form-control h-9 w-auto py-0">
             <option value="newest">{{ CONTENT.shop.sortNewest }}</option>
-            <option value="price_asc">{{ CONTENT.shop.sortPriceAsc }}</option>
-            <option value="price_desc">{{ CONTENT.shop.sortPriceDesc }}</option>
+            <option value="weight_asc">{{ CONTENT.shop.sortWeightAsc }}</option>
+            <option value="weight_desc">{{ CONTENT.shop.sortWeightDesc }}</option>
           </select>
         </label>
       </div>

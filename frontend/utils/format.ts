@@ -13,6 +13,22 @@ export function formatPrice(value: number | string | null): string | null {
   return toFa(n.toLocaleString('en-US')) + ' تومان'
 }
 
+/** Weight in grams with Persian digits: "۱۲٫۵ گرم" (wholesale gold is by weight). */
+export function formatGrams(value: number | string | null): string | null {
+  if (value == null) return null
+  const n = typeof value === 'string' ? Number(value) : value
+  if (Number.isNaN(n)) return null
+  return toFa(n.toLocaleString('en-US', { maximumFractionDigits: 2 })) + ' گرم'
+}
+
+/** Compact grams for KPI cards: "۵۵۳ گرم" / "۱٫۲ کیلوگرم". */
+export function formatGramsCompact(value: number | string | null): string {
+  const n = typeof value === 'string' ? Number(value) : value
+  if (n == null || Number.isNaN(n)) return '—'
+  if (n >= 1000) return `${toFa((n / 1000).toFixed(1))} کیلوگرم`
+  return `${toFa(n.toLocaleString('en-US', { maximumFractionDigits: 2 }))} گرم`
+}
+
 /** Compact Toman for KPI cards: ۵۵۳ میلیون / ۱٫۲ میلیارد تومان (single line). */
 export function formatTomanCompact(value: number | string | null): string {
   const n = typeof value === 'string' ? Number(value) : value

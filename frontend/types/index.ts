@@ -76,7 +76,7 @@ export interface CartItem {
   productId: string
   name: string
   sku: string
-  price: number | null
+  weightGrams: number | null
   imageUrl: string | null
   quantity: number
 }
@@ -148,7 +148,8 @@ export interface AdminOrder {
 export interface OrderItem {
   product_id: string | null
   product_name: string
-  unit_price: string | null
+  unit_weight_grams: string | null
+  unit_price: string | null // legacy
   quantity: number
 }
 

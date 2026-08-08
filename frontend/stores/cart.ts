@@ -8,10 +8,10 @@ export const useCartStore = defineStore('cart', {
 
   getters: {
     itemCount: (state) => state.items.reduce((n, i) => n + i.quantity, 0),
-    // Sum of priced items only; "on request" items don't contribute a number.
+    // Total weight in grams (wholesale gold is quantified by weight, not Toman).
     total: (state) =>
       state.items.reduce(
-        (sum, i) => sum + (i.price != null ? i.price * i.quantity : 0),
+        (sum, i) => sum + (i.weightGrams != null ? i.weightGrams * i.quantity : 0),
         0,
       ),
     isSelected: (state) => (productId: string) =>
@@ -31,7 +31,7 @@ export const useCartStore = defineStore('cart', {
         productId: product.id,
         name: product.name,
         sku: product.sku,
-        price: product.price != null ? Number(product.price) : null,
+        weightGrams: product.weight_grams != null ? Number(product.weight_grams) : null,
         imageUrl: product.image_url,
         quantity,
       })

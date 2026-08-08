@@ -4,7 +4,7 @@ import { reactive, watch } from 'vue'
 import { PROVINCES } from '~/constants/provinces'
 import { STATUS_CLASS, STATUS_FLOW, STATUS_LABEL } from '~/constants/orderStatus'
 import type { OrderListResponse, OrderStatus } from '~/types'
-import { formatPrice, toFa } from '~/utils/format'
+import { formatGrams, toFa } from '~/utils/format'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -97,7 +97,7 @@ function faDate(iso: string) {
             <th class="p-3 text-start">موبایل</th>
             <th class="p-3 text-start">فروشگاه</th>
             <th class="p-3 text-start">استان</th>
-            <th class="p-3 text-start">مبلغ</th>
+            <th class="p-3 text-start">وزن</th>
             <th class="p-3 text-start">وضعیت</th>
           </tr>
         </thead>
@@ -117,7 +117,7 @@ function faDate(iso: string) {
             <td class="tnum p-3" dir="ltr">{{ o.phone }}</td>
             <td class="p-3">{{ o.store_name }}</td>
             <td class="p-3">{{ o.province }}</td>
-            <td class="tnum p-3">{{ formatPrice(o.total) ?? '—' }}</td>
+            <td class="tnum p-3">{{ formatGrams(o.total) ?? '—' }}</td>
             <td class="p-3">
               <span class="px-2 py-1 text-xs" :class="STATUS_CLASS[o.status]">
                 {{ STATUS_LABEL[o.status] }}
@@ -147,7 +147,7 @@ function faDate(iso: string) {
         </div>
         <p class="tnum mt-1 text-sm text-ink-muted" dir="ltr">{{ o.phone }}</p>
         <p class="mt-1 text-sm text-ink-muted">{{ o.store_name }} — {{ o.province }}</p>
-        <p class="tnum mt-1 text-sm text-gold-text">{{ formatPrice(o.total) ?? '—' }}</p>
+        <p class="tnum mt-1 text-sm text-gold-text">{{ formatGrams(o.total) ?? '—' }}</p>
       </button>
     </div>
 

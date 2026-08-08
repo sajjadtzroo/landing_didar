@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Trash2 } from 'lucide-vue-next'
 import { CONTENT } from '~/constants/content'
+import { formatGrams } from '~/utils/format'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [boolean]; continue: [] }>()
@@ -39,7 +40,7 @@ function remove(productId: string, name: string) {
         <div class="min-w-0 flex-1">
           <p class="truncate text-ink">{{ item.name }}</p>
           <p class="mt-1 text-sm text-gold-text">
-            {{ CONTENT.products.priceOnRequest }}
+            {{ formatGrams(item.weightGrams) ?? CONTENT.products.priceOnRequest }}
           </p>
           <div class="mt-2 flex items-center gap-3">
             <QtyStepper
@@ -63,7 +64,7 @@ function remove(productId: string, name: string) {
       <div class="mb-4 flex items-center justify-between text-ink">
         <span>{{ CONTENT.cart.total }}</span>
         <span class="font-medium text-gold-text">
-          {{ CONTENT.products.priceOnRequest }}
+          {{ formatGrams(cart.total) ?? CONTENT.products.priceOnRequest }}
         </span>
       </div>
       <button

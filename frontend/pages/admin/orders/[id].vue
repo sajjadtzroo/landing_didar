@@ -4,7 +4,7 @@ import { ref, watch } from 'vue'
 import { CONTENT } from '~/constants/content'
 import { STATUS_FLOW, STATUS_LABEL } from '~/constants/orderStatus'
 import type { AdminOrderDetail, OrderStatus } from '~/types'
-import { formatPrice, toFa } from '~/utils/format'
+import { formatGrams, toFa } from '~/utils/format'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -130,12 +130,12 @@ function faDateTime(iso: string) {
       <ul class="divide-y divide-line">
         <li v-for="(it, i) in order.items" :key="i" class="flex justify-between py-3 text-sm">
           <span>{{ it.product_name }} × {{ toFa(it.quantity) }}</span>
-          <span class="tnum text-gold-text">{{ formatPrice(it.unit_price) ?? 'استعلام' }}</span>
+          <span class="tnum text-gold-text">{{ formatGrams(it.unit_weight_grams) ?? '—' }}</span>
         </li>
       </ul>
       <div class="mt-4 flex justify-between border-t border-line pt-3 font-medium">
-        <span>جمع کل</span>
-        <span class="tnum text-gold-text">{{ formatPrice(order.total) ?? '—' }}</span>
+        <span>وزن کل</span>
+        <span class="tnum text-gold-text">{{ formatGrams(order.total) ?? '—' }}</span>
       </div>
       <p v-if="order.note" class="mt-4 border-t border-line pt-3 text-sm text-ink-muted">
         توضیحات مشتری: {{ order.note }}
