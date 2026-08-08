@@ -40,12 +40,30 @@ def _apply_filters(
         like = f"%{q}%"
         stmt = stmt.where(
             or_(
+                Order.reference.ilike(like),
                 Order.full_name.ilike(like),
                 Order.phone.ilike(like),
                 Order.store_name.ilike(like),
             )
         )
     return stmt
+
+
+# Whitelisted sort columns (key sent by the admin UI -> column). created_at is the
+# default and also the tiebreaker so paging stays stable.
+_SORTS = {
+    "created_at": Order.created_at,
+    "total": Order.total,
+    "full_name": Order.full_name,
+    "status": Order.status,
+    "reference": Order.reference,
+}
+
+
+def _order_by(sort: str, direction: str):
+    col = _SORTS.get(sort, Order.created_at)
+    primary = col.asc() if direction == "asc" else col.desc()
+    return (primary, Order.created_at.desc())
 
 
 @router.get("/orders", response_model=OrderListOut)
@@ -56,6 +74,8 @@ async def list_orders(
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     q: str | None = None,
+    sort: str = "created_at",
+    dir: str = "desc",
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
@@ -65,7 +85,7 @@ async def list_orders(
         select(func.count()).select_from(Order).where(~Order.is_read)
     )
     rows = await db.execute(
-        base.order_by(Order.created_at.desc())
+        base.order_by(*_order_by(sort, dir))
         .offset((page - 1) * page_size)
         .limit(page_size)
     )

@@ -52,6 +52,21 @@ async def test_search_query(approved_client, admin_client, order_payload):
     assert miss["total"] == 0
 
 
+async def test_search_by_reference(approved_client, admin_client, order_payload):
+    ref = await _create_order(approved_client, order_payload)
+    hit = (await admin_client.get(ORDERS, params={"q": ref})).json()
+    assert hit["total"] == 1 and hit["items"][0]["reference"] == ref
+
+
+async def test_sort_by_date_direction(approved_client, admin_client, order_payload):
+    first = await _create_order(approved_client, order_payload)
+    second = await _create_order(approved_client, order_payload)
+    desc = (await admin_client.get(ORDERS, params={"sort": "created_at", "dir": "desc"})).json()
+    asc = (await admin_client.get(ORDERS, params={"sort": "created_at", "dir": "asc"})).json()
+    assert [i["reference"] for i in desc["items"]] == [second, first]
+    assert [i["reference"] for i in asc["items"]] == [first, second]
+
+
 async def test_pagination(approved_client, admin_client, order_payload):
     for _ in range(3):
         await _create_order(approved_client, order_payload)
