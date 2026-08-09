@@ -93,10 +93,48 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
     )
 
 
-# --- Media (dev). Swap LocalStorage for S3 in prod; see services/storage.py ---
+# --- Media ---------------------------------------------------------------------
+# When MinIO is configured, serve /media by streaming from the PRIVATE bucket with
+# credentials (bucket stays private; the app is the only reader), falling back to
+# local disk for pre-MinIO / imported files. Otherwise mount the local directory.
 media_dir = Path(settings.media_root)
 media_dir.mkdir(parents=True, exist_ok=True)
-app.mount(settings.media_url_prefix, StaticFiles(directory=media_dir), name="media")
+
+from app.services.storage import MinioStorage, get_storage  # noqa: E402
+
+if isinstance(get_storage(), MinioStorage):
+    from fastapi import HTTPException
+    from fastapi.responses import FileResponse, StreamingResponse
+    from minio.error import S3Error
+
+    @app.get(settings.media_url_prefix + "/{key:path}")
+    async def media(key: str):
+        store = get_storage()
+        try:
+            resp = await asyncio.to_thread(store.open, key)
+        except S3Error as exc:
+            local = media_dir / key
+            if exc.code in ("NoSuchKey", "NoSuchBucket") and local.is_file():
+                return FileResponse(local)  # pre-MinIO / imported media
+            raise HTTPException(404, detail="Not found") from exc
+        ctype = resp.headers.get("Content-Type", "application/octet-stream")
+
+        def _iter():
+            try:
+                yield from resp.stream(64 * 1024)
+            finally:
+                resp.close()
+                resp.release_conn()
+
+        return StreamingResponse(
+            _iter(),
+            media_type=ctype,
+            headers={"Cache-Control": "private, max-age=300"},
+        )
+else:
+    app.mount(
+        settings.media_url_prefix, StaticFiles(directory=media_dir), name="media"
+    )
 
 
 @app.get("/health")
