@@ -24,6 +24,7 @@ class OrderStatus(enum.StrEnum):
     contacted = "contacted"
     confirmed = "confirmed"
     shipped = "shipped"
+    delivered = "delivered"  # fulfilled — mints an authenticity serial per piece
     cancelled = "cancelled"
 
 
@@ -85,6 +86,13 @@ class Order(Base):
     status_log: Mapped[list["OrderStatusLog"]] = relationship(
         back_populates="order", cascade="all, delete-orphan", lazy="selectin"
     )
+    # Authenticity serials minted when the order is delivered (one per piece).
+    serials = relationship("ProductSerial", back_populates="order", lazy="selectin")
+
+    @property
+    def serial_codes(self) -> list[str]:
+        """Display-form codes (DGV-XXXXXXXX) for the buyer/admin views."""
+        return [f"{s.code[:3]}-{s.code[3:]}" for s in self.serials]
 
 
 class OrderItem(Base):

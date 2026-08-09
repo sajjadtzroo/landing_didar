@@ -10,6 +10,29 @@ SERIALS = "/api/v1/admin/serials"
 GENERATE = "/api/v1/admin/serials/generate"
 VERIFY = "/api/v1/serials/verify"
 PRODUCTS = "/api/v1/admin/products"
+ORDERS = "/api/v1/orders"
+ADMIN_ORDERS = "/api/v1/admin/orders"
+ACCOUNT_ORDERS = "/api/v1/account/me/orders"
+
+
+async def _place_order(approved_client, admin_client, items):
+    r = await approved_client.post(
+        ORDERS,
+        json={
+            "full_name": "Ali Rezaei", "phone": "09121234567",
+            "store_name": "Rezaei Jewelry", "province": "Tehran", "items": items,
+        },
+    )
+    assert r.status_code == 201, r.text
+    ref = r.json()["reference"]
+    listed = (await admin_client.get(ADMIN_ORDERS, params={"q": ref})).json()
+    return listed["items"][0]["id"], ref
+
+
+async def _deliver(admin_client, oid):
+    r = await admin_client.patch(f"{ADMIN_ORDERS}/{oid}", json={"status": "delivered"})
+    assert r.status_code == 200, r.text
+    return r.json()
 
 
 def _sku():
@@ -114,6 +137,60 @@ async def test_export_csv(admin_client):
     assert r.status_code == 200
     assert "text/csv" in r.headers["content-type"]
     assert "DGV-" in r.text
+
+
+async def test_delivery_mints_one_serial_per_unit(approved_client, admin_client):
+    p = await _create_product(admin_client)
+    oid, ref = await _place_order(approved_client, admin_client, [{"product_id": p["id"], "quantity": 3}])
+    detail = await _deliver(admin_client, oid)
+    assert len(detail["serial_codes"]) == 3
+    listed = (await admin_client.get(SERIALS, params={"order_id": oid})).json()
+    assert listed["total"] == 3
+    assert all(s["status"] == "sold" and s["order_reference"] == ref for s in listed["items"])
+
+
+async def test_delivery_skips_custom_items(approved_client, admin_client):
+    p = await _create_product(admin_client)
+    oid, _ = await _place_order(
+        approved_client, admin_client,
+        [{"product_id": p["id"], "quantity": 2}, {"quantity": 5}],  # 2nd = custom
+    )
+    detail = await _deliver(admin_client, oid)
+    assert len(detail["serial_codes"]) == 2  # custom item minted nothing
+
+
+async def test_delivery_is_idempotent(approved_client, admin_client):
+    p = await _create_product(admin_client)
+    oid, _ = await _place_order(approved_client, admin_client, [{"product_id": p["id"], "quantity": 2}])
+    await _deliver(admin_client, oid)
+    await admin_client.patch(f"{ADMIN_ORDERS}/{oid}", json={"status": "shipped"})
+    detail = await _deliver(admin_client, oid)  # deliver again
+    assert len(detail["serial_codes"]) == 2  # not 4
+
+
+async def test_delivered_code_verifies_publicly(approved_client, admin_client, client):
+    p = await _create_product(admin_client, name="Vera Ring")
+    oid, _ = await _place_order(approved_client, admin_client, [{"product_id": p["id"], "quantity": 1}])
+    code = (await _deliver(admin_client, oid))["serial_codes"][0]
+    out = await client.get(VERIFY, params={"code": code})
+    assert out.status_code == 200 and out.json()["product_name"] == "Vera Ring"
+
+
+async def test_customer_sees_serial_codes(approved_client, admin_client):
+    p = await _create_product(admin_client)
+    oid, ref = await _place_order(approved_client, admin_client, [{"product_id": p["id"], "quantity": 1}])
+    await _deliver(admin_client, oid)
+    mine = (await approved_client.get(ACCOUNT_ORDERS)).json()
+    row = next(o for o in mine if o["reference"] == ref)
+    assert len(row["serial_codes"]) == 1
+
+
+async def test_manual_generate_endpoint(approved_client, admin_client):
+    p = await _create_product(admin_client)
+    oid, _ = await _place_order(approved_client, admin_client, [{"product_id": p["id"], "quantity": 2}])
+    r = await admin_client.post(f"{ADMIN_ORDERS}/{oid}/generate-serials")
+    assert r.status_code == 200
+    assert len(r.json()["codes"]) == 2
 
 
 async def test_verify_rate_limited(admin_client, client):

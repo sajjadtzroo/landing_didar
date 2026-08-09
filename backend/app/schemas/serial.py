@@ -32,6 +32,7 @@ class SerialOut(BaseModel):
     batch_id: uuid.UUID
     note: str | None
     created_at: datetime
+    order_reference: str | None = None  # set when minted for a delivered order
     verify_count: int = 0
     first_verified_at: datetime | None = None
 

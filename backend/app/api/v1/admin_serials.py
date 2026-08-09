@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
 from app.core.db import get_db
+from app.models.order import Order
 from app.models.product import Product
 from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialScan
 from app.schemas.serial import SerialGenerate, SerialListOut, SerialOut, SerialUpdate
@@ -17,13 +18,15 @@ from app.services import serials as serial_service
 router = APIRouter(dependencies=[Depends(require_admin)])
 
 
-def _apply_filters(stmt, product_id, status, batch_id, q):
+def _apply_filters(stmt, product_id, status, batch_id, order_id, q):
     if product_id:
         stmt = stmt.where(ProductSerial.product_id == product_id)
     if status:
         stmt = stmt.where(ProductSerial.status == status)
     if batch_id:
         stmt = stmt.where(ProductSerial.batch_id == batch_id)
+    if order_id:
+        stmt = stmt.where(ProductSerial.order_id == order_id)
     if q:
         norm = serial_service.normalize(q)
         if norm:
@@ -32,7 +35,7 @@ def _apply_filters(stmt, product_id, status, batch_id, q):
     return stmt
 
 
-def _to_out(s: ProductSerial, verify_count: int = 0, first=None) -> SerialOut:
+def _to_out(s: ProductSerial, verify_count: int = 0, first=None, order_reference=None) -> SerialOut:
     return SerialOut(
         id=s.id,
         code=serial_service.format_code(s.code),
@@ -44,6 +47,7 @@ def _to_out(s: ProductSerial, verify_count: int = 0, first=None) -> SerialOut:
         batch_id=s.batch_id,
         note=s.note,
         created_at=s.created_at,
+        order_reference=order_reference,
         verify_count=verify_count,
         first_verified_at=first,
     )
@@ -67,18 +71,21 @@ async def list_serials(
     product_id: uuid.UUID | None = None,
     status: ProductSerialStatus | None = None,
     batch_id: uuid.UUID | None = None,
+    order_id: uuid.UUID | None = None,
     q: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
     agg = _scan_agg()
-    base = select(ProductSerial, agg.c.cnt, agg.c.first).outerjoin(
-        agg, agg.c.sid == ProductSerial.id
+    base = (
+        select(ProductSerial, agg.c.cnt, agg.c.first, Order.reference)
+        .outerjoin(agg, agg.c.sid == ProductSerial.id)
+        .outerjoin(Order, Order.id == ProductSerial.order_id)
     )
-    base = _apply_filters(base, product_id, status, batch_id, q)
+    base = _apply_filters(base, product_id, status, batch_id, order_id, q)
 
     count_stmt = _apply_filters(
-        select(ProductSerial.id), product_id, status, batch_id, q
+        select(ProductSerial.id), product_id, status, batch_id, order_id, q
     )
     total = await db.scalar(select(func.count()).select_from(count_stmt.subquery()))
 
@@ -87,7 +94,7 @@ async def list_serials(
         .offset((page - 1) * page_size)
         .limit(page_size)
     )
-    items = [_to_out(s, cnt or 0, first) for s, cnt, first in rows.all()]
+    items = [_to_out(s, cnt or 0, first, ref) for s, cnt, first, ref in rows.all()]
     return SerialListOut(items=items, total=total or 0, page=page, page_size=page_size)
 
 
@@ -107,9 +114,10 @@ async def export_serials(
     product_id: uuid.UUID | None = None,
     status: ProductSerialStatus | None = None,
     batch_id: uuid.UUID | None = None,
+    order_id: uuid.UUID | None = None,
     q: str | None = None,
 ):
-    stmt = _apply_filters(select(ProductSerial), product_id, status, batch_id, q)
+    stmt = _apply_filters(select(ProductSerial), product_id, status, batch_id, order_id, q)
     rows = (await db.execute(stmt.order_by(ProductSerial.created_at.desc()))).scalars().all()
 
     buf = io.StringIO()

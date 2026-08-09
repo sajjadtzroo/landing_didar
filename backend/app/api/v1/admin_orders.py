@@ -16,6 +16,7 @@ from app.schemas.order import (
     OrderUpdate,
 )
 from app.services import orders as order_service
+from app.services import serials as serial_service
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
@@ -148,6 +149,9 @@ async def update_order(
         raise HTTPException(404, detail="Order not found")
     if payload.status is not None:
         await order_service.change_status(db, order, payload.status)
+        # Delivered => mint one authenticity serial per piece (idempotent).
+        if order.status == OrderStatus.delivered:
+            await serial_service.generate_for_order(db, order)
     if payload.internal_note is not None:
         order.internal_note = payload.internal_note
     if payload.is_read is not None:
@@ -155,3 +159,16 @@ async def update_order(
     await db.commit()
     await db.refresh(order)
     return order
+
+
+@router.post("/orders/{order_id}/generate-serials")
+async def generate_order_serials(order_id: str, db: AsyncSession = Depends(get_db)):
+    """Manual fallback: mint serials for an order (e.g. delivered before this feature).
+    Idempotent — returns the order's codes whether it minted now or already had them."""
+    order = await db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(404, detail="Order not found")
+    await serial_service.generate_for_order(db, order)
+    await db.commit()
+    await db.refresh(order)
+    return {"codes": order.serial_codes}

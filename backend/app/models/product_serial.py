@@ -49,8 +49,14 @@ class ProductSerial(Base):
     # All rows from one generate call share a batch_id (recall / re-export a print run).
     batch_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True, nullable=False)
     note: Mapped[str | None] = mapped_column(String(300))
+    # Set when the serial was minted for a delivered order (SET NULL keeps the
+    # certificate if the order row is ever deleted).
+    order_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("orders.id", ondelete="SET NULL"), index=True
+    )
 
     product = relationship("Product")
+    order = relationship("Order", back_populates="serials")
     scans: Mapped[list["SerialScan"]] = relationship(
         back_populates="serial", cascade="all, delete-orphan"
     )

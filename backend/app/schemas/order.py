@@ -76,6 +76,7 @@ class OrderTrackOut(BaseModel):
     created_at: datetime
     items: list[OrderItemOut]
     status_log: list[OrderStatusLogOut]
+    serial_codes: list[str] = []  # authenticity codes once delivered
 
 
 class OrderOut(BaseModel):
@@ -103,6 +104,7 @@ class OrderOut(BaseModel):
 class OrderDetailOut(OrderOut):
     items: list[OrderItemOut]
     status_log: list[OrderStatusLogOut]
+    serial_codes: list[str] = []  # authenticity codes minted on delivery
 
 
 class OrderListOut(BaseModel):
