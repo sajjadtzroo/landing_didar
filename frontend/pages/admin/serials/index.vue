@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BadgeCheck, Copy, Download, Plus, Search, Trash2 } from 'lucide-vue-next'
+import { Copy, Download, Plus, Printer, QrCode, Search, Trash2 } from 'lucide-vue-next'
 import { reactive, ref, watch } from 'vue'
 import type { Product, ProductSerial, SerialListResponse } from '~/types'
 import { toFa } from '~/utils/format'
@@ -83,6 +83,10 @@ function copy(code: string) {
 function exportCsv(batchId?: string) {
   const p = batchId ? `batch_id=${batchId}` : query()
   window.open(`${useApiBase()}/admin/serials/export?${p}`, '_blank')
+}
+// Public QR label image (you must already know the code — nothing new exposed).
+function qrUrl(code: string) {
+  return `${useApiBase()}/serials/${code}/qr.png`
 }
 
 function faDate(iso: string) {
@@ -168,6 +172,15 @@ function faDate(iso: string) {
             </td>
             <td class="tnum p-3 text-ink-muted">{{ faDate(s.created_at) }}</td>
             <td class="p-3 text-end">
+              <a
+                :href="qrUrl(s.code)"
+                target="_blank"
+                rel="noopener"
+                class="me-2 inline-flex text-ink-muted hover:text-gold-text"
+                aria-label="برچسب QR"
+              >
+                <QrCode :size="16" />
+              </a>
               <button class="text-ink-muted hover:text-danger" aria-label="حذف" @click="remove(s)">
                 <Trash2 :size="16" />
               </button>
@@ -236,13 +249,20 @@ function faDate(iso: string) {
         >
           {{ generating ? 'در حال تولید…' : 'تولید' }}
         </button>
-        <button
-          v-else
-          class="flex h-[58px] w-full items-center justify-center gap-2 bg-navy text-base font-medium text-white hover:bg-gold"
-          @click="exportCsv(lastBatch[0]?.batch_id)"
-        >
-          <Download :size="18" /> دانلود CSV این دسته
-        </button>
+        <div v-else class="flex gap-3">
+          <button
+            class="flex h-[58px] flex-1 items-center justify-center gap-2 border border-line text-base font-medium hover:border-gold"
+            @click="exportCsv(lastBatch[0]?.batch_id)"
+          >
+            <Download :size="18" /> دانلود CSV
+          </button>
+          <button
+            class="flex h-[58px] flex-1 items-center justify-center gap-2 bg-navy text-base font-medium text-white hover:bg-gold"
+            @click="navigateTo(`/admin/serials/print?batch_id=${lastBatch[0]?.batch_id}`)"
+          >
+            <Printer :size="18" /> چاپ برچسب‌ها
+          </button>
+        </div>
       </template>
     </BaseSheet>
   </div>

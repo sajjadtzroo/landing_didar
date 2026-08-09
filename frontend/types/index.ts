@@ -225,4 +225,6 @@ export interface SerialVerify {
   weight_grams: string | null
   image_url: string | null
   issued_at: string
+  // Passport timeline: minted (derived) + sold, oldest first.
+  events: { type: string; at: string }[]
 }

@@ -53,6 +53,12 @@ useHead({ title: 'بررسی اصالت | دیدار گلد' })
 function faDate(iso: string) {
   return toFa(new Date(iso).toLocaleDateString('en-GB'))
 }
+
+// Passport timeline labels (unknown types are hidden rather than shown raw).
+const EVENT_LABEL: Record<string, string> = {
+  minted: 'صدور کد اصالت',
+  sold: 'فروش و تحویل',
+}
 </script>
 
 <template>
@@ -103,6 +109,25 @@ function faDate(iso: string) {
             <p class="tnum mt-3 text-xs text-ink-muted" dir="ltr">{{ result.code }}</p>
             <p class="tnum mt-1 text-xs text-ink-muted">تاریخ صدور کد: {{ faDate(result.issued_at) }}</p>
           </div>
+        </div>
+
+        <!-- Passport timeline -->
+        <div
+          v-if="result.events?.some((e) => EVENT_LABEL[e.type])"
+          class="border-t border-line px-4 py-3"
+        >
+          <p class="mb-2 text-xs text-ink-muted">شناسنامه قطعه</p>
+          <ol class="space-y-1.5">
+            <li
+              v-for="(e, i) in result.events.filter((ev) => EVENT_LABEL[ev.type])"
+              :key="i"
+              class="flex items-center gap-2 text-sm text-ink"
+            >
+              <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden="true" />
+              {{ EVENT_LABEL[e.type] }}
+              <span class="tnum ms-auto text-xs text-ink-muted">{{ faDate(e.at) }}</span>
+            </li>
+          </ol>
         </div>
       </div>
 
