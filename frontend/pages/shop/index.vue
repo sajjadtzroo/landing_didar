@@ -122,11 +122,11 @@ useHead({
     <section class="mb-8 sm:mb-10">
       <div class="relative aspect-[3/2] w-full overflow-hidden sm:aspect-[21/7]">
         <NuxtImg
-          src="/shop-hero.jpg"
+          src="/shop-hero-showroom.jpg"
           :alt="CONTENT.shop.title"
           class="h-full w-full object-cover"
-          width="1450"
-          height="1000"
+          width="1250"
+          height="884"
           format="webp"
           sizes="100vw"
           loading="eager"
