@@ -7,7 +7,7 @@ from app.core.db import get_db
 from app.models.faq import FAQ
 from app.models.product import Product
 from app.schemas.faq import FAQCreate, FAQOut, FAQUpdate
-from app.schemas.product import ProductCreate, ProductOut, ProductUpdate
+from app.schemas.product import AdminProductOut, ProductCreate, ProductUpdate
 from app.services.storage import get_storage
 
 router = APIRouter(dependencies=[Depends(require_admin)])
@@ -34,13 +34,13 @@ async def upload_media(file: UploadFile = File(...)):
 
 
 # ---- Products ----
-@router.get("/products", response_model=list[ProductOut])
+@router.get("/products", response_model=list[AdminProductOut])
 async def list_products(db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(Product).order_by(Product.sort_order))
     return res.scalars().all()
 
 
-@router.post("/products", response_model=ProductOut, status_code=201)
+@router.post("/products", response_model=AdminProductOut, status_code=201)
 async def create_product(payload: ProductCreate, db: AsyncSession = Depends(get_db)):
     product = Product(**payload.model_dump())
     db.add(product)
@@ -49,7 +49,7 @@ async def create_product(payload: ProductCreate, db: AsyncSession = Depends(get_
     return product
 
 
-@router.patch("/products/{product_id}", response_model=ProductOut)
+@router.patch("/products/{product_id}", response_model=AdminProductOut)
 async def update_product(
     product_id: str, payload: ProductUpdate, db: AsyncSession = Depends(get_db)
 ):

@@ -15,6 +15,8 @@ const { toast } = useToast()
 const { isFav, toggle } = useFavorites()
 const selected = computed(() => cart.isSelected(props.product.id))
 const qty = computed(() => cart.quantityOf(props.product.id))
+// Sample pieces (نمونه) are shown for reference but can't be ordered.
+const isSample = computed(() => props.product.product_status === 'sample')
 
 // Second gallery image (if imported) → crossfade on hover.
 const hoverImage = computed(() => {
@@ -107,6 +109,13 @@ async function onHeart() {
         >
           ✓ {{ CONTENT.products.added }} · {{ toFa(qty) }}
         </span>
+        <!-- Sample badge -->
+        <span
+          v-else-if="isSample"
+          class="absolute end-2 top-2 bg-ink/85 px-2 py-1 text-xs font-medium text-white"
+        >
+          {{ CONTENT.products.sample }}
+        </span>
       </div>
 
       <div class="px-4 py-4">
@@ -135,27 +144,35 @@ async function onHeart() {
     <!-- Shop mode: add-to-cart (OUTSIDE the link so tapping add doesn't navigate).
          Mobile → 44px circle; desktop → full-width bar for clear affordance. -->
     <div v-if="shop" class="px-4 pb-4">
-      <button
-        type="button"
-        class="ms-auto flex h-11 w-11 items-center justify-center rounded-full text-white
-          transition duration-300 active:scale-95 sm:hidden"
-        :class="selected ? 'bg-gold' : 'bg-navy hover:bg-gold'"
-        :aria-label="selected ? CONTENT.shop.inCart : `${CONTENT.products.add}: ${product.name}`"
-        @click="addToCart"
+      <p
+        v-if="isSample"
+        class="corner-soft border border-line py-2.5 text-center text-sm text-ink-muted"
       >
-        <component :is="selected ? Check : Plus" :size="20" aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        class="hidden h-11 w-full items-center justify-center gap-2 text-sm font-medium text-white
-          transition duration-300 active:scale-[0.98] sm:flex"
-        :class="selected ? 'bg-gold' : 'bg-navy hover:bg-gold'"
-        :aria-label="selected ? CONTENT.shop.inCart : `${CONTENT.products.add}: ${product.name}`"
-        @click="addToCart"
-      >
-        <component :is="selected ? Check : Plus" :size="18" aria-hidden="true" />
-        {{ selected ? CONTENT.shop.inCart : CONTENT.shop.addToCart }}
-      </button>
+        {{ CONTENT.products.sampleNote }}
+      </p>
+      <template v-else>
+        <button
+          type="button"
+          class="ms-auto flex h-11 w-11 items-center justify-center rounded-full text-white
+            transition duration-300 active:scale-95 sm:hidden"
+          :class="selected ? 'bg-gold' : 'bg-navy hover:bg-gold'"
+          :aria-label="selected ? CONTENT.shop.inCart : `${CONTENT.products.add}: ${product.name}`"
+          @click="addToCart"
+        >
+          <component :is="selected ? Check : Plus" :size="20" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          class="hidden h-11 w-full items-center justify-center gap-2 text-sm font-medium text-white
+            transition duration-300 active:scale-[0.98] sm:flex"
+          :class="selected ? 'bg-gold' : 'bg-navy hover:bg-gold'"
+          :aria-label="selected ? CONTENT.shop.inCart : `${CONTENT.products.add}: ${product.name}`"
+          @click="addToCart"
+        >
+          <component :is="selected ? Check : Plus" :size="18" aria-hidden="true" />
+          {{ selected ? CONTENT.shop.inCart : CONTENT.shop.addToCart }}
+        </button>
+      </template>
     </div>
 
     <!-- Signature gold accent: grows from the start edge on hover -->

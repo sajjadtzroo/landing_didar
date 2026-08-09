@@ -5,6 +5,9 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 Category = Literal["daily", "lux_daily", "luxury"]
+# Sellability, orthogonal to is_active: sellable (normal), sample (نمونه — shown
+# but not orderable), not_for_sale (غیرقابل‌فروش — hidden from the public shop).
+ProductStatus = Literal["sellable", "sample", "not_for_sale"]
 
 
 class ProductBase(BaseModel):
@@ -19,12 +22,15 @@ class ProductBase(BaseModel):
     ojrat_percent: Decimal | None = Field(default=None, ge=0, le=100)
     image_url: str | None = None
     category: Category = "daily"
+    # Public-safe: the frontend needs these to gate ordering (sample) + warranty.
+    product_status: ProductStatus = "sellable"
+    warrantable: bool = True
     is_active: bool = True
     sort_order: int = 0
 
 
 class ProductCreate(ProductBase):
-    pass
+    supplier: str | None = Field(default=None, max_length=120)  # admin-only
 
 
 class ProductUpdate(BaseModel):
@@ -38,6 +44,9 @@ class ProductUpdate(BaseModel):
     ojrat_percent: Decimal | None = Field(default=None, ge=0, le=100)
     image_url: str | None = None
     category: Category | None = None
+    supplier: str | None = Field(default=None, max_length=120)
+    product_status: ProductStatus | None = None
+    warrantable: bool | None = None
     is_active: bool | None = None
     sort_order: int | None = None
 
@@ -46,3 +55,9 @@ class ProductOut(ProductBase):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
     images: list[str] = []  # gallery paths imported from MinIO; [] until imported
+
+
+class AdminProductOut(ProductOut):
+    """Admin view — adds the internal supplier/maker field."""
+
+    supplier: str | None = None

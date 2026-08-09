@@ -174,6 +174,8 @@ export const CONTENT = {
     },
     add: 'افزودن به سبد',
     added: 'انتخاب‌شده',
+    sample: 'نمونه',
+    sampleNote: 'نمونه — غیرقابل سفارش',
     weight: 'وزن',
     karat: 'عیار',
     ojrat: 'اجرت',

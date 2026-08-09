@@ -97,7 +97,11 @@ async def _resolve_groups(
     if wanted:
         rows = (
             await db.execute(
-                select(Product).where(Product.id.in_(wanted), Product.is_active)
+                select(Product).where(
+                    Product.id.in_(wanted),
+                    Product.is_active,
+                    Product.product_status != "not_for_sale",
+                )
             )
         ).scalars().all()
         by_id = {p.id: p for p in rows}
@@ -127,7 +131,9 @@ async def list_products(response: Response, db: AsyncSession = Depends(get_db)):
     if cached is not None:
         return cached
     res = await db.execute(
-        select(Product).where(Product.is_active).order_by(Product.sort_order)
+        select(Product)
+        .where(Product.is_active, Product.product_status != "not_for_sale")
+        .order_by(Product.sort_order)
     )
     items = [ProductOut.model_validate(p) for p in res.scalars().all()]
     _cache_set("products", items)
@@ -137,7 +143,11 @@ async def list_products(response: Response, db: AsyncSession = Depends(get_db)):
 @router.get("/products/{slug}", response_model=ProductOut)
 async def get_product(slug: str, db: AsyncSession = Depends(get_db)):
     res = await db.execute(
-        select(Product).where(Product.slug == slug, Product.is_active)
+        select(Product).where(
+            Product.slug == slug,
+            Product.is_active,
+            Product.product_status != "not_for_sale",
+        )
     )
     product = res.scalar_one_or_none()
     if product is None:

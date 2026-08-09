@@ -53,6 +53,9 @@ const categoryLabel = computed(() =>
   product.value ? CONTENT.products[product.value.category]?.title : '',
 )
 
+// Sample pieces (نمونه) are shown for reference but can't be ordered.
+const isSample = computed(() => product.value?.product_status === 'sample')
+
 // Spec tiles: weight leads (the wholesale value signal), then عیار + اجرت —
 // same value hierarchy as the shop cards.
 const specs = computed(() => {
@@ -223,7 +226,13 @@ async function onHeart() {
             {{ product.description }}
           </p>
 
-          <div class="mt-8 flex items-center gap-3">
+          <p
+            v-if="isSample"
+            class="corner-soft mt-8 border border-line bg-surface-soft px-4 py-3 text-center text-sm text-ink-muted"
+          >
+            {{ CONTENT.products.sampleNote }}
+          </p>
+          <div v-else class="mt-8 flex items-center gap-3">
             <QtyStepper v-model="qty" />
             <button
               type="button"

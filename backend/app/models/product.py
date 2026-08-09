@@ -31,5 +31,16 @@ class Product(Base):
     )
     # "daily" | "luxury" — groups products into the two landing carousels
     category: Mapped[str] = mapped_column(String(20), default="daily", nullable=False)
+    # Supplier / maker (admin-only; not exposed on the public product payload).
+    supplier: Mapped[str | None] = mapped_column(String(120))
+    # Sellability, orthogonal to `is_active` visibility: sellable (normal),
+    # sample (نمونه — shown but not orderable), not_for_sale (hidden from shop).
+    product_status: Mapped[str] = mapped_column(
+        String(16), default="sellable", server_default="sellable", nullable=False
+    )
+    # Whether this product carries a warranty (consumed by the Warranty module).
+    warrantable: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default="true", nullable=False
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

@@ -19,6 +19,9 @@ const blank = () => ({
   karat: 18,
   ojrat_percent: '' as string | number,
   category: 'daily' as 'daily' | 'lux_daily' | 'luxury',
+  supplier: '',
+  product_status: 'sellable' as 'sellable' | 'sample' | 'not_for_sale',
+  warrantable: true,
   is_active: true,
 })
 const form = reactive(blank())
@@ -40,6 +43,9 @@ function startEdit(p: Product) {
     karat: p.karat ?? 18,
     ojrat_percent: p.ojrat_percent ?? '',
     category: p.category ?? 'daily',
+    supplier: p.supplier ?? '',
+    product_status: p.product_status ?? 'sellable',
+    warrantable: p.warrantable ?? true,
     is_active: p.is_active,
   })
   editing.value = true
@@ -55,6 +61,9 @@ async function save() {
     karat: form.karat ? Number(form.karat) : null,
     ojrat_percent: form.ojrat_percent === '' ? null : Number(form.ojrat_percent),
     category: form.category,
+    supplier: form.supplier || null,
+    product_status: form.product_status,
+    warrantable: form.warrantable,
     is_active: form.is_active,
     sort_order: editing.value
       ? undefined
@@ -182,6 +191,17 @@ async function move(index: number, dir: -1 | 1) {
             <option value="luxury">لوکس</option>
           </select>
         </FormField>
+        <FormField label="تأمین‌کننده / سازنده (اختیاری)" v-slot="{ id }">
+          <input :id="id" v-model="form.supplier" class="form-control" />
+        </FormField>
+        <FormField label="وضعیت فروش" v-slot="{ id }">
+          <select :id="id" v-model="form.product_status" class="form-control">
+            <option value="sellable">قابل فروش</option>
+            <option value="sample">نمونه (غیرقابل سفارش)</option>
+            <option value="not_for_sale">غیرقابل فروش (پنهان)</option>
+          </select>
+        </FormField>
+        <label class="flex items-center gap-2 text-sm"><input v-model="form.warrantable" type="checkbox" /> دارای گارانتی</label>
         <label class="flex items-center gap-2 text-sm"><input v-model="form.is_active" type="checkbox" /> فعال</label>
       </div>
       <template #footer>
