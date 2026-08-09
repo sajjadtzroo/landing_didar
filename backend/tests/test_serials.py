@@ -250,3 +250,33 @@ async def test_admin_status_change_records_sold_event(client, admin_client):
     assert r.status_code == 200
     out = (await client.get(VERIFY, params={"code": row["code"]})).json()
     assert [e["type"] for e in out["events"]] == ["minted", "sold"]
+
+
+# ---- Phase 3: proof of delivery ----
+async def test_delivered_stamps_delivered_at(approved_client, admin_client):
+    p = await _create_product(admin_client)
+    oid, _ = await _place_order(
+        approved_client, admin_client, [{"product_id": p["id"], "quantity": 1}]
+    )
+    out = await _deliver(admin_client, oid)
+    assert out["delivered_at"] is not None
+
+
+async def test_delivery_proof_persists(approved_client, admin_client):
+    p = await _create_product(admin_client)
+    oid, _ = await _place_order(
+        approved_client, admin_client, [{"product_id": p["id"], "quantity": 1}]
+    )
+    await _deliver(admin_client, oid)
+    r = await admin_client.patch(
+        f"{ADMIN_ORDERS}/{oid}",
+        json={
+            "delivery_assignee": "رضا محمدی",
+            "delivery_proof": {"code": "TX-991", "note": "تحویل درب مغازه"},
+        },
+    )
+    assert r.status_code == 200, r.text
+    detail = (await admin_client.get(f"{ADMIN_ORDERS}/{oid}")).json()
+    assert detail["delivery_assignee"] == "رضا محمدی"
+    proof = detail["delivery_proof"]
+    assert proof["code"] == "TX-991" and proof["note"] == "تحویل درب مغازه"

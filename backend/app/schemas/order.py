@@ -101,10 +101,22 @@ class OrderOut(BaseModel):
     created_at: datetime
 
 
+class DeliveryProof(BaseModel):
+    """Evidence captured at hand-off (photo doubles as the signature for MVP)."""
+
+    photo_url: str | None = Field(default=None, max_length=500)
+    code: str | None = Field(default=None, max_length=40)  # confirmation code
+    note: str | None = Field(default=None, max_length=300)
+
+
 class OrderDetailOut(OrderOut):
     items: list[OrderItemOut]
     status_log: list[OrderStatusLogOut]
     serial_codes: list[str] = []  # authenticity codes minted on delivery
+    # Proof of Delivery (WO 7.7)
+    delivered_at: datetime | None = None
+    delivery_assignee: str | None = None
+    delivery_proof: DeliveryProof | None = None
 
 
 class OrderListOut(BaseModel):
@@ -119,3 +131,5 @@ class OrderUpdate(BaseModel):
     status: OrderStatus | None = None
     internal_note: str | None = Field(default=None, max_length=1000)
     is_read: bool | None = None
+    delivery_assignee: str | None = Field(default=None, max_length=80)
+    delivery_proof: DeliveryProof | None = None

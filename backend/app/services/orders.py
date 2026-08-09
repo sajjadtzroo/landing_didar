@@ -1,5 +1,6 @@
 import hashlib
 import secrets
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -108,3 +109,6 @@ async def change_status(
         OrderStatusLog(from_status=order.status, to_status=to_status)
     )
     order.status = to_status
+    # Proof of Delivery: stamp the first time the order becomes delivered.
+    if to_status == OrderStatus.delivered and order.delivered_at is None:
+        order.delivered_at = datetime.now(UTC)

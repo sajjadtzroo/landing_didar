@@ -156,6 +156,10 @@ async def update_order(
         order.internal_note = payload.internal_note
     if payload.is_read is not None:
         order.is_read = payload.is_read
+    if payload.delivery_assignee is not None:
+        order.delivery_assignee = payload.delivery_assignee
+    if payload.delivery_proof is not None:
+        order.delivery_proof = payload.delivery_proof.model_dump(exclude_none=True)
     await db.commit()
     await db.refresh(order)
     return order

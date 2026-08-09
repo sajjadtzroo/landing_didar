@@ -1,8 +1,10 @@
 import enum
 import uuid
+from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
+    DateTime,
     Enum,
     ForeignKey,
     Index,
@@ -13,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy import (
     Enum as SAEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
@@ -70,6 +72,12 @@ class Order(Base):
     # Order size in GRAMS (wholesale gold is quantified by weight, not Toman).
     total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     is_read: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # --- Proof of Delivery (WO 7.7): who delivered, when, and the evidence ---
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    delivery_assignee: Mapped[str | None] = mapped_column(String(80))
+    # {photo_url?, code?, note?} — photo doubles as the signature for MVP
+    delivery_proof: Mapped[dict | None] = mapped_column(JSONB)
 
     idempotency_key: Mapped[str | None] = mapped_column(String(64), unique=True)
 
