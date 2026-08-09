@@ -106,6 +106,7 @@ watch(
                 class="ms-auto flex h-11 w-11 items-center justify-center text-ink-muted
                   hover:text-gold-text"
                 :aria-label="'بستن'"
+                @pointerdown.stop
                 @click="close"
               >
                 <X :size="22" />
