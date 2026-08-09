@@ -46,6 +46,10 @@ const rejectingId = ref<string | null>(null)
 const rejectReason = ref('')
 const busy = ref<string | null>(null)
 
+// Local uploads are backend-relative "/media/..."; resolve to the API host so
+// the browser can load them from the frontend origin.
+const mediaUrl = useMediaUrl()
+
 function isImage(url: string) {
   return /\.(jpe?g|png|gif|webp|svg)(\?|$)/i.test(url)
 }
@@ -128,7 +132,7 @@ function faDate(iso: string) {
                     <a
                       v-for="(doc, i) in c.verification_documents"
                       :key="i"
-                      :href="doc.url"
+                      :href="mediaUrl(doc.url)"
                       target="_blank"
                       rel="noopener"
                       class="block"
@@ -136,7 +140,7 @@ function faDate(iso: string) {
                     >
                       <img
                         v-if="isImage(doc.url)"
-                        :src="doc.url"
+                        :src="mediaUrl(doc.url)"
                         :alt="doc.filename ?? `سند ${toFa(i + 1)}`"
                         class="h-14 w-14 rounded border border-line object-cover"
                       />
@@ -229,14 +233,14 @@ function faDate(iso: string) {
           <a
             v-for="(doc, i) in c.verification_documents"
             :key="i"
-            :href="doc.url"
+            :href="mediaUrl(doc.url)"
             target="_blank"
             rel="noopener"
             :title="doc.filename ?? `سند ${toFa(i + 1)}`"
           >
             <img
               v-if="isImage(doc.url)"
-              :src="doc.url"
+              :src="mediaUrl(doc.url)"
               :alt="doc.filename ?? `سند ${toFa(i + 1)}`"
               class="h-16 w-16 rounded border border-line object-cover"
             />

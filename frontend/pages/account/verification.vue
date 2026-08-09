@@ -6,6 +6,8 @@ definePageMeta({ middleware: 'customer' })
 
 const { customer, ensure } = useCustomerAuth()
 const { upload, remove } = useCustomerUpload()
+// Local uploads are backend-relative "/media/..."; resolve to the API host.
+const mediaUrl = useMediaUrl()
 
 const fullName = ref('')
 const storeName = ref('')
@@ -132,7 +134,7 @@ useHead({ title: 'احراز هویت | دیدار' })
         class="flex items-center justify-between border border-line bg-surface-raised p-4"
       >
         <a
-          :href="doc.url"
+          :href="mediaUrl(doc.url)"
           target="_blank"
           rel="noopener noreferrer"
           class="flex items-center gap-2 text-sm text-ink hover:text-gold"
