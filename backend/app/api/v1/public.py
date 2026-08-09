@@ -25,12 +25,15 @@ from app.models.landing import Landing
 from app.models.order import Order
 from app.models.portfolio import Portfolio
 from app.models.product import Product
+from app.models.product_serial import ProductSerial, ProductSerialStatus
 from app.schemas.faq import FAQOut
 from app.schemas.landing import LandingDetailOut, LandingGroupOut
 from app.schemas.order import OrderCreate, OrderCreatedOut, OrderTrackOut
 from app.schemas.portfolio import PortfolioPublicOut
 from app.schemas.product import ProductOut
+from app.schemas.serial import SerialVerifyOut
 from app.services import orders as order_service
+from app.services import serials as serial_service
 from app.services.notifications import get_adapter
 
 router = APIRouter()
@@ -257,6 +260,40 @@ async def track_order(
     if order is None or order.phone != phone.strip():
         raise HTTPException(404, detail="Order not found")
     return order
+
+
+@router.get("/serials/verify", response_model=SerialVerifyOut)
+@limiter.limit("30/minute")
+async def verify_serial(
+    request: Request,
+    code: str,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public authenticity check. The hand-typed code is normalized, then looked up.
+    Unknown AND revoked codes return the SAME opaque 404 (a revoked code is not
+    authentic). Every hit is logged as the copy-attack signal. Never cached, and
+    rate-limited so valid codes can't be enumerated/scraped."""
+    response.headers["Cache-Control"] = "no-store"
+    normalized = serial_service.normalize(code)
+    if not normalized:
+        raise HTTPException(404, detail="Not found")
+    serial = (
+        await db.execute(
+            select(ProductSerial).where(ProductSerial.code == normalized)
+        )
+    ).scalar_one_or_none()
+    if serial is None or serial.status == ProductSerialStatus.revoked:
+        raise HTTPException(404, detail="Not found")
+    await serial_service.log_scan(db, serial.id, order_service.hash_ip(get_client_ip(request)))
+    return SerialVerifyOut(
+        code=serial_service.format_code(serial.code),
+        product_name=serial.product_name,
+        karat=serial.karat,
+        weight_grams=serial.weight_grams,
+        image_url=serial.image_url,
+        issued_at=serial.created_at,
+    )
 
 
 async def _notify(order_id, admin_url: str) -> None:

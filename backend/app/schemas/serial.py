@@ -1,0 +1,55 @@
+import uuid
+from datetime import datetime
+from decimal import Decimal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.models.product_serial import ProductSerialStatus
+
+
+class SerialGenerate(BaseModel):
+    product_id: uuid.UUID
+    quantity: int = Field(ge=1, le=5000)
+
+
+class SerialUpdate(BaseModel):
+    status: ProductSerialStatus | None = None
+    note: str | None = Field(default=None, max_length=300)
+
+
+class SerialOut(BaseModel):
+    """Admin view. `code` is the display form; verify_count/first_verified_at come
+    from the scan log (the copy-attack signal)."""
+
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    code: str  # display form (DGV-XXXXXXXX)
+    product_id: uuid.UUID
+    product_name: str
+    karat: int | None
+    weight_grams: Decimal | None
+    status: ProductSerialStatus
+    batch_id: uuid.UUID
+    note: str | None
+    created_at: datetime
+    verify_count: int = 0
+    first_verified_at: datetime | None = None
+
+
+class SerialListOut(BaseModel):
+    items: list[SerialOut]
+    total: int
+    page: int
+    page_size: int
+
+
+class SerialVerifyOut(BaseModel):
+    """Public authenticity certificate — reads the SNAPSHOT (no live join, no PII,
+    no internal status). `issued_at` is the code's generation date, not a sale date."""
+
+    code: str  # display form
+    product_name: str
+    karat: int | None
+    weight_grams: Decimal | None
+    image_url: str | None
+    issued_at: datetime
