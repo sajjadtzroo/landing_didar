@@ -51,8 +51,6 @@ async def test_import_maps_sku_folders_into_media_and_db(
     monkeypatch.setattr(settings, "media_root", str(tmp_path))
     monkeypatch.setattr(settings, "media_url_prefix", "/media")
     monkeypatch.setattr(settings, "minio_bucket", "photos")
-    # import_product_images uses the app's SessionLocal (prod URL) — point it at test DB.
-    monkeypatch.setattr(mod, "SessionLocal", _sessionmaker)
 
     async with _sessionmaker() as db:
         db.add(Product(name="Ring 2000", sku="2000"))  # has a folder
