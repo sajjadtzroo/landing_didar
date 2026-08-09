@@ -32,6 +32,13 @@ services:
       COOKIE_SECURE: "false"
       SMS_PROVIDER: log
       ADMIN_ORDER_BASE_URL: http://localhost:3001/admin/orders
+      # MinIO object storage (values from the gitignored root .env). Empty →
+      # falls back to LocalStorage, so the stack still runs without them.
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-}
+      MINIO_BUCKET: ${MINIO_BUCKET:-}
+      MINIO_SECURE: ${MINIO_SECURE:-true}
     volumes:
       - media:/app/media
     ports:
