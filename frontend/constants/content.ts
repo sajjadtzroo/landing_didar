@@ -58,6 +58,13 @@ export const CONTENT = {
     noMatch: 'موردی با این جستجو یافت نشد.',
     categoriesTitle: 'دسته‌بندی‌ها',
     heroEyebrow: 'DIDAR GOLD',
+    allProducts: 'همه محصولات',
+    catalogEyebrow: 'مجموعه دیدار',
+    catalogTitle: 'کاتالوگ محصولات',
+    filtersTitle: 'فیلترها',
+    applyFilters: 'مشاهده نتایج',
+    scrollHint: 'مشاهده محصولات',
+    addToCart: 'افزودن به سبد',
   },
 
   // Order status labels (customer-facing), keyed by OrderStatus.

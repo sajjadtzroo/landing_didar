@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, ShoppingBag, User } from 'lucide-vue-next'
+import { ChevronDown, Heart, ShoppingBag, User } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { CONTENT } from '~/constants/content'
 import type { Portfolio } from '~/types'
@@ -12,7 +12,16 @@ const { open: promoOpen } = usePromo()
 const { y } = import.meta.client ? useWindowScroll() : { y: ref(0) }
 
 const cart = useCartStore()
+const favorites = useFavoritesStore()
 const { openCart } = useUiState()
+
+// Section link: gold text + a gold underline that grows on hover, locked open
+// on the active route (nav-state-active).
+const linkClass =
+  'relative text-sm transition hover:text-gold-text after:absolute after:inset-x-0 ' +
+  'after:-bottom-1 after:h-px after:origin-center after:scale-x-0 after:bg-gold ' +
+  'after:transition-transform after:duration-300 hover:after:scale-x-100'
+const linkActive = 'text-gold-text after:scale-x-100'
 
 // Curated collections menu — reuses the /shop portfolios payload (shared key, so
 // Nuxt dedupes it; cached 60s server-side). ponytail: add a lightweight
@@ -57,19 +66,11 @@ const overHero = computed(() => onLanding.value && y.value < 80)
 
       <!-- Section links -->
       <div class="hidden items-center gap-6 sm:flex">
-        <NuxtLink
-          to="/l/one"
-          class="text-sm transition hover:text-gold-text"
-          active-class="text-gold-text"
-        >
+        <NuxtLink to="/l/one" :class="linkClass" :active-class="linkActive">
           {{ CONTENT.nav.home }}
         </NuxtLink>
 
-        <NuxtLink
-          to="/shop"
-          class="text-sm transition hover:text-gold-text"
-          active-class="text-gold-text"
-        >
+        <NuxtLink to="/shop" :class="linkClass" :active-class="linkActive">
           {{ CONTENT.nav.shop }}
         </NuxtLink>
 
@@ -102,11 +103,7 @@ const overHero = computed(() => onLanding.value && y.value < 80)
           </div>
         </div>
 
-        <NuxtLink
-          to="/account"
-          class="text-sm transition hover:text-gold-text"
-          active-class="text-gold-text"
-        >
+        <NuxtLink to="/account" :class="linkClass" :active-class="linkActive">
           {{ CONTENT.nav.account }}
         </NuxtLink>
       </div>
@@ -119,6 +116,20 @@ const overHero = computed(() => onLanding.value && y.value < 80)
           :aria-label="CONTENT.nav.account"
         >
           <User :size="20" aria-hidden="true" />
+        </NuxtLink>
+        <NuxtLink
+          to="/account/favorites"
+          class="relative hidden h-11 w-11 items-center justify-center transition hover:text-gold-text sm:flex"
+          :aria-label="CONTENT.nav.favorites"
+        >
+          <Heart :size="20" aria-hidden="true" />
+          <span
+            v-if="favorites.count"
+            class="tnum absolute -end-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center
+              rounded-full bg-gold px-1 text-[11px] font-bold text-navy-deep"
+          >
+            {{ toFa(favorites.count) }}
+          </span>
         </NuxtLink>
         <button
           type="button"

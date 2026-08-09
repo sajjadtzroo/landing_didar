@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { X } from 'lucide-vue-next'
+import { SlidersHorizontal, X } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { CONTENT } from '~/constants/content'
 import type { Portfolio, Product } from '~/types'
+import { toFa } from '~/utils/format'
 
-// Storefront: full catalogue with prices + add-to-cart (no online payment — the
-// cart → order flow captures the order as a lead). Reuses the 'products' payload.
-const { data: products } = await useFetch<Product[]>('/products', {
+// Storefront: full catalogue with add-to-cart (no online payment — the cart →
+// order flow captures the order as a lead). Reuses the 'products' payload.
+const { data: products, pending } = await useFetch<Product[]>('/products', {
   baseURL: useApiBase(),
   key: 'products',
   default: () => [],
@@ -25,20 +26,16 @@ const CATEGORIES = [
   { key: 'luxury', label: CONTENT.products.luxury.title },
 ] as const
 
-const search = ref('')
-const category = ref<string>('') // '' = all
-const sort = ref<'newest' | 'weight_asc' | 'weight_desc'>('newest')
+// URL-synced filter state (shareable, survives reload + back/forward).
+const { search, category, sort, weightMin, weightMax, ojratMin, ojratMax, karat, clear } =
+  useShopFilters()
 
-// Advanced filters (client-side): weight/making-fee ranges + karat.
-const showAdvanced = ref(false)
-const weightMin = ref('')
-const weightMax = ref('')
-const ojratMin = ref('')
-const ojratMax = ref('')
-const karat = ref<number | ''>('') // '' = all
+// Advanced filters live in a sheet (all viewports — 3 controls, no need to
+// duplicate an inline desktop panel).
+const filtersOpen = ref(false)
 
-// Distinct karat values present in the catalogue (sorted). The panel only shows
-// the karat control when there's more than one — most items are 18k.
+// Distinct karat values present (sorted). The control only shows when there's
+// more than one — most items are 18k.
 const karats = computed(() =>
   [...new Set((products.value || []).map((p) => p.karat).filter((k): k is number => k != null))]
     .sort((a, b) => a - b),
@@ -51,24 +48,25 @@ const categoryCounts = computed(() => {
   return c
 })
 
-const hasAdvanced = computed(
-  () => !!weightMin.value || !!weightMax.value || !!ojratMin.value || !!ojratMax.value || karat.value !== '',
+// Count of active advanced-filter *groups*, for the filter button badge.
+const advancedCount = computed(
+  () =>
+    (weightMin.value || weightMax.value ? 1 : 0) +
+    (ojratMin.value || ojratMax.value ? 1 : 0) +
+    (karat.value !== '' ? 1 : 0),
 )
-const hasFilters = computed(() => !!category.value || !!search.value.trim() || hasAdvanced.value)
-const categoryLabel = computed(
-  () => CATEGORIES.find((c) => c.key === category.value)?.label,
+const hasFilters = computed(
+  () => !!category.value || !!search.value.trim() || advancedCount.value > 0,
 )
-function clearFilters() {
-  search.value = ''
-  category.value = ''
-  weightMin.value = ''
-  weightMax.value = ''
-  ojratMin.value = ''
-  ojratMax.value = ''
-  karat.value = ''
-}
+const categoryLabel = computed(() => CATEGORIES.find((c) => c.key === category.value)?.label)
 
-// A nullable numeric field passes only when it's present and inside any active bound.
+const SORT_OPTIONS = [
+  { value: 'newest', label: CONTENT.shop.sortNewest },
+  { value: 'weight_asc', label: CONTENT.shop.sortWeightAsc },
+  { value: 'weight_desc', label: CONTENT.shop.sortWeightDesc },
+] as const
+
+// A nullable numeric field passes only when present and inside any active bound.
 function inRange(val: string | null, min: string, max: string) {
   if (!min && !max) return true
   if (val == null) return false
@@ -147,7 +145,7 @@ useHead({
     </section>
 
     <div class="mx-auto max-w-content px-5 sm:px-10">
-      <!-- Shop by category (mirrors the product category enum) -->
+      <!-- Shop by category — the single category control (filter bar no longer duplicates it) -->
       <ShopCategories v-model="category" :counts="categoryCounts" />
 
       <!-- Admin-curated collections (hidden while the user is actively filtering) -->
@@ -158,97 +156,50 @@ useHead({
         :portfolio="pf"
       />
 
-      <!-- Filter bar -->
-      <div class="mb-6 flex flex-col gap-4 border-y border-line py-4 sm:flex-row sm:items-center">
+      <!-- Catalogue section anchor -->
+      <SectionDivider :eyebrow="CONTENT.shop.catalogEyebrow" :title="CONTENT.shop.catalogTitle" />
+
+      <!-- Filter toolbar: search · sort · advanced -->
+      <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           v-model="search"
           type="search"
           :placeholder="CONTENT.shop.searchPlaceholder"
-          class="form-control sm:max-w-xs"
+          class="form-control h-11 sm:max-w-xs"
           aria-label="جستجو"
         />
-        <div
-          class="-mx-5 flex flex-nowrap items-center gap-2 overflow-x-auto px-5
-            [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden"
-        >
-          <button
-            type="button"
-            class="h-9 shrink-0 whitespace-nowrap border px-3 text-sm transition"
-            :class="category === '' ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
-            @click="category = ''"
-          >
-            {{ CONTENT.shop.all }}
-          </button>
-          <button
-            v-for="c in CATEGORIES"
-            :key="c.key"
-            type="button"
-            class="h-9 shrink-0 whitespace-nowrap border px-3 text-sm transition"
-            :class="category === c.key ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
-            @click="category = c.key"
-          >
-            {{ c.label }}
-          </button>
-        </div>
-        <button
-          type="button"
-          class="h-9 border px-3 text-sm transition sm:ms-auto"
-          :class="showAdvanced || hasAdvanced ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
-          :aria-expanded="showAdvanced"
-          @click="showAdvanced = !showAdvanced"
-        >
-          {{ CONTENT.shop.advancedToggle }}
-        </button>
-        <label class="flex items-center gap-2 text-sm text-ink-muted">
-          {{ CONTENT.shop.sortLabel }}
-          <select v-model="sort" class="form-control h-9 w-auto py-0">
-            <option value="newest">{{ CONTENT.shop.sortNewest }}</option>
-            <option value="weight_asc">{{ CONTENT.shop.sortWeightAsc }}</option>
-            <option value="weight_desc">{{ CONTENT.shop.sortWeightDesc }}</option>
-          </select>
-        </label>
-      </div>
-
-      <!-- Advanced filter panel -->
-      <div v-if="showAdvanced" class="mb-6 flex flex-col gap-5 border border-line bg-surface-raised p-4 sm:flex-row sm:flex-wrap sm:items-end">
-        <div class="flex flex-col gap-1.5">
-          <span class="text-sm text-ink-muted">{{ CONTENT.shop.weightLabel }}</span>
-          <div class="flex items-center gap-2">
-            <input v-model="weightMin" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.minLabel" class="form-control h-9 w-24" :aria-label="`${CONTENT.shop.weightLabel} ${CONTENT.shop.minLabel}`" />
-            <span class="text-ink-muted">–</span>
-            <input v-model="weightMax" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.maxLabel" class="form-control h-9 w-24" :aria-label="`${CONTENT.shop.weightLabel} ${CONTENT.shop.maxLabel}`" />
-          </div>
-        </div>
-        <div class="flex flex-col gap-1.5">
-          <span class="text-sm text-ink-muted">{{ CONTENT.shop.ojratLabel }}</span>
-          <div class="flex items-center gap-2">
-            <input v-model="ojratMin" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.minLabel" class="form-control h-9 w-24" :aria-label="`${CONTENT.shop.ojratLabel} ${CONTENT.shop.minLabel}`" />
-            <span class="text-ink-muted">–</span>
-            <input v-model="ojratMax" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.maxLabel" class="form-control h-9 w-24" :aria-label="`${CONTENT.shop.ojratLabel} ${CONTENT.shop.maxLabel}`" />
-          </div>
-        </div>
-        <div v-if="karats.length > 1" class="flex flex-col gap-1.5">
-          <span class="text-sm text-ink-muted">{{ CONTENT.shop.karatLabel }}</span>
-          <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-3 sm:ms-auto">
+          <!-- Sort segmented control -->
+          <div class="corner-soft flex overflow-hidden border border-line" role="group" :aria-label="CONTENT.shop.sortLabel">
             <button
+              v-for="(o, i) in SORT_OPTIONS"
+              :key="o.value"
               type="button"
-              class="h-9 border px-3 text-sm transition"
-              :class="karat === '' ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
-              @click="karat = ''"
+              class="h-11 whitespace-nowrap px-3 text-sm transition"
+              :class="[
+                sort === o.value ? 'bg-navy text-white' : 'text-ink-muted hover:text-ink',
+                i > 0 ? 'border-s border-line' : '',
+              ]"
+              :aria-pressed="sort === o.value"
+              @click="sort = o.value"
             >
-              {{ CONTENT.shop.all }}
-            </button>
-            <button
-              v-for="k in karats"
-              :key="k"
-              type="button"
-              class="h-9 border px-3 text-sm transition"
-              :class="karat === k ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
-              @click="karat = k"
-            >
-              {{ k }}
+              {{ o.label }}
             </button>
           </div>
+          <!-- Advanced filters (opens sheet) -->
+          <button
+            type="button"
+            class="flex h-11 shrink-0 items-center gap-2 border px-3 text-sm transition"
+            :class="advancedCount ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
+            @click="filtersOpen = true"
+          >
+            <SlidersHorizontal :size="16" aria-hidden="true" />
+            {{ CONTENT.shop.advancedToggle }}
+            <span
+              v-if="advancedCount"
+              class="tnum flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 text-[11px] font-bold text-navy-deep"
+            >{{ toFa(advancedCount) }}</span>
+          </button>
         </div>
       </div>
 
@@ -309,7 +260,7 @@ useHead({
         <button
           type="button"
           class="text-xs text-gold-text underline underline-offset-2 hover:no-underline"
-          @click="clearFilters"
+          @click="clear"
         >
           {{ CONTENT.shop.clearAll }}
         </button>
@@ -319,7 +270,12 @@ useHead({
         {{ CONTENT.shop.resultCount(filtered.length) }}
       </p>
 
-      <div v-if="filtered.length" class="grid grid-cols-2 gap-4 pb-16 sm:gap-6 lg:grid-cols-4">
+      <!-- Loading skeletons (client-side navigations / refetch) -->
+      <div v-if="pending && !filtered.length" class="grid grid-cols-2 gap-4 pb-16 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+        <ProductCardSkeleton v-for="n in 8" :key="n" />
+      </div>
+
+      <div v-else-if="filtered.length" class="grid grid-cols-2 gap-4 pb-16 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
         <ProductCard
           v-for="(p, i) in filtered"
           :key="p.id"
@@ -328,6 +284,7 @@ useHead({
           shop
         />
       </div>
+
       <div v-else class="py-16 text-center">
         <p class="text-ink-muted">{{ CONTENT.shop.empty }}</p>
         <button
@@ -335,11 +292,76 @@ useHead({
           type="button"
           class="corner-soft mt-4 border border-navy px-4 py-2 text-sm text-ink transition
             hover:bg-navy hover:text-white"
-          @click="clearFilters"
+          @click="clear"
         >
           {{ CONTENT.shop.clearFilters }}
         </button>
       </div>
     </div>
+
+    <!-- Advanced filters sheet (weight / اجرت / عیار) -->
+    <BaseSheet v-model="filtersOpen" :title="CONTENT.shop.filtersTitle">
+      <div class="space-y-6">
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm text-ink-muted">{{ CONTENT.shop.weightLabel }}</span>
+          <div class="flex items-center gap-2">
+            <input v-model="weightMin" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.minLabel" class="form-control h-11" :aria-label="`${CONTENT.shop.weightLabel} ${CONTENT.shop.minLabel}`" />
+            <span class="text-ink-muted">–</span>
+            <input v-model="weightMax" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.maxLabel" class="form-control h-11" :aria-label="`${CONTENT.shop.weightLabel} ${CONTENT.shop.maxLabel}`" />
+          </div>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm text-ink-muted">{{ CONTENT.shop.ojratLabel }}</span>
+          <div class="flex items-center gap-2">
+            <input v-model="ojratMin" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.minLabel" class="form-control h-11" :aria-label="`${CONTENT.shop.ojratLabel} ${CONTENT.shop.minLabel}`" />
+            <span class="text-ink-muted">–</span>
+            <input v-model="ojratMax" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.maxLabel" class="form-control h-11" :aria-label="`${CONTENT.shop.ojratLabel} ${CONTENT.shop.maxLabel}`" />
+          </div>
+        </div>
+        <div v-if="karats.length > 1" class="flex flex-col gap-1.5">
+          <span class="text-sm text-ink-muted">{{ CONTENT.shop.karatLabel }}</span>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              class="h-11 border px-4 text-sm transition"
+              :class="karat === '' ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
+              @click="karat = ''"
+            >
+              {{ CONTENT.shop.all }}
+            </button>
+            <button
+              v-for="k in karats"
+              :key="k"
+              type="button"
+              class="tnum h-11 border px-4 text-sm transition"
+              :class="karat === k ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
+              @click="karat = k"
+            >
+              {{ toFa(k) }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center gap-3">
+          <button
+            v-if="advancedCount"
+            type="button"
+            class="h-12 border border-line px-4 text-sm text-ink-muted transition hover:border-navy hover:text-ink"
+            @click="weightMin = ''; weightMax = ''; ojratMin = ''; ojratMax = ''; karat = ''"
+          >
+            {{ CONTENT.shop.clearAll }}
+          </button>
+          <button
+            type="button"
+            class="flex h-12 flex-1 items-center justify-center bg-navy text-base font-medium text-white transition hover:bg-gold"
+            @click="filtersOpen = false"
+          >
+            {{ CONTENT.shop.applyFilters }}
+          </button>
+        </div>
+      </template>
+    </BaseSheet>
   </main>
 </template>
