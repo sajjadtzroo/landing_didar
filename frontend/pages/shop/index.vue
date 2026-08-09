@@ -148,16 +148,20 @@ useHead({
     </section>
 
     <div class="mx-auto max-w-content px-5 sm:px-10">
+      <!-- نرخ روز: live 18k market rate (the anchor of every gold storefront) -->
+      <GoldPriceStrip />
+
+      <!-- Trust: authenticity (→ /verify), warranty, buyback -->
+      <ShopTrust />
+
       <!-- Shop by category — the single category control (filter bar no longer duplicates it) -->
       <ShopCategories v-model="category" :counts="categoryCounts" />
 
-      <!-- Admin-curated collections (hidden while the user is actively filtering) -->
-      <PortfolioSection
-        v-for="pf in portfolios"
-        v-show="!hasFilters"
-        :key="pf.id"
-        :portfolio="pf"
-      />
+      <!-- Admin-curated collections (hidden while the user is actively filtering;
+           v-if so the DOM drops entirely rather than hiding) -->
+      <template v-if="!hasFilters">
+        <PortfolioSection v-for="pf in portfolios" :key="pf.id" :portfolio="pf" />
+      </template>
 
       <!-- Catalogue section anchor -->
       <SectionDivider :eyebrow="CONTENT.shop.catalogEyebrow" :title="CONTENT.shop.catalogTitle" />

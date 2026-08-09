@@ -34,7 +34,8 @@ export const CONTENT = {
     searchPlaceholder: 'جستجوی محصول…',
     all: 'همه',
     sortLabel: 'مرتب‌سازی',
-    sortNewest: 'جدیدترین',
+    // "newest" actually orders by the admin's sort_order — label it honestly.
+    sortNewest: 'پیشنهاد دیدار',
     sortWeightAsc: 'سبک‌ترین',
     sortWeightDesc: 'سنگین‌ترین',
     empty: 'محصولی با این فیلترها یافت نشد.',
@@ -65,6 +66,15 @@ export const CONTENT = {
     applyFilters: 'مشاهده نتایج',
     scrollHint: 'مشاهده محصولات',
     addToCart: 'افزودن به سبد',
+    // نرخ روز strip (public TGJU rates)
+    goldPriceLabel: 'نرخ لحظه‌ای طلای ۱۸ عیار',
+    goldPriceUnit: 'تومان / گرم',
+    goldPriceUpdated: (t: string) => `بروزرسانی ${t}`,
+    // Trust strip (authenticity / warranty / buyback)
+    trustVerify: 'اصالت با کد اختصاصی',
+    trustVerifyCta: 'بررسی اصالت',
+    trustWarranty: 'گارانتی معتبر دیدار',
+    trustBuyback: 'بازخرید شفاف',
   },
 
   // Order status labels (customer-facing), keyed by OrderStatus.
