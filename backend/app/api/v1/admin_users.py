@@ -69,6 +69,36 @@ async def update_user(
     return user
 
 
+@router.get("/users/{user_id}/retailers", response_model=list[uuid.UUID])
+async def get_user_retailers(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    """Customer ids assigned to this agent (WO 7.5 assignment)."""
+    from app.models.agent import AgentRetailer
+
+    rows = await db.execute(
+        select(AgentRetailer.customer_id).where(AgentRetailer.agent_id == user_id)
+    )
+    return list(rows.scalars().all())
+
+
+@router.put("/users/{user_id}/retailers", response_model=list[uuid.UUID])
+async def set_user_retailers(
+    user_id: uuid.UUID, customer_ids: list[uuid.UUID], db: AsyncSession = Depends(get_db)
+):
+    """Replace the agent's retailer assignment with the given customer ids."""
+    from sqlalchemy import delete
+
+    from app.models.agent import AgentRetailer
+
+    user = await db.get(User, user_id)
+    if user is None:
+        raise HTTPException(404, detail="User not found")
+    await db.execute(delete(AgentRetailer).where(AgentRetailer.agent_id == user_id))
+    for cid in set(customer_ids):
+        db.add(AgentRetailer(agent_id=user_id, customer_id=cid))
+    await db.commit()
+    return list(set(customer_ids))
+
+
 @router.delete("/users/{user_id}", status_code=204)
 async def delete_user(
     user_id: uuid.UUID, request: Request, db: AsyncSession = Depends(get_db)

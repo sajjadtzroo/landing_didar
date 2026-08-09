@@ -99,6 +99,7 @@ class OrderOut(BaseModel):
     utm_campaign: str | None
     referrer: str | None
     created_at: datetime
+    agent_username: str | None = None  # set when an agent placed it (WO 7.5)
 
 
 class DeliveryProof(BaseModel):

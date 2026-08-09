@@ -61,6 +61,26 @@ async def require_admin(
     return username
 
 
+async def require_agent(
+    request: Request, db: AsyncSession = Depends(get_db)
+) -> User:
+    """Field-sales endpoints (WO 7.5). Returns the full User row (endpoints need
+    the id for assignment scoping). Superadmin passes for oversight/debugging."""
+    username = read_session(request.cookies.get(SESSION_COOKIE))
+    if not username:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+        )
+    user = (
+        await db.execute(
+            select(User).where(User.username == username, User.is_active)
+        )
+    ).scalar_one_or_none()
+    if user is None or user.role not in {AdminRole.agent, AdminRole.superadmin}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return user
+
+
 async def require_superadmin(
     request: Request, db: AsyncSession = Depends(get_db)
 ) -> str:

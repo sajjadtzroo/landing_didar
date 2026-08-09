@@ -6,10 +6,13 @@ from app.models.order import Order, OrderItem, OrderStatus, OrderStatusLog
 from app.models.portfolio import Portfolio
 from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialScan
 from app.models.product import Product
+from app.models.agent import AgentRetailer, AgentVisit
 from app.models.user import AdminRole, AuditLog, User
 
 __all__ = [
     "Product",
+    "AgentRetailer",
+    "AgentVisit",
     "User",
     "AdminRole",
     "AuditLog",

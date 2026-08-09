@@ -22,9 +22,12 @@ from app.core.db import Base
 
 
 class OrderStatus(enum.StrEnum):
+    """WO 7.4 mapping: new≈Submitted, confirmed≈Approved, shipped≈Dispatched."""
+
     new = "new"
     contacted = "contacted"
     confirmed = "confirmed"
+    preparing = "preparing"  # در حال آماده‌سازی
     shipped = "shipped"
     delivered = "delivered"  # fulfilled — mints an authenticity serial per piece
     cancelled = "cancelled"
@@ -79,6 +82,13 @@ class Order(Base):
     # {photo_url?, code?, note?} — photo doubles as the signature for MVP
     delivery_proof: Mapped[dict | None] = mapped_column(JSONB)
 
+    # Agent who placed this order on behalf of the retailer (WO 7.5). SET NULL
+    # keeps the order if the agent account is ever deleted.
+    agent_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    agent = relationship("User", lazy="selectin")
+
     idempotency_key: Mapped[str | None] = mapped_column(String(64), unique=True)
 
     # Attribution — stored on the row so sales has it even if Matomo was blocked
@@ -101,6 +111,11 @@ class Order(Base):
     def serial_codes(self) -> list[str]:
         """Display-form codes (DGV-XXXXXXXX) for the buyer/admin views."""
         return [f"{s.code[:3]}-{s.code[3:]}" for s in self.serials]
+
+    @property
+    def agent_username(self) -> str | None:
+        """Who placed the order on behalf of the retailer (admin display)."""
+        return self.agent.username if self.agent else None
 
 
 class OrderItem(Base):
