@@ -72,7 +72,7 @@ async def delete_product(product_id: str, db: AsyncSession = Depends(get_db)):
     await db.commit()
 
 
-@router.post("/products/{product_id}/image", response_model=ProductOut)
+@router.post("/products/{product_id}/image", response_model=AdminProductOut)
 async def upload_product_image(
     product_id: str,
     file: UploadFile = File(...),

@@ -41,6 +41,27 @@ async def test_list_products_hides_inactive_and_sorts(client, admin_client):
     assert names == ["A", "B"]  # inactive excluded, sorted by sort_order
 
 
+async def test_list_products_excludes_not_for_sale_keeps_sample(client, admin_client):
+    await _make_product(admin_client, name="Sellable", sort_order=1)
+    await _make_product(admin_client, name="Sample", product_status="sample", sort_order=2)
+    await _make_product(
+        admin_client, name="Hidden", product_status="not_for_sale", sort_order=3
+    )
+    names = [p["name"] for p in (await client.get("/api/v1/products")).json()]
+    assert names == ["Sellable", "Sample"]  # not_for_sale hidden, sample kept
+
+
+async def test_not_for_sale_slug_404_but_sample_reachable(client, admin_client):
+    await _make_product(
+        admin_client, name="S", slug="sample-ring", product_status="sample"
+    )
+    await _make_product(
+        admin_client, name="N", slug="nfs-ring", product_status="not_for_sale"
+    )
+    assert (await client.get("/api/v1/products/sample-ring")).status_code == 200
+    assert (await client.get("/api/v1/products/nfs-ring")).status_code == 404
+
+
 # ---- GET /products/{slug} ----
 async def test_get_product_by_slug(client, admin_client):
     p = await _make_product(admin_client, name="Nova", slug="nova-ring")
