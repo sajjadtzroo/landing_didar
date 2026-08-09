@@ -144,8 +144,17 @@ async def update_serial(
     serial = await db.get(ProductSerial, serial_id)
     if serial is None:
         raise HTTPException(404, detail="Serial not found")
+    old_status = serial.status
     for k, v in payload.model_dump(exclude_unset=True).items():
         setattr(serial, k, v)
+    # Passport timeline: log the transition (back to in_stock reads as "restored").
+    if serial.status != old_status:
+        type_ = (
+            "restored"
+            if serial.status == ProductSerialStatus.in_stock
+            else serial.status.value
+        )
+        serial_service.record_event(db, serial.id, type_, {"from": old_status.value})
     await db.commit()
     await db.refresh(serial)
     return _to_out(serial)

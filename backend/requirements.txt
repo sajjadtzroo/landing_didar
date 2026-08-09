@@ -13,3 +13,4 @@ loguru==0.7.3
 httpx==0.28.1
 python-multipart==0.0.20
 minio==7.2.15
+qrcode[pil]==8.0

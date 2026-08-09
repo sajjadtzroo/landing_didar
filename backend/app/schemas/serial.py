@@ -44,9 +44,18 @@ class SerialListOut(BaseModel):
     page_size: int
 
 
+class SerialEventOut(BaseModel):
+    """One passport-timeline entry. `minted` is derived from created_at; stored
+    types are sold/revoked/restored (+ warranty/buyback in later phases)."""
+
+    type: str
+    at: datetime
+
+
 class SerialVerifyOut(BaseModel):
     """Public authenticity certificate — reads the SNAPSHOT (no live join, no PII,
-    no internal status). `issued_at` is the code's generation date, not a sale date."""
+    no internal status). `issued_at` is the code's generation date, not a sale date.
+    `events` is the passport timeline (issue + sale)."""
 
     code: str  # display form
     product_name: str
@@ -54,3 +63,4 @@ class SerialVerifyOut(BaseModel):
     weight_grams: Decimal | None
     image_url: str | None
     issued_at: datetime
+    events: list[SerialEventOut] = []

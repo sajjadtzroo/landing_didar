@@ -25,13 +25,13 @@ from app.models.landing import Landing
 from app.models.order import Order
 from app.models.portfolio import Portfolio
 from app.models.product import Product
-from app.models.product_serial import ProductSerial, ProductSerialStatus
+from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialEvent
 from app.schemas.faq import FAQOut
 from app.schemas.landing import LandingDetailOut, LandingGroupOut
 from app.schemas.order import OrderCreate, OrderCreatedOut, OrderTrackOut
 from app.schemas.portfolio import PortfolioPublicOut
 from app.schemas.product import ProductOut
-from app.schemas.serial import SerialVerifyOut
+from app.schemas.serial import SerialEventOut, SerialVerifyOut
 from app.services import orders as order_service
 from app.services import serials as serial_service
 from app.services.notifications import get_adapter
@@ -296,6 +296,17 @@ async def verify_serial(
     if serial is None or serial.status == ProductSerialStatus.revoked:
         raise HTTPException(404, detail="Not found")
     await serial_service.log_scan(db, serial.id, order_service.hash_ip(get_client_ip(request)))
+    # Passport timeline: mint is derived (created_at); only the sale is public.
+    stored = (
+        await db.execute(
+            select(SerialEvent)
+            .where(SerialEvent.serial_id == serial.id, SerialEvent.type == "sold")
+            .order_by(SerialEvent.created_at)
+        )
+    ).scalars().all()
+    events = [SerialEventOut(type="minted", at=serial.created_at)] + [
+        SerialEventOut(type=e.type, at=e.created_at) for e in stored
+    ]
     return SerialVerifyOut(
         code=serial_service.format_code(serial.code),
         product_name=serial.product_name,
@@ -303,6 +314,30 @@ async def verify_serial(
         weight_grams=serial.weight_grams,
         image_url=serial.image_url,
         issued_at=serial.created_at,
+        events=events,
+    )
+
+
+@router.get("/serials/{code}/qr.png")
+@limiter.limit("60/minute")
+async def serial_qr(
+    request: Request, code: str, db: AsyncSession = Depends(get_db)
+):
+    """QR label image for a code — encodes the public /verify deep-link. You must
+    already know the full code, so this exposes nothing new (404 for unknown)."""
+    normalized = serial_service.normalize(code)
+    exists = normalized and (
+        await db.execute(
+            select(ProductSerial.id).where(ProductSerial.code == normalized)
+        )
+    ).scalar_one_or_none()
+    if not exists:
+        raise HTTPException(404, detail="Not found")
+    png = serial_service.qr_png(normalized, settings.cors_origins[0])
+    return Response(
+        content=png,
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
     )
 
 

@@ -207,3 +207,46 @@ async def test_verify_rate_limited(admin_client, client):
     limiter.enabled = False
     assert codes.count(200) == 30  # 30/minute cap
     assert 429 in codes
+
+
+# ---- Phase 2: QR labels + passport events ----
+QR = "/api/v1/serials/{code}/qr.png"
+
+
+async def test_qr_png_for_known_code(client, admin_client):
+    p = await _create_product(admin_client)
+    row = (await _generate(admin_client, p["id"]))[0]
+    r = await client.get(QR.format(code=row["code"]))
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/png"
+    assert r.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+async def test_qr_unknown_code_404(client):
+    assert (await client.get(QR.format(code="DGV-ZZZZZZZZ"))).status_code == 404
+
+
+async def test_verify_events_minted_only_for_stock(client, admin_client):
+    p = await _create_product(admin_client)
+    row = (await _generate(admin_client, p["id"]))[0]
+    out = (await client.get(VERIFY, params={"code": row["code"]})).json()
+    assert [e["type"] for e in out["events"]] == ["minted"]
+
+
+async def test_delivery_adds_sold_event_to_passport(approved_client, admin_client, client):
+    p = await _create_product(admin_client)
+    oid, _ = await _place_order(
+        approved_client, admin_client, [{"product_id": p["id"], "quantity": 1}]
+    )
+    code = (await _deliver(admin_client, oid))["serial_codes"][0]
+    out = (await client.get(VERIFY, params={"code": code})).json()
+    assert [e["type"] for e in out["events"]] == ["minted", "sold"]
+
+
+async def test_admin_status_change_records_sold_event(client, admin_client):
+    p = await _create_product(admin_client)
+    row = (await _generate(admin_client, p["id"]))[0]
+    r = await admin_client.patch(f"{SERIALS}/{row['id']}", json={"status": "sold"})
+    assert r.status_code == 200
+    out = (await client.get(VERIFY, params={"code": row["code"]})).json()
+    assert [e["type"] for e in out["events"]] == ["minted", "sold"]

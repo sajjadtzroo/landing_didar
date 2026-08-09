@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import Order
 from app.models.product import Product
-from app.models.product_serial import ProductSerial, SerialScan
+from app.models.product_serial import ProductSerial, SerialEvent, SerialScan
 
 _ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no ambiguous chars (0/O, 1/I/L)
 _MAX_ROUNDS = 10
@@ -129,7 +129,34 @@ async def generate_for_order(db: AsyncSession, order: Order) -> list[ProductSeri
             )
     if not specs:
         return []
-    return await _insert_unique(db, specs, commit=False)
+    serials = await _insert_unique(db, specs, commit=False)
+    # Passport timeline: these pieces are born sold (delivery is the sale event).
+    for s in serials:
+        record_event(db, s.id, "sold", {"order_id": str(order.id)})
+    return serials
+
+
+def record_event(
+    db: AsyncSession, serial_id: uuid.UUID, type_: str, meta: dict | None = None
+) -> None:
+    """Append a lifecycle event (sold/revoked/restored/…). Caller owns the commit."""
+    db.add(SerialEvent(serial_id=serial_id, type=type_, meta=meta))
+
+
+def qr_png(code: str, base_url: str) -> bytes:
+    """QR image for a piece's label — encodes the public verify deep-link."""
+    import io
+
+    import qrcode
+
+    img = qrcode.make(
+        f"{base_url}/verify?code={format_code(code)}",
+        box_size=8,
+        border=2,
+    )
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 async def log_scan(db: AsyncSession, serial_id: uuid.UUID, ip_hash: str | None) -> None:

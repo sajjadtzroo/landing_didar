@@ -4,7 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import ForeignKey, Integer, Numeric, String
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
@@ -60,6 +60,30 @@ class ProductSerial(Base):
     scans: Mapped[list["SerialScan"]] = relationship(
         back_populates="serial", cascade="all, delete-orphan"
     )
+    events: Mapped[list["SerialEvent"]] = relationship(
+        back_populates="serial",
+        cascade="all, delete-orphan",
+        order_by="SerialEvent.created_at",
+    )
+
+
+class SerialEvent(Base):
+    """Lifecycle event on a piece (the passport timeline). Minting is NOT stored —
+    the row's created_at already is the mint event; only real transitions land here:
+    sold / revoked / restored (Phase 6 adds warranty_activated / buyback_requested)."""
+
+    __tablename__ = "serial_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    serial_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("product_serials.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    type: Mapped[str] = mapped_column(String(24), nullable=False)
+    meta: Mapped[dict | None] = mapped_column(JSONB)
+
+    serial: Mapped["ProductSerial"] = relationship(back_populates="events")
 
 
 class SerialScan(Base):
