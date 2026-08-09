@@ -252,7 +252,7 @@ async function removeLanding() {
         <div
           v-for="(t, i) in content.trust"
           :key="i"
-          class="grid items-end gap-3 border border-line p-3 sm:grid-cols-[8rem,1fr,1fr,auto]"
+          class="admin-subcard grid items-end gap-3 p-3 sm:grid-cols-[8rem,1fr,1fr,auto]"
         >
           <label class="text-xs text-ink-muted">
             آیکون
@@ -290,7 +290,7 @@ async function removeLanding() {
           </span>
         </label>
 
-        <div v-for="(g, gi) in content.groups" :key="gi" class="space-y-3 border border-line p-4">
+        <div v-for="(g, gi) in content.groups" :key="gi" class="admin-subcard space-y-3 p-4">
           <div class="flex items-center gap-2">
             <p class="flex-1 text-sm font-medium">گروه {{ gi + 1 }}</p>
             <button class="text-ink-muted hover:text-ink disabled:opacity-30" :disabled="gi === 0" aria-label="بالا" @click="move(content.groups, gi, -1)"><ArrowUp :size="15" /></button>
@@ -308,7 +308,7 @@ async function removeLanding() {
             <li
               v-for="(pid, pi) in g.product_ids"
               :key="pid"
-              class="flex items-center gap-2 border border-line bg-surface p-2 text-sm"
+              class="corner-soft flex items-center gap-2 border border-white/60 bg-cream-bright/70 p-2 text-sm"
             >
               <button class="text-ink-muted hover:text-ink disabled:opacity-30" :disabled="pi === 0" aria-label="بالا" @click="move(g.product_ids, pi, -1)"><ArrowUp :size="13" /></button>
               <button class="text-ink-muted hover:text-ink disabled:opacity-30" :disabled="pi === g.product_ids.length - 1" aria-label="پایین" @click="move(g.product_ids, pi, 1)"><ArrowDown :size="13" /></button>
@@ -340,7 +340,7 @@ async function removeLanding() {
             <input v-model="content.sections.faq" type="checkbox" class="h-4 w-4" /> نمایش
           </span>
         </label>
-        <div v-for="(f, i) in content.faq" :key="i" class="space-y-2 border border-line p-3">
+        <div v-for="(f, i) in content.faq" :key="i" class="admin-subcard space-y-2 p-3">
           <div class="flex items-center gap-2">
             <span class="tnum flex-1 text-xs text-ink-muted">سؤال {{ i + 1 }}</span>
             <button class="text-ink-muted hover:text-ink disabled:opacity-30" :disabled="i === 0" aria-label="بالا" @click="move(content.faq, i, -1)"><ArrowUp :size="14" /></button>
@@ -379,7 +379,7 @@ async function removeLanding() {
     </div>
 
     <!-- Sticky save bar -->
-    <div class="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 px-5 py-3 backdrop-blur lg:pe-72">
+    <div class="fixed inset-x-0 bottom-0 z-40 border-t border-white/40 bg-cream-bright/70 px-5 py-3 backdrop-blur-xl lg:pe-72">
       <div class="mx-auto flex max-w-4xl items-center gap-3">
         <span v-if="saved" class="text-sm text-success">ذخیره شد ✓</span>
         <div class="flex-1" />
