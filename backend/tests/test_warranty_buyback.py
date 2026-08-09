@@ -127,3 +127,14 @@ async def test_buyback_export_csv(client, admin_client):
     r = await admin_client.get("/api/v1/admin/buybacks/export")
     assert r.status_code == 200
     assert row["code"] in r.text and "under_review" in r.text
+
+
+async def test_buyback_rejected_for_unsold_piece(client, admin_client):
+    """Review fix: an in-stock (undelivered) piece can't take a buyback request."""
+    r = await admin_client.post(
+        PRODUCTS, json={"name": "V", "sku": f"SKU-{uuid.uuid4().hex[:8]}"}
+    )
+    row = (
+        await admin_client.post(GENERATE, json={"product_id": r.json()["id"], "quantity": 1})
+    ).json()[0]
+    assert (await client.post(_b(row["code"]), json=WHO)).status_code == 409

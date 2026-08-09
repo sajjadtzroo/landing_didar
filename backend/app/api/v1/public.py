@@ -352,12 +352,16 @@ async def verify_serial(
 
 
 async def _sold_serial_or_404(db: AsyncSession, code: str) -> ProductSerial:
+    """Warranty/buyback both require a genuine, SOLD piece: 404 for unknown or
+    revoked (opaque), 409 for a piece still in stock."""
     normalized = serial_service.normalize(code)
     serial = (
         await db.execute(select(ProductSerial).where(ProductSerial.code == normalized))
     ).scalar_one_or_none() if normalized else None
     if serial is None or serial.status == ProductSerialStatus.revoked:
         raise HTTPException(404, detail="Not found")
+    if serial.status != ProductSerialStatus.sold:
+        raise HTTPException(409, detail="این قطعه هنوز فروخته نشده است")
     return serial
 
 
@@ -372,8 +376,6 @@ async def activate_warranty(
     """فعال‌سازی گارانتی (WO 7.8): only for a sold, warrantable piece without an
     existing warranty. 12 months from activation."""
     serial = await _sold_serial_or_404(db, code)
-    if serial.status != ProductSerialStatus.sold:
-        raise HTTPException(409, detail="این قطعه هنوز فروخته نشده است")
     product = await db.get(Product, serial.product_id)
     if not (product and product.warrantable):
         raise HTTPException(409, detail="این محصول مشمول گارانتی نیست")

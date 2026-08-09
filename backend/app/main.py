@@ -86,7 +86,7 @@ async def audit_admin_mutations(request, call_next):
     path = request.url.path
     if (
         request.method in _AUDIT_METHODS
-        and path.startswith("/api/v1/admin")
+        and (path.startswith("/api/v1/admin") or path.startswith("/api/v1/agent"))
         and path != "/api/v1/admin/login"  # audited inside login (no cookie yet)
     ):
         from app.core.db import SessionLocal

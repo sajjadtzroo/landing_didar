@@ -110,7 +110,6 @@ async def test_order_on_behalf_sets_agent_and_totals(client, admin_client, _sess
     assert body["agent_username"] == "agent1"
     assert float(body["total"]) == 15  # 5g × 3, server-trusted
     assert body["store_name"] == "طلای شرق"
-    assert body["contact_method"] == "agent"
 
 
 async def test_order_for_unassigned_retailer_404(client, admin_client, _sessionmaker):
@@ -162,7 +161,6 @@ async def test_agent_delivery_mints_serials_with_proof(client, admin_client, _se
     body = r.json()
     assert body["status"] == "delivered"
     assert len(body["serial_codes"]) == 2
-    assert body["delivery_assignee"] == "ایجنت نمونه"
     assert body["delivered_at"] is not None
 
 
@@ -191,3 +189,69 @@ async def test_preparing_status_accepted(admin_client, approved_client):
     oid = (await admin_client.get("/api/v1/admin/orders", params={"q": ref})).json()["items"][0]["id"]
     pr = await admin_client.patch(f"/api/v1/admin/orders/{oid}", json={"status": "preparing"})
     assert pr.status_code == 200 and pr.json()["status"] == "preparing"
+
+
+async def test_agent_orders_hide_admin_fields(client, admin_client, _sessionmaker):
+    """Review fix: internal_note / is_read / attribution never reach agents."""
+    agent = await _mk_agent(_sessionmaker)
+    retailer = await _mk_retailer(_sessionmaker)
+    await _assign(_sessionmaker, agent.id, retailer.id)
+    p = await _mk_product(admin_client)
+    await _agent_login(client)
+    created = (
+        await client.post(
+            AGENT_ORDERS,
+            json={"customer_id": str(retailer.id), "province": "Tehran",
+                  "items": [{"product_id": p["id"], "quantity": 1}]},
+        )
+    ).json()
+    listed = (await client.get(AGENT_ORDERS)).json()[0]
+    for payload in (created, listed):
+        for hidden in ("internal_note", "is_read", "utm_source", "referrer", "phone"):
+            assert hidden not in payload, hidden
+
+
+async def test_superadmin_can_deliver_agent_order(client, admin_client, _sessionmaker):
+    """Review fix: the oversight path — superadmin delivers any agent order."""
+    from app.core.security import hash_password
+    from app.models.user import User
+
+    agent = await _mk_agent(_sessionmaker)
+    retailer = await _mk_retailer(_sessionmaker)
+    await _assign(_sessionmaker, agent.id, retailer.id)
+    p = await _mk_product(admin_client)
+    await _agent_login(client)
+    oid = (
+        await client.post(
+            AGENT_ORDERS,
+            json={"customer_id": str(retailer.id), "province": "Tehran",
+                  "items": [{"product_id": p["id"], "quantity": 1}]},
+        )
+    ).json()["id"]
+    async with _sessionmaker() as s:
+        s.add(User(username="boss", password_hash=hash_password("boss-pass-99"), role="superadmin"))
+        await s.commit()
+    await _agent_login(client, "boss", "boss-pass-99")
+    r = await client.post(f"{AGENT_ORDERS}/{oid}/deliver", json={"note": "بازرسی"})
+    assert r.status_code == 200 and r.json()["status"] == "delivered"
+
+
+async def test_agent_mutations_are_audited(client, admin_client, _sessionmaker):
+    """Review fix: agent order placement/delivery land in the audit trail."""
+    from sqlalchemy import select
+
+    from app.models.user import AuditLog
+
+    agent = await _mk_agent(_sessionmaker)
+    retailer = await _mk_retailer(_sessionmaker)
+    await _assign(_sessionmaker, agent.id, retailer.id)
+    p = await _mk_product(admin_client)
+    await _agent_login(client)
+    await client.post(
+        AGENT_ORDERS,
+        json={"customer_id": str(retailer.id), "province": "Tehran",
+              "items": [{"product_id": p["id"], "quantity": 1}]},
+    )
+    async with _sessionmaker() as s:
+        rows = (await s.execute(select(AuditLog))).scalars().all()
+    assert ("agent1", "POST /api/v1/agent/orders") in [(a.actor, a.action) for a in rows]

@@ -13,9 +13,16 @@ from app.core.db import get_db
 from app.models.agent import AgentRetailer, AgentVisit
 from app.models.customer import Customer
 from app.models.order import Order, OrderStatus
-from app.models.user import User
-from app.schemas.agent import AgentOrderCreate, AgentRetailerOut, VisitCreate, VisitOut
-from app.schemas.order import DeliveryProof, OrderCreate, OrderDetailOut, OrderOut
+from app.models.user import AdminRole, User
+from app.schemas.agent import (
+    AgentOrderCreate,
+    AgentOrderDetailOut,
+    AgentOrderOut,
+    AgentRetailerOut,
+    VisitCreate,
+    VisitOut,
+)
+from app.schemas.order import DeliveryProof, OrderCreate
 from app.services import orders as order_service
 from app.services import serials as serial_service
 
@@ -65,7 +72,7 @@ async def my_retailers(
     return out
 
 
-@router.post("/orders", response_model=OrderDetailOut, status_code=201)
+@router.post("/orders", response_model=AgentOrderDetailOut, status_code=201)
 async def place_order(
     payload: AgentOrderCreate,
     agent: User = Depends(require_agent),
@@ -91,7 +98,7 @@ async def place_order(
     return order
 
 
-@router.get("/orders", response_model=list[OrderOut])
+@router.get("/orders", response_model=list[AgentOrderOut])
 async def my_orders(
     agent: User = Depends(require_agent), db: AsyncSession = Depends(get_db)
 ):
@@ -104,7 +111,7 @@ async def my_orders(
     return rows.scalars().all()
 
 
-@router.post("/orders/{order_id}/deliver", response_model=OrderDetailOut)
+@router.post("/orders/{order_id}/deliver", response_model=AgentOrderDetailOut)
 async def deliver_order(
     order_id: uuid.UUID,
     proof: DeliveryProof,
@@ -114,7 +121,8 @@ async def deliver_order(
     """ثبت تحویل پایه — the agent marks their own order delivered with proof;
     mints authenticity serials exactly like the admin path."""
     order = await db.get(Order, order_id)
-    if order is None or order.agent_id != agent.id:
+    is_super = agent.role == AdminRole.superadmin  # oversight path
+    if order is None or (not is_super and order.agent_id != agent.id):
         raise HTTPException(404, detail="Order not found")
     await order_service.change_status(db, order, OrderStatus.delivered)
     await serial_service.generate_for_order(db, order)
