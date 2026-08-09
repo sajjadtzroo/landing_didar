@@ -89,6 +89,7 @@ export type OrderStatus =
   | 'new'
   | 'contacted'
   | 'confirmed'
+  | 'preparing'
   | 'shipped'
   | 'delivered'
   | 'cancelled'
