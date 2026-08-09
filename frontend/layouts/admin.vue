@@ -18,6 +18,8 @@ const SECTIONS: [string, string][] = [
   ['/admin/landings', 'صفحات فرود'],
   ['/admin/faqs', 'سؤالات متداول'],
   ['/admin/customers', 'احراز هویت مشتریان'],
+  ['/admin/users', 'کاربران'],
+  ['/admin/audit', 'گزارش فعالیت'],
 ]
 const pageTitle = computed(
   () => SECTIONS.find(([p]) => route.path.startsWith(p))?.[1] ?? 'داشبورد',

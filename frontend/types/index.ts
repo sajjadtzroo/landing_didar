@@ -221,6 +221,34 @@ export interface SerialListResponse {
   page_size: number
 }
 
+// --- RBAC (WO 7.15) ---
+export type AdminRole = 'superadmin' | 'operator' | 'retailer' | 'agent' | 'support'
+
+export interface PanelUser {
+  id: string
+  username: string
+  full_name: string | null
+  phone: string | null
+  role: AdminRole
+  is_active: boolean
+  created_at: string
+}
+
+export interface AuditEntry {
+  id: string
+  actor: string
+  action: string
+  status: number | null
+  created_at: string
+}
+
+export interface AuditListResponse {
+  items: AuditEntry[]
+  total: number
+  page: number
+  page_size: number
+}
+
 // Public authenticity certificate — mirrors backend SerialVerifyOut.
 export interface SerialVerify {
   code: string

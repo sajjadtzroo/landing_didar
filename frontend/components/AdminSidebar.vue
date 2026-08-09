@@ -3,6 +3,7 @@ import {
   BadgeCheck,
   BarChart3,
   Coins,
+  History,
   LayoutGrid,
   LayoutTemplate,
   LogOut,
@@ -10,6 +11,7 @@ import {
   ScrollText,
   ShieldCheck,
   ShoppingCart,
+  Users,
 } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { toFa } from '~/utils/format'
@@ -22,7 +24,8 @@ const auth = useAdminAuth()
 const route = useRoute()
 
 // Grouped navigation: labelled sections give hierarchy as the panel grows.
-const groups = [
+// «مدیریت سیستم» is superadmin-only (users + audit; backend enforces it too).
+const groups = computed(() => [
   {
     label: 'نمای کلی',
     items: [
@@ -45,7 +48,18 @@ const groups = [
     label: 'مشتریان',
     items: [{ to: '/admin/customers', label: 'احراز هویت مشتریان', icon: ShieldCheck }],
   },
-]
+  ...(auth.isSuperadmin
+    ? [
+        {
+          label: 'مدیریت سیستم',
+          items: [
+            { to: '/admin/users', label: 'کاربران', icon: Users },
+            { to: '/admin/audit', label: 'گزارش فعالیت', icon: History },
+          ],
+        },
+      ]
+    : []),
+])
 
 // Exact match for the dashboard, prefix match for sections.
 function isActive(to: string) {
