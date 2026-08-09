@@ -6,6 +6,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   try {
     const me = await apiFetch<{ username: string; role: string }>('/admin/me')
     useAdminAuth().setIdentity(me.username, me.role)
+    if (me.role === 'agent') return navigateTo('/agent')
   } catch {
     return navigateTo('/admin/login')
   }

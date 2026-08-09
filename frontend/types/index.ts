@@ -149,6 +149,24 @@ export interface AdminOrder {
   utm_campaign: string | null
   referrer: string | null
   created_at: string
+  agent_username: string | null // set when an agent placed it (WO 7.5)
+}
+
+// Agent portal (WO 7.5)
+export interface AgentRetailer {
+  id: string
+  store_name: string | null
+  full_name: string | null
+  phone: string
+  province: string | null
+  city: string | null
+}
+
+export interface AgentVisit {
+  id: string
+  customer_id: string
+  note: string
+  created_at: string
 }
 
 export interface OrderItem {

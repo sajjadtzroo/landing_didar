@@ -72,6 +72,7 @@ export const CONTENT = {
     new: 'ثبت شد',
     contacted: 'در حال پیگیری',
     confirmed: 'تأیید شد',
+    preparing: 'در حال آماده‌سازی',
     shipped: 'ارسال شد',
     delivered: 'تحویل شد',
     cancelled: 'لغو شد',

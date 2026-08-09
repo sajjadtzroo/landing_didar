@@ -52,6 +52,7 @@ export const STATUS_COLORS: Record<string, string> = {
   new: '#8A5B00', // warning
   contacted: '#7A8794', // neutral
   confirmed: '#1E7A46', // success
+  preparing: '#B08A57', // gold (in progress)
   shipped: '#0B9A55', // success (lighter)
   delivered: '#0E7A3E', // success (delivered)
   cancelled: '#B3261E', // danger

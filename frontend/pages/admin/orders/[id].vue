@@ -143,6 +143,10 @@ function faDateTime(iso: string) {
           <div class="flex justify-between"><dt class="text-ink-muted">استان</dt><dd>{{ order.province }}</dd></div>
           <div v-if="order.city" class="flex justify-between"><dt class="text-ink-muted">شهر</dt><dd>{{ order.city }}</dd></div>
           <div class="flex justify-between"><dt class="text-ink-muted">روش پیگیری</dt><dd>{{ CONTENT.form.contactMethods[order.contact_method] }}</dd></div>
+          <div v-if="order.agent_username" class="flex justify-between">
+            <dt class="text-ink-muted">ثبت توسط ایجنت</dt>
+            <dd class="tnum" dir="ltr">{{ order.agent_username }}</dd>
+          </div>
           <div class="flex justify-between"><dt class="text-ink-muted">تاریخ</dt><dd class="tnum">{{ faDateTime(order.created_at) }}</dd></div>
           <div v-if="order.utm_source" class="flex justify-between"><dt class="text-ink-muted">منبع</dt><dd>{{ order.utm_source }}</dd></div>
         </dl>

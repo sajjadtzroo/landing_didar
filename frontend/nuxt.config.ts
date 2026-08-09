@@ -53,6 +53,7 @@ export default defineNuxtConfig({
   // SSR on for SEO; admin is client-only (session-gated, no SEO value).
   routeRules: {
     '/admin/**': { ssr: false },
+    '/agent/**': { ssr: false },
     // Customer panel is session-gated (no SEO value) — render client-side.
     '/account/**': { ssr: false },
     // Landings are identical per visitor (cart is client-side), so cache the

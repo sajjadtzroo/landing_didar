@@ -40,6 +40,25 @@ const editing = ref(false)
 const panelOpen = ref(false)
 const error = ref('')
 
+// --- Agent → retailer assignment (WO 7.5) ---
+interface CustomerRow { id: string; store_name: string | null; full_name: string | null; phone: string }
+const customers = ref<CustomerRow[]>([])
+const assigned = ref<Set<string>>(new Set())
+async function loadAssignment(userId: string) {
+  const [all, ids] = await Promise.all([
+    apiFetch<CustomerRow[]>('/admin/customers?status=approved'),
+    apiFetch<string[]>(`/admin/users/${userId}/retailers`),
+  ])
+  customers.value = all
+  assigned.value = new Set(ids)
+}
+function toggleRetailer(id: string) {
+  const next = new Set(assigned.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  assigned.value = next
+}
+
 function startCreate() {
   Object.assign(form, blank())
   editing.value = false
@@ -59,6 +78,7 @@ function startEdit(u: PanelUser) {
   editing.value = true
   error.value = ''
   panelOpen.value = true
+  if (u.role === 'agent') loadAssignment(u.id)
 }
 
 async function save() {
@@ -85,6 +105,13 @@ async function save() {
           phone: form.phone || null,
           role: form.role,
         },
+      })
+    }
+    // Persist agent retailer assignment alongside the profile.
+    if (editing.value && form.role === 'agent') {
+      await apiFetch(`/admin/users/${form.id}/retailers`, {
+        method: 'PUT',
+        body: [...assigned.value],
       })
     }
     panelOpen.value = false
@@ -209,6 +236,25 @@ function faDate(iso: string) {
         <label v-if="editing" class="flex items-center gap-2 text-sm">
           <input v-model="form.is_active" type="checkbox" :disabled="form.username === auth.username" /> فعال
         </label>
+
+        <!-- Agent → retailer assignment -->
+        <div v-if="editing && form.role === 'agent'">
+          <p class="mb-2 text-sm text-ink-muted">خرده‌فروشان تخصیص‌یافته</p>
+          <div class="max-h-52 space-y-1 overflow-y-auto border border-line p-2">
+            <label
+              v-for="c in customers"
+              :key="c.id"
+              class="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm hover:bg-surface-soft"
+            >
+              <input type="checkbox" :checked="assigned.has(c.id)" @change="toggleRetailer(c.id)" />
+              <span class="min-w-0 flex-1 truncate">{{ c.store_name || c.full_name || c.phone }}</span>
+              <span class="tnum text-xs text-ink-muted" dir="ltr">{{ c.phone }}</span>
+            </label>
+            <p v-if="!customers.length" class="p-2 text-xs text-ink-muted">
+              مشتری تأییدشده‌ای یافت نشد.
+            </p>
+          </div>
+        </div>
         <p v-if="error" class="text-sm text-danger">{{ error }}</p>
       </div>
       <template #footer>

@@ -14,7 +14,8 @@ async function submit() {
   error.value = ''
   try {
     await auth.login(username.value, password.value)
-    await navigateTo('/admin/orders')
+    // Field agents land in their own portal; panel roles go to orders.
+    await navigateTo(auth.role === 'agent' ? '/agent' : '/admin/orders')
   } catch {
     error.value = 'نام کاربری یا رمز عبور نادرست است.'
   } finally {
