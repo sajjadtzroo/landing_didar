@@ -17,7 +17,7 @@ from loguru import logger
 from sqlalchemy import select
 
 from app.core.config import settings
-from app.core.db import SessionLocal
+from app.core import db as _db  # SessionLocal resolved at call time (test-patchable)
 from app.models.product import Product
 
 _IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".avif"}
@@ -68,17 +68,21 @@ def _download(client, key: str, dest: Path) -> None:
         resp.release_conn()
 
 
-async def import_product_images(client=None) -> dict:
-    """Sync every product's `{sku}/` MinIO folder into local media and record the
-    served paths. Returns {'products', 'photos', 'skipped'} for reporting."""
+async def import_product_images(client=None, skus: list[str] | None = None) -> dict:
+    """Sync products' `{sku}/` MinIO folders into local media and record the
+    served paths. `skus` limits the sync (bulk-import follow-up); None = all.
+    Returns {'products', 'photos', 'skipped'} for reporting."""
     client = client or _make_client()
     media_root = Path(settings.media_root)
     prefix_url = settings.media_url_prefix
     photos = 0
     skipped: list[str] = []
 
-    async with SessionLocal() as db:
-        products = (await db.execute(select(Product))).scalars().all()
+    async with _db.SessionLocal() as db:
+        stmt = select(Product)
+        if skus is not None:
+            stmt = stmt.where(Product.sku.in_(skus))
+        products = (await db.execute(stmt)).scalars().all()
         for p in products:
             keys = await asyncio.to_thread(_list_images, client, p.sku)
             if not keys:
