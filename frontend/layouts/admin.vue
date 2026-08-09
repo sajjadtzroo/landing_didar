@@ -14,6 +14,7 @@ const SECTIONS: [string, string][] = [
   ['/admin/prices', 'قیمت طلا'],
   ['/admin/products', 'محصولات'],
   ['/admin/serials', 'سریال‌ها / اصالت'],
+  ['/admin/mobile-gallery', 'گالری سیار'],
   ['/admin/portfolios', 'پورتفولیوها'],
   ['/admin/landings', 'صفحات فرود'],
   ['/admin/faqs', 'سؤالات متداول'],

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ClipboardList, LogOut, Store } from 'lucide-vue-next'
+import { Briefcase, ClipboardList, LogOut, Store } from 'lucide-vue-next'
 
 // Field-agent portal chrome: a slim top bar (this is a phone-first work tool,
 // not the admin panel) + content container.
@@ -9,6 +9,7 @@ const route = useRoute()
 const TABS = [
   { to: '/agent', label: 'کاسبان من', icon: Store },
   { to: '/agent/orders', label: 'سفارش‌ها', icon: ClipboardList },
+  { to: '/agent/gallery', label: 'گالری من', icon: Briefcase },
 ]
 function isActive(to: string) {
   return to === '/agent' ? route.path === '/agent' : route.path.startsWith(to)

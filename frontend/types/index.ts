@@ -163,6 +163,23 @@ export interface AgentRetailer {
   city: string | null
 }
 
+// گالری سیار (WO 7.6)
+export interface GalleryItem {
+  id: string
+  code: string
+  product_name: string
+  image_url: string | null
+  kind: 'sample' | 'sellable'
+  status: 'with_agent' | 'returned' | 'sold'
+  note: string | null
+  created_at: string
+}
+
+export interface GalleryResponse {
+  items: GalleryItem[]
+  counts: Record<string, number>
+}
+
 export interface AgentVisit {
   id: string
   customer_id: string
