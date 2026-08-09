@@ -7,7 +7,7 @@ from app.models.order import Order, OrderItem, OrderStatus, OrderStatusLog
 from app.models.portfolio import Portfolio
 from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialScan
 from app.models.product import Product
-from app.models.agent import AgentRetailer, AgentVisit
+from app.models.agent import AgentRetailer, AgentVisit, MobileGalleryItem
 from app.models.user import AdminRole, AuditLog, User
 from app.models.warranty import BuybackRequest, BuybackStatus, Warranty
 
@@ -19,6 +19,7 @@ __all__ = [
     "BuybackStatus",
     "AgentRetailer",
     "AgentVisit",
+    "MobileGalleryItem",
     "User",
     "AdminRole",
     "AuditLog",

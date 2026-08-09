@@ -10,12 +10,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_agent
 from app.core.db import get_db
-from app.models.agent import AgentRetailer, AgentVisit
+from app.models.agent import AgentRetailer, AgentVisit, MobileGalleryItem
 from app.models.customer import Customer
 from app.models.order import Order, OrderStatus
+from app.models.product_serial import ProductSerialStatus
 from app.models.user import AdminRole, User
 from app.schemas.agent import (
     AgentOrderCreate,
+    GalleryItemOut,
+    GalleryOut,
+    GallerySellIn,
     AgentOrderDetailOut,
     AgentOrderOut,
     AgentRetailerOut,
@@ -160,3 +164,70 @@ async def my_visits(
         stmt = stmt.where(AgentVisit.customer_id == customer_id)
     rows = await db.execute(stmt.order_by(AgentVisit.created_at.desc()).limit(100))
     return rows.scalars().all()
+
+
+# --- گالری سیار (WO 7.6): what I'm carrying + quick sale ---
+def _gallery_out(i: MobileGalleryItem) -> GalleryItemOut:
+    return GalleryItemOut(
+        id=i.id,
+        code=serial_service.format_code(i.serial.code),
+        product_name=i.serial.product_name,
+        image_url=i.serial.image_url,
+        kind=i.kind,
+        status=i.status,
+        note=i.note,
+        created_at=i.created_at,
+    )
+
+
+@router.get("/gallery", response_model=GalleryOut)
+async def my_gallery(
+    agent: User = Depends(require_agent), db: AsyncSession = Depends(get_db)
+):
+    items = (
+        await db.execute(
+            select(MobileGalleryItem)
+            .where(MobileGalleryItem.agent_id == agent.id)
+            .order_by(MobileGalleryItem.created_at.desc())
+        )
+    ).scalars().all()
+    active = [i for i in items if i.status == "with_agent"]
+    counts = {
+        "with_agent": len(active),
+        "sample": sum(1 for i in active if i.kind == "sample"),
+        "sellable": sum(1 for i in active if i.kind == "sellable"),
+        "sold": sum(1 for i in items if i.status == "sold"),
+        "returned": sum(1 for i in items if i.status == "returned"),
+    }
+    return GalleryOut(items=[_gallery_out(i) for i in items], counts=counts)
+
+
+@router.post("/gallery/{item_id}/sell", response_model=GalleryItemOut)
+async def quick_sell(
+    item_id: uuid.UUID,
+    payload: GallerySellIn,
+    agent: User = Depends(require_agent),
+    db: AsyncSession = Depends(get_db),
+):
+    """فروش فوری در حالت محدود (WO 7.6): sell a carried sellable piece on the
+    spot — the serial flips to sold with a passport event; no order row."""
+    item = await db.get(MobileGalleryItem, item_id)
+    if item is None or item.agent_id != agent.id:
+        raise HTTPException(404, detail="Item not found")
+    if item.status != "with_agent":
+        raise HTTPException(409, detail="این قطعه همراه شما نیست")
+    if item.kind != "sellable":
+        raise HTTPException(409, detail="کالای نمونه قابل فروش نیست")
+    if item.serial.status != ProductSerialStatus.in_stock:
+        raise HTTPException(409, detail="وضعیت سریال اجازه فروش نمی‌دهد")
+
+    item.serial.status = ProductSerialStatus.sold
+    serial_service.record_event(
+        db, item.serial_id, "sold", {"quick_sale": True, "agent": agent.username}
+    )
+    item.status = "sold"
+    if payload.note:
+        item.note = payload.note
+    await db.commit()
+    await db.refresh(item)
+    return _gallery_out(item)

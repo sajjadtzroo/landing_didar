@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -48,6 +49,38 @@ class AgentOrderOut(BaseModel):
 class AgentOrderDetailOut(AgentOrderOut):
     serial_codes: list[str] = []
     delivered_at: datetime | None = None
+
+
+# --- گالری سیار (WO 7.6) ---
+GalleryKind = Literal["sample", "sellable"]
+
+
+class GalleryItemOut(BaseModel):
+    id: uuid.UUID
+    code: str  # display form
+    product_name: str
+    image_url: str | None
+    kind: GalleryKind
+    status: str  # with_agent | returned | sold
+    note: str | None
+    created_at: datetime
+
+
+class GalleryOut(BaseModel):
+    items: list[GalleryItemOut]
+    # {"with_agent": n, "sample": n, "sellable": n, "sold": n, "returned": n}
+    counts: dict[str, int]
+
+
+class GalleryAssignIn(BaseModel):
+    agent_id: uuid.UUID
+    code: str = Field(min_length=4, max_length=16)
+    kind: GalleryKind | None = None  # default: derived from the product
+    note: str | None = Field(default=None, max_length=300)
+
+
+class GallerySellIn(BaseModel):
+    note: str | None = Field(default=None, max_length=300)  # buyer / context
 
 
 class VisitCreate(BaseModel):
