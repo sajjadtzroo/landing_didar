@@ -124,7 +124,7 @@ async function move(index: number, dir: -1 | 1) {
       <li
         v-for="(p, i) in products"
         :key="p.id"
-        class="flex items-center gap-4 border border-line bg-surface-raised p-3"
+        class="admin-card admin-card--hover flex items-center gap-4 p-3"
         :class="!p.is_active ? 'opacity-60' : ''"
       >
         <div class="flex flex-col">

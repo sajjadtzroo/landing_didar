@@ -68,7 +68,7 @@ async function move(index: number, dir: -1 | 1) {
     </AdminPageHeader>
 
     <ul class="space-y-3">
-      <li v-for="(f, i) in faqs" :key="f.id" class="flex items-start gap-3 border border-line bg-surface-raised p-4" :class="!f.is_active ? 'opacity-60' : ''">
+      <li v-for="(f, i) in faqs" :key="f.id" class="admin-card admin-card--hover flex items-start gap-3 p-4" :class="!f.is_active ? 'opacity-60' : ''">
         <div class="flex flex-col">
           <button class="text-ink-muted hover:text-ink disabled:opacity-30" :disabled="i === 0" aria-label="بالا" @click="move(i, -1)"><ArrowUp :size="16" /></button>
           <button class="text-ink-muted hover:text-ink disabled:opacity-30" :disabled="i === (faqs?.length ?? 0) - 1" aria-label="پایین" @click="move(i, 1)"><ArrowDown :size="16" /></button>

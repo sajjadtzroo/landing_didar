@@ -76,7 +76,7 @@ async function remove(ln: AdminLanding) {
       <li
         v-for="ln in landings"
         :key="ln.id"
-        class="flex items-center gap-4 border border-line bg-surface-raised p-4"
+        class="admin-card admin-card--hover flex items-center gap-4 p-4"
       >
         <div class="min-w-0 flex-1">
           <p class="text-ink">{{ ln.title }}</p>

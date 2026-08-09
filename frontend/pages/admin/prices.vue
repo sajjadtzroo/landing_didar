@@ -88,7 +88,7 @@ function changeClass(it: PriceItem) {
 
     <!-- Headline cards -->
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <div v-for="c in cards" :key="c.symbol" class="border border-line bg-surface-raised p-4">
+      <div v-for="c in cards" :key="c.symbol" class="admin-card admin-card--hover p-4">
         <p class="text-xs text-ink-muted">{{ c.label }}</p>
         <p class="tnum mt-2 text-xl font-medium text-ink">
           {{ price(c) }} <span class="text-sm font-normal text-ink-muted">{{ unitLabel(c) }}</span>

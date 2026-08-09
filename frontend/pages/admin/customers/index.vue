@@ -96,7 +96,7 @@ function faDate(iso: string) {
     </div>
 
     <!-- Desktop table -->
-    <div class="hidden overflow-x-auto border border-line md:block">
+    <div class="admin-card hidden overflow-x-auto p-0 md:block">
       <table class="w-full text-start text-sm">
         <thead class="bg-surface-soft text-ink-muted">
           <tr>
@@ -210,7 +210,7 @@ function faDate(iso: string) {
       <div
         v-for="c in data"
         :key="c.id"
-        class="border border-line bg-surface-raised p-4"
+        class="admin-card p-4"
       >
         <div class="flex items-start justify-between gap-2">
           <div>

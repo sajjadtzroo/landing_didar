@@ -76,7 +76,7 @@ async function remove(pf: AdminPortfolio) {
       <li
         v-for="pf in portfolios"
         :key="pf.id"
-        class="flex items-center gap-4 border border-line bg-surface-raised p-4"
+        class="admin-card admin-card--hover flex items-center gap-4 p-4"
       >
         <div class="min-w-0 flex-1">
           <p class="flex items-center gap-2 text-ink">
@@ -105,7 +105,7 @@ async function remove(pf: AdminPortfolio) {
         </button>
       </li>
     </ul>
-    <p v-if="portfolios && !portfolios.length" class="border border-line bg-surface-raised py-12 text-center text-sm text-ink-muted">
+    <p v-if="portfolios && !portfolios.length" class="admin-card py-12 text-center text-sm text-ink-muted">
       هنوز پورتفولیویی نساخته‌اید.
     </p>
 

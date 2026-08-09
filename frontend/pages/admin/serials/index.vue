@@ -128,7 +128,7 @@ function faDate(iso: string) {
     <p v-if="data" class="tnum mb-3 text-xs text-ink-muted">{{ toFa(data.total) }} سریال</p>
 
     <!-- Table -->
-    <div class="hidden overflow-x-auto border border-line md:block">
+    <div class="admin-card hidden overflow-x-auto p-0 md:block">
       <table class="w-full text-start text-sm">
         <thead class="bg-surface-soft text-ink-muted">
           <tr>
