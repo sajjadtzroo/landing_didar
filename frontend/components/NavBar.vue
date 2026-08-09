@@ -58,6 +58,14 @@ const overHero = computed(() => onLanding.value && y.value < 80)
       <!-- Section links -->
       <div class="hidden items-center gap-6 sm:flex">
         <NuxtLink
+          to="/l/one"
+          class="text-sm transition hover:text-gold-text"
+          active-class="text-gold-text"
+        >
+          {{ CONTENT.nav.home }}
+        </NuxtLink>
+
+        <NuxtLink
           to="/shop"
           class="text-sm transition hover:text-gold-text"
           active-class="text-gold-text"
