@@ -185,3 +185,36 @@ export interface CustomerAdmin {
   created_at: string
 }
 
+
+// Per-item serial code (admin view) — mirrors backend SerialOut.
+export interface ProductSerial {
+  id: string
+  code: string // display form DGV-XXXXXXXX
+  product_id: string
+  product_name: string
+  karat: number | null
+  weight_grams: string | null
+  status: 'in_stock' | 'sold' | 'revoked'
+  batch_id: string
+  note: string | null
+  created_at: string
+  verify_count: number
+  first_verified_at: string | null
+}
+
+export interface SerialListResponse {
+  items: ProductSerial[]
+  total: number
+  page: number
+  page_size: number
+}
+
+// Public authenticity certificate — mirrors backend SerialVerifyOut.
+export interface SerialVerify {
+  code: string
+  product_name: string
+  karat: number | null
+  weight_grams: string | null
+  image_url: string | null
+  issued_at: string
+}

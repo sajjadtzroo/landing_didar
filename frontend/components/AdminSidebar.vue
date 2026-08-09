@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  BadgeCheck,
   BarChart3,
   Coins,
   LayoutGrid,
@@ -34,6 +35,7 @@ const groups = [
     label: 'کاتالوگ',
     items: [
       { to: '/admin/products', label: 'محصولات', icon: Package },
+      { to: '/admin/serials', label: 'سریال‌ها / اصالت', icon: BadgeCheck },
       { to: '/admin/portfolios', label: 'پورتفولیوها', icon: LayoutGrid },
       { to: '/admin/landings', label: 'صفحات فرود', icon: LayoutTemplate },
       { to: '/admin/faqs', label: 'سؤالات متداول', icon: ScrollText },

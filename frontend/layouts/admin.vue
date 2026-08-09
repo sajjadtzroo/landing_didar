@@ -13,6 +13,7 @@ const SECTIONS: [string, string][] = [
   ['/admin/orders', 'سفارش‌ها'],
   ['/admin/prices', 'قیمت طلا'],
   ['/admin/products', 'محصولات'],
+  ['/admin/serials', 'سریال‌ها / اصالت'],
   ['/admin/portfolios', 'پورتفولیوها'],
   ['/admin/landings', 'صفحات فرود'],
   ['/admin/faqs', 'سؤالات متداول'],
