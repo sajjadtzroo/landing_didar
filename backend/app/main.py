@@ -20,6 +20,8 @@ from app.api.v1 import (
     admin_prices,
     admin_serials,
     admin_stats,
+    admin_users,
+    admin_audit,
     auth,
     public,
 )
@@ -70,6 +72,42 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# --- Audit trail (WO 7.15): every mutating admin request, one middleware ---
+_AUDIT_METHODS = {"POST", "PATCH", "PUT", "DELETE"}
+
+
+@app.middleware("http")
+async def audit_admin_mutations(request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if (
+        request.method in _AUDIT_METHODS
+        and path.startswith("/api/v1/admin")
+        and path != "/api/v1/admin/login"  # audited inside login (no cookie yet)
+    ):
+        from app.core.db import SessionLocal
+        from app.core.security import SESSION_COOKIE, read_session
+        from app.models.user import AuditLog
+
+        actor = read_session(request.cookies.get(SESSION_COOKIE))
+        if actor:
+            try:
+                async with SessionLocal() as s:
+                    s.add(
+                        AuditLog(
+                            actor=actor[:60],
+                            action=f"{request.method} {path}"[:200],
+                            status=response.status_code,
+                        )
+                    )
+                    await s.commit()
+            except Exception:  # noqa: BLE001 — auditing must never fail a request
+                from loguru import logger
+
+                logger.warning("audit write failed for {} {}", request.method, path)
+    return response
 
 # --- Consistent error envelope: {"detail": "...", "field": "..."} everywhere ---
 
@@ -160,3 +198,5 @@ app.include_router(admin_serials.router, prefix=f"{API}/admin", tags=["admin:ser
 app.include_router(
     admin_customers.router, prefix=f"{API}/admin", tags=["admin:customers"]
 )
+app.include_router(admin_users.router, prefix=f"{API}/admin", tags=["admin:users"])
+app.include_router(admin_audit.router, prefix=f"{API}/admin", tags=["admin:audit"])

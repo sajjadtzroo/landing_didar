@@ -8,3 +8,4 @@ class LoginIn(BaseModel):
 
 class MeOut(BaseModel):
     username: str
+    role: str = "superadmin"  # WO 7.15 role; default keeps old clients working

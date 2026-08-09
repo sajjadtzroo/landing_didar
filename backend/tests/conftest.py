@@ -45,7 +45,8 @@ TEST_DB_URL = os.getenv(
 _TABLES = (
     "order_status_log, order_items, orders, "
     "landings, portfolios, products, faqs, "
-    "favorites, customer_addresses, otp_codes, customers"
+    "favorites, customer_addresses, otp_codes, customers, "
+    "users, audit_log"
 )
 
 
@@ -95,6 +96,10 @@ async def _wire(_engine, _sessionmaker, monkeypatch):
             yield s
 
     app.dependency_overrides[get_db] = _get_db
+    # Anything that opens its own session (audit middleware) hits the test DB too.
+    import app.core.db as _db_mod
+
+    monkeypatch.setattr(_db_mod, "SessionLocal", _sessionmaker)
     # Rate limiter off by default (one dedicated test flips it on).
     limiter.enabled = False
 
@@ -130,6 +135,20 @@ async def admin_client():
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
     app.dependency_overrides.pop(require_admin, None)
+
+
+@pytest_asyncio.fixture
+async def super_client():
+    """Superadmin-guarded routes (users/audit) without the cookie round-trip."""
+    from app.api.deps import require_superadmin
+
+    app.dependency_overrides[require_admin] = lambda: "admin"
+    app.dependency_overrides[require_superadmin] = lambda: "admin"
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
+        yield c
+    app.dependency_overrides.pop(require_admin, None)
+    app.dependency_overrides.pop(require_superadmin, None)
 
 
 @pytest_asyncio.fixture

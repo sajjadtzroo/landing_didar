@@ -21,7 +21,7 @@ def _admin_creds(monkeypatch):
 async def test_login_success_sets_cookie(client):
     r = await client.post(LOGIN, json={"username": "admin", "password": "secret123"})
     assert r.status_code == 200
-    assert r.json() == {"username": "admin"}
+    assert r.json() == {"username": "admin", "role": "superadmin"}
     assert "didar_admin" in r.cookies
 
 
@@ -38,7 +38,7 @@ async def test_me_after_login(client):
     await client.post(LOGIN, json={"username": "admin", "password": "secret123"})
     r = await client.get(ME)  # cookie carried by the client
     assert r.status_code == 200
-    assert r.json() == {"username": "admin"}
+    assert r.json() == {"username": "admin", "role": "superadmin"}
 
 
 async def test_logout_clears_session(client):
