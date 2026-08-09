@@ -114,13 +114,37 @@
     border-radius: 10px;
   }
 
-  /* Shared admin surface: sharp bordered card on the raised cream tone. Add
+  /* Shared admin surface: frosted glass panel floating over the dashboard aura.
+     Translucent cream + backdrop blur + light top-edge highlight for depth.
+     Falls back to a solid raised card under prefers-reduced-transparency. Add
      `.admin-card--hover` on interactive cards for a subtle lift. */
   .admin-card {
-    @apply border border-line bg-surface-raised p-5;
+    @apply p-5;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: rgba(255, 250, 243, 0.6);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow:
+      0 10px 34px rgba(4, 30, 66, 0.09),
+      inset 0 1px 0 rgba(255, 255, 255, 0.65);
   }
   .admin-card--hover {
-    @apply transition-shadow duration-200 hover:shadow-luxury;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .admin-card--hover:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 16px 46px rgba(4, 30, 66, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  }
+
+  /* Dashboard ambient aura: soft brand-tinted glows the glass cards refract. */
+  .admin-aura {
+    @apply pointer-events-none fixed inset-0 -z-10 overflow-hidden;
+  }
+  .admin-aura span {
+    @apply absolute rounded-full;
   }
 
   /* Signature section divider: gold hairline + ✦ */
@@ -151,5 +175,13 @@
   .chrome-blur {
     backdrop-filter: none !important;
     background-color: var(--surface) !important;
+  }
+  .admin-card {
+    backdrop-filter: none !important;
+    background: var(--surface-raised) !important;
+    border-color: var(--line) !important;
+  }
+  .admin-aura {
+    display: none !important;
   }
 }

@@ -30,7 +30,15 @@ if (import.meta.client) {
 </script>
 
 <template>
-  <div class="min-h-dvh bg-surface text-ink" data-theme="light">
+  <div class="relative min-h-dvh bg-surface text-ink" data-theme="light">
+    <!-- Ambient aura: brand-tinted glows the glass cards refract. Painted first
+         → sits above the base surface, below the sidebar/content. -->
+    <div class="admin-aura" aria-hidden="true">
+      <span class="-start-24 -top-32 h-96 w-96 bg-gold/25 blur-[120px]" />
+      <span class="-end-24 top-1/3 h-80 w-80 bg-navy/15 blur-[120px]" />
+      <span class="bottom-0 start-1/3 h-72 w-72 bg-gold-soft/20 blur-[110px]" />
+    </div>
+
     <!-- Fixed sidebar — RTL leading (right) edge -->
     <aside class="fixed inset-y-0 start-0 z-30 hidden w-64 shadow-luxury lg:block">
       <AdminSidebar />

@@ -53,6 +53,7 @@ export const STATUS_COLORS: Record<string, string> = {
   contacted: '#7A8794', // neutral
   confirmed: '#1E7A46', // success
   shipped: '#0B9A55', // success (lighter)
+  delivered: '#0E7A3E', // success (delivered)
   cancelled: '#B3261E', // danger
 }
 
