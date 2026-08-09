@@ -169,6 +169,10 @@ export interface AdminOrderDetail extends AdminOrder {
   items: OrderItem[]
   status_log: OrderStatusLogEntry[]
   serial_codes: string[] // authenticity codes minted on delivery
+  // Proof of Delivery (WO 7.7)
+  delivered_at: string | null
+  delivery_assignee: string | null
+  delivery_proof: { photo_url?: string | null; code?: string | null; note?: string | null } | null
 }
 
 export interface OrderListResponse {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BadgeCheck, MessageSquare, Phone } from 'lucide-vue-next'
+import { BadgeCheck, MessageSquare, Phone, Truck, Upload } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import { CONTENT } from '~/constants/content'
 import { STATUS_FLOW, STATUS_LABEL } from '~/constants/orderStatus'
@@ -32,6 +32,48 @@ watch(
 async function setStatus(status: OrderStatus) {
   await apiFetch(`/admin/orders/${id}`, { method: 'PATCH', body: { status } })
   await refresh()
+}
+
+// --- Proof of Delivery (WO 7.7) ---
+const { upload } = useAdminUpload()
+const mediaUrl = useMediaUrl()
+const assignee = ref(order.value?.delivery_assignee ?? '')
+const proofCode = ref(order.value?.delivery_proof?.code ?? '')
+const proofNote = ref(order.value?.delivery_proof?.note ?? '')
+const proofPhoto = ref(order.value?.delivery_proof?.photo_url ?? '')
+const uploadingProof = ref(false)
+const savingProof = ref(false)
+
+async function pickProofPhoto(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  uploadingProof.value = true
+  try {
+    proofPhoto.value = await upload(file)
+  } finally {
+    uploadingProof.value = false
+    ;(e.target as HTMLInputElement).value = ''
+  }
+}
+
+async function saveProof() {
+  savingProof.value = true
+  try {
+    await apiFetch(`/admin/orders/${id}`, {
+      method: 'PATCH',
+      body: {
+        delivery_assignee: assignee.value,
+        delivery_proof: {
+          photo_url: proofPhoto.value || null,
+          code: proofCode.value || null,
+          note: proofNote.value || null,
+        },
+      },
+    })
+    await refresh()
+  } finally {
+    savingProof.value = false
+  }
 }
 
 const minting = ref(false)
@@ -186,6 +228,52 @@ function faDateTime(iso: string) {
       <p v-else class="text-sm text-ink-muted">
         با تحویل سفارش، برای هر قطعه یک کد اصالت ساخته می‌شود.
       </p>
+    </section>
+
+    <!-- Proof of Delivery (only once the order is delivered) -->
+    <section v-if="order.status === 'delivered'" class="admin-card mt-6">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <h2 class="flex items-center gap-2 text-lg font-medium">
+          <Truck :size="18" class="text-gold-text" /> تحویل و رسید
+        </h2>
+        <span v-if="order.delivered_at" class="tnum text-xs text-ink-muted">
+          تاریخ تحویل: {{ faDateTime(order.delivered_at) }}
+        </span>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <FormField label="تحویل‌دهنده (ایجنت / پیک)" v-slot="{ id: fid }">
+          <input :id="fid" v-model="assignee" class="form-control" />
+        </FormField>
+        <FormField label="کد تأیید (اختیاری)" v-slot="{ id: fid }">
+          <input :id="fid" v-model="proofCode" dir="ltr" class="form-control" />
+        </FormField>
+      </div>
+
+      <FormField label="یادداشت تحویل (اختیاری)" class="mt-4" v-slot="{ id: fid }">
+        <input :id="fid" v-model="proofNote" class="form-control" />
+      </FormField>
+
+      <!-- Photo evidence (doubles as the signature for MVP) -->
+      <div class="mt-4">
+        <p class="mb-1.5 text-sm text-ink-muted">عکس رسید / تحویل</p>
+        <label class="inline-flex cursor-pointer items-center gap-2 text-sm text-gold-text hover:underline">
+          <Upload :size="15" />
+          {{ uploadingProof ? 'در حال بارگذاری…' : proofPhoto ? 'تعویض عکس' : 'بارگذاری عکس' }}
+          <input type="file" accept="image/*" capture="environment" class="hidden" @change="pickProofPhoto" />
+        </label>
+        <a v-if="proofPhoto" :href="mediaUrl(proofPhoto)" target="_blank" rel="noopener" class="mt-2 block w-40">
+          <img :src="mediaUrl(proofPhoto)" alt="رسید تحویل" class="corner-soft w-40 border border-line object-cover" />
+        </a>
+      </div>
+
+      <button
+        class="mt-5 h-11 bg-navy px-5 text-sm text-white hover:bg-gold disabled:opacity-60"
+        :disabled="savingProof || uploadingProof"
+        @click="saveProof"
+      >
+        {{ savingProof ? 'در حال ذخیره…' : 'ذخیره رسید تحویل' }}
+      </button>
     </section>
   </div>
 </template>
