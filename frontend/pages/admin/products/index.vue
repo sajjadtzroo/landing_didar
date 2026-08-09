@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ArrowDown, ArrowUp, Pencil, Plus, Trash2, Upload } from 'lucide-vue-next'
-import { reactive, ref } from 'vue'
-import type { Product } from '~/types'
+import { ArrowDown, ArrowUp, FileSpreadsheet, ImageDown, Pencil, Plus, Trash2, Upload } from 'lucide-vue-next'
+import { onBeforeUnmount, reactive, ref } from 'vue'
+import type { ImportJob, Product } from '~/types'
 import { toFa } from '~/utils/format'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
@@ -101,6 +101,75 @@ async function uploadImage(p: Product, e: Event) {
   await refresh()
 }
 
+// --- Bulk CSV import (background job with progress polling) ---
+const importOpen = ref(false)
+const importFile = ref<File | null>(null)
+const importSyncImages = ref(false)
+const importJob = ref<ImportJob | null>(null)
+const importError = ref('')
+const importBusy = ref(false)
+let pollTimer: ReturnType<typeof setInterval> | undefined
+
+function startImport() {
+  importFile.value = null
+  importJob.value = null
+  importError.value = ''
+  importOpen.value = true
+}
+function onImportFile(e: Event) {
+  importFile.value = (e.target as HTMLInputElement).files?.[0] ?? null
+}
+function templateUrl() {
+  return `${useApiBase()}/admin/products/import/template`
+}
+
+async function uploadImport() {
+  if (!importFile.value) return
+  importBusy.value = true
+  importError.value = ''
+  try {
+    const fd = new FormData()
+    fd.append('file', importFile.value)
+    fd.append('sync_images', String(importSyncImages.value))
+    const res = await apiFetch<{ job_id: string }>('/admin/products/import', {
+      method: 'POST',
+      body: fd,
+    })
+    pollJob(res.job_id)
+  } catch (e: any) {
+    importError.value = e?.data?.detail || 'بارگذاری ناموفق بود.'
+    importBusy.value = false
+  }
+}
+
+function pollJob(jobId: string) {
+  clearInterval(pollTimer)
+  pollTimer = setInterval(async () => {
+    importJob.value = await apiFetch<ImportJob>(`/admin/products/import/${jobId}`)
+    if (importJob.value.status === 'done' || importJob.value.status === 'failed') {
+      clearInterval(pollTimer)
+      importBusy.value = false
+      await refresh()
+    }
+  }, 700)
+}
+onBeforeUnmount(() => clearInterval(pollTimer))
+
+// Standalone MinIO photo sync ({sku}/ folders), same job machinery.
+const syncBusy = ref(false)
+async function syncImagesNow() {
+  syncBusy.value = true
+  try {
+    const res = await apiFetch<{ job_id: string }>('/admin/products/sync-images', { method: 'POST' })
+    importJob.value = null
+    importOpen.value = true
+    importFile.value = null
+    pollJob(res.job_id)
+  } catch {
+    syncBusy.value = false
+  }
+}
+
 // ponytail: keyboard-accessible up/down reorder instead of mouse-only drag —
 // swaps sort_order with the neighbour. Add HTML5 drag later if truly needed.
 async function move(index: number, dir: -1 | 1) {
@@ -121,6 +190,19 @@ async function move(index: number, dir: -1 | 1) {
 <template>
   <div>
     <AdminPageHeader title="محصولات">
+      <button
+        class="flex h-11 items-center gap-2 border border-line px-4 text-sm hover:border-gold disabled:opacity-60"
+        :disabled="syncBusy"
+        @click="syncImagesNow"
+      >
+        <ImageDown :size="16" /> همگام‌سازی تصاویر
+      </button>
+      <button
+        class="flex h-11 items-center gap-2 border border-line px-4 text-sm hover:border-gold"
+        @click="startImport"
+      >
+        <FileSpreadsheet :size="16" /> ورود گروهی (CSV)
+      </button>
       <button
         class="flex h-11 items-center gap-2 bg-navy px-4 text-sm text-white hover:bg-gold"
         @click="startCreate"
@@ -207,6 +289,94 @@ async function move(index: number, dir: -1 | 1) {
       <template #footer>
         <button class="flex h-[58px] w-full items-center justify-center bg-navy text-base font-medium text-white hover:bg-gold" @click="save">
           ذخیره
+        </button>
+      </template>
+    </BaseSheet>
+
+    <!-- Bulk CSV import sheet -->
+    <BaseSheet v-model="importOpen" title="ورود گروهی محصولات">
+      <!-- Job progress / result -->
+      <div v-if="importJob" class="space-y-4">
+        <div>
+          <div class="mb-1 flex justify-between text-sm">
+            <span>
+              {{ importJob.status === 'done' ? 'انجام شد' : importJob.status === 'failed' ? 'ناموفق' : 'در حال پردازش…' }}
+            </span>
+            <span v-if="importJob.total" class="tnum text-ink-muted">
+              {{ toFa(importJob.processed) }} / {{ toFa(importJob.total) }}
+            </span>
+          </div>
+          <div class="h-2 w-full bg-surface-soft">
+            <div
+              class="h-2 transition-all duration-300"
+              :class="importJob.status === 'failed' ? 'bg-danger' : 'bg-gold'"
+              :style="{ width: importJob.total ? `${(importJob.processed / importJob.total) * 100}%` : importJob.status === 'done' ? '100%' : '30%' }"
+            />
+          </div>
+        </div>
+
+        <div v-if="importJob.status === 'done'" class="corner-soft border border-line bg-success-soft p-3 text-sm text-success">
+          <span class="tnum">{{ toFa(importJob.created_count) }}</span> محصول جدید ·
+          <span class="tnum">{{ toFa(importJob.updated_count) }}</span> به‌روزرسانی
+          <template v-if="importJob.result?.photos?.photos != null">
+            · <span class="tnum">{{ toFa(importJob.result.photos.photos) }}</span> عکس از MinIO
+          </template>
+          <template v-else-if="importJob.result?.photos != null && importJob.kind === 'image_sync'">
+            · <span class="tnum">{{ toFa(importJob.result.photos) }}</span> عکس از MinIO
+          </template>
+        </div>
+
+        <div v-if="importJob.errors?.length" class="max-h-52 overflow-y-auto border border-line">
+          <p class="border-b border-line bg-danger-soft p-2 text-xs text-danger">
+            {{ toFa(importJob.errors.length) }} ردیف خطا (بقیه ردیف‌ها ثبت شدند)
+          </p>
+          <ul class="divide-y divide-line text-xs">
+            <li v-for="(e, i) in importJob.errors" :key="i" class="flex gap-2 p-2">
+              <span class="tnum shrink-0 text-ink-muted">ردیف {{ toFa(e.row) }}</span>
+              <span>{{ e.error }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Upload form -->
+      <div v-else class="space-y-4">
+        <p class="text-sm leading-6 text-ink-muted">
+          فایل CSV با ستون‌های الگو بارگذاری کنید. ردیف‌ها با «کد (SKU)» تطبیق داده می‌شوند —
+          کد جدید ساخته می‌شود، کد تکراری به‌روزرسانی می‌شود و سلول خالی یعنی بدون تغییر.
+          اعداد فارسی و برچسب‌های فارسی (روزمره / لوکس / نمونه / بله…) پذیرفته می‌شوند.
+        </p>
+        <a :href="templateUrl()" class="text-sm text-gold-text underline underline-offset-4 hover:no-underline" download>
+          دانلود فایل الگو (CSV)
+        </a>
+        <FormField label="فایل CSV" v-slot="{ id }">
+          <input :id="id" type="file" accept=".csv,text/csv" class="form-control py-3.5" @change="onImportFile" />
+        </FormField>
+        <label class="flex items-start gap-2 text-sm">
+          <input v-model="importSyncImages" type="checkbox" class="mt-1" />
+          <span>
+            دریافت عکس‌ها از MinIO پس از ورود
+            <span class="block text-xs text-ink-muted">عکس هر محصول باید در پوشه‌ای هم‌نام با SKU آن باشد (مثل <span class="tnum" dir="ltr">NK-101/1.jpg</span>).</span>
+          </span>
+        </label>
+        <p v-if="importError" class="text-sm text-danger">{{ importError }}</p>
+      </div>
+
+      <template #footer>
+        <button
+          v-if="!importJob"
+          class="flex h-[58px] w-full items-center justify-center bg-navy text-base font-medium text-white hover:bg-gold disabled:opacity-60"
+          :disabled="!importFile || importBusy"
+          @click="uploadImport"
+        >
+          {{ importBusy ? 'در حال بارگذاری…' : 'شروع ورود' }}
+        </button>
+        <button
+          v-else-if="importJob.status === 'done' || importJob.status === 'failed'"
+          class="flex h-[58px] w-full items-center justify-center bg-navy text-base font-medium text-white hover:bg-gold"
+          @click="importOpen = false"
+        >
+          بستن
         </button>
       </template>
     </BaseSheet>

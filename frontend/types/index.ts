@@ -285,6 +285,20 @@ export interface SerialVerify {
   buyback_status: 'under_review' | 'accepted' | 'rejected' | null
 }
 
+// Bulk import background job (CSV products / MinIO photo sync)
+export interface ImportJob {
+  id: string
+  kind: 'products_csv' | 'image_sync'
+  status: 'pending' | 'running' | 'done' | 'failed'
+  total: number
+  processed: number
+  created_count: number
+  updated_count: number
+  errors: { row: number; error: string }[] | null
+  result: Record<string, any> | null
+  created_at: string
+}
+
 // Admin buyback queue (WO 7.9)
 export interface BuybackRequest {
   id: string
