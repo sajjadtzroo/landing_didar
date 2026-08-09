@@ -18,7 +18,7 @@ const isActive = (to: string) =>
 <template>
   <nav
     class="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-line
-      bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
+      bg-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_20px_-8px_rgba(4,30,66,0.18)] sm:hidden"
     aria-label="ناوبری اصلی"
   >
     <NuxtLink
