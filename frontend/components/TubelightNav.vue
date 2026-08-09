@@ -4,15 +4,23 @@
 // active item via CSS transform — measured from the DOM, so no motion library.
 // Nav-only: cart lives in a separate top-left fab (CartFab); ordering is reached
 // through the cart drawer.
-import { HelpCircle, Home, MessageCircle, Package } from 'lucide-vue-next'
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { HelpCircle, Home, MessageCircle, Package, Store } from 'lucide-vue-next'
+import { type Component, computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { CONTENT } from '~/constants/content'
 
-const items = [
+interface NavItem {
+  name: string
+  url: string
+  icon: Component
+  route?: boolean // true = navigate to a route instead of scrolling to an anchor
+}
+
+const items: NavItem[] = [
   { name: 'خانه', url: '#top', icon: Home },
   { name: CONTENT.products.title, url: '#products', icon: Package },
   { name: CONTENT.faq.title, url: '#faq', icon: HelpCircle },
   { name: 'تماس', url: '#footer', icon: MessageCircle },
+  { name: CONTENT.nav.shop, url: '/shop', icon: Store, route: true },
 ]
 
 const route = useRoute()
@@ -38,16 +46,20 @@ function syncActive() {
   const line = y.value + 140
   let idx = 0
   items.forEach((item, i) => {
-    if (item.url === '#top') return
+    if (item.url === '#top' || item.route) return
     const el = document.querySelector(item.url) as HTMLElement | null
     if (el && el.offsetTop <= line) idx = i
   })
   active.value = idx
 }
 
-function select(i: number, url: string) {
+function select(i: number, item: NavItem) {
+  if (item.route) {
+    navigateTo(item.url) // real route (e.g. /shop) — leave the landing page
+    return
+  }
   active.value = i
-  const target = url === '#top' ? document.body : document.querySelector(url)
+  const target = item.url === '#top' ? document.body : document.querySelector(item.url)
   target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
@@ -101,7 +113,7 @@ watch(y, syncActive)
             ? overHero ? 'text-white' : 'text-gold-text'
             : overHero ? 'text-cream/80 hover:text-white' : 'text-ink hover:text-gold-text'
         "
-        @click.prevent="select(i, item.url)"
+        @click.prevent="select(i, item)"
       >
         <span class="hidden md:inline">{{ item.name }}</span>
         <component :is="item.icon" :size="18" :stroke-width="2.5" class="md:hidden" aria-hidden="true" />
