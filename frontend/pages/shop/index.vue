@@ -127,8 +127,11 @@ useHead({
           class="h-full w-full object-cover"
           width="1450"
           height="1000"
+          format="webp"
+          sizes="100vw"
           loading="eager"
           fetchpriority="high"
+          preload
         />
         <div
           class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent"

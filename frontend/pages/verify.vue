@@ -79,6 +79,7 @@ const EVENT_LABEL: Record<string, string> = {
           inputmode="text"
           autocapitalize="characters"
           placeholder="DGV-XXXXXXXX"
+          aria-label="کد اصالت"
           class="form-control text-center tracking-widest"
           @input="onInput"
         />

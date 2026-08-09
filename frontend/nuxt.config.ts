@@ -60,6 +60,12 @@ export default defineNuxtConfig({
     // rendered HTML with stale-while-revalidate — serves instantly, revalidates
     // in the background. Biggest SSR throughput win. Staleness ceiling: 60s.
     '/l/**': { swr: 60 },
+    // Storefront pages are identical per visitor too (cart/favorites live
+    // client-side) — same SWR win. Cached responses are compressed per-request
+    // by server/plugins/compression.ts (beforeResponse), never in the cache.
+    '/shop': { swr: 60 },
+    '/shop/**': { swr: 60 },
+    '/products/**': { swr: 60 },
     // Home is the storefront. Campaign landings still live at /l/<slug>.
     '/': { redirect: '/shop' },
     // Baseline security headers. No strict CSP: Nuxt's inline hydration script

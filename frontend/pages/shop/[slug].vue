@@ -62,7 +62,11 @@ useHead(() => ({
           :src="portfolio!.cover_image_url"
           :alt="portfolio!.name"
           class="h-full w-full object-cover"
+          width="1600"
+          height="600"
+          format="webp"
           loading="eager"
+          fetchpriority="high"
           sizes="100vw"
         />
         <div class="absolute inset-0 flex items-end bg-gradient-to-t from-black/55 to-transparent p-5">

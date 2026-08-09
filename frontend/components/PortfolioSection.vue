@@ -46,7 +46,14 @@ const to = computed(() => `/shop/${props.portfolio.slug}`)
       </NuxtLink>
     </div>
 
-    <div v-for="(g, gi) in groups" :key="gi" class="mb-8 last:mb-0">
+    <!-- Content-derived key: groups are a filtered computed, so indices shift
+         when a middle group empties — an index key would recycle DOM across
+         different groups. -->
+    <div
+      v-for="g in groups"
+      :key="`${g.title}:${g.products[0]?.id ?? ''}`"
+      class="mb-8 last:mb-0"
+    >
       <div v-if="g.title || g.eyebrow || g.description" class="mb-4">
         <p v-if="g.eyebrow" class="mb-1 text-xs tracking-[0.2em] text-gold-text">{{ g.eyebrow }}</p>
         <h3 v-if="g.title" class="text-lg font-medium text-ink">{{ g.title }}</h3>
