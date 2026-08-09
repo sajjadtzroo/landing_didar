@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { BadgeCheck, Search, ShieldAlert } from 'lucide-vue-next'
-import { onMounted, ref } from 'vue'
+import { BadgeCheck, Banknote, Search, ShieldAlert, ShieldCheck } from 'lucide-vue-next'
+import { onMounted, reactive, ref } from 'vue'
 import type { SerialVerify } from '~/types'
 import { toFa } from '~/utils/format'
 
@@ -58,6 +58,61 @@ function faDate(iso: string) {
 const EVENT_LABEL: Record<string, string> = {
   minted: 'صدور کد اصالت',
   sold: 'فروش و تحویل',
+  warranty_activated: 'فعال‌سازی گارانتی',
+  buyback_requested: 'ثبت درخواست بازخرید',
+}
+
+const BUYBACK_LABEL: Record<string, string> = {
+  under_review: 'درخواست بازخرید در حال بررسی',
+  accepted: 'درخواست بازخرید پذیرفته شد',
+  rejected: 'درخواست بازخرید رد شد',
+}
+
+// --- Warranty activation + buyback request (WO 7.8 / 7.9) ---
+const { toast } = useToast()
+const who = reactive({ full_name: '', phone: '' })
+const warrantyFormOpen = ref(false)
+const buybackFormOpen = ref(false)
+const buybackNote = ref('')
+const acting = ref(false)
+const actionError = ref('')
+
+async function activateWarranty() {
+  acting.value = true
+  actionError.value = ''
+  try {
+    await $fetch(`/serials/${result.value!.code}/warranty`, {
+      method: 'POST',
+      baseURL: useApiBase(),
+      body: { full_name: who.full_name, phone: who.phone },
+    })
+    toast('گارانتی فعال شد')
+    warrantyFormOpen.value = false
+    await verify()
+  } catch (e: any) {
+    actionError.value = e?.data?.detail || 'فعال‌سازی ناموفق بود.'
+  } finally {
+    acting.value = false
+  }
+}
+
+async function requestBuyback() {
+  acting.value = true
+  actionError.value = ''
+  try {
+    await $fetch(`/serials/${result.value!.code}/buyback`, {
+      method: 'POST',
+      baseURL: useApiBase(),
+      body: { full_name: who.full_name, phone: who.phone, note: buybackNote.value || null },
+    })
+    toast('درخواست بازخرید ثبت شد')
+    buybackFormOpen.value = false
+    await verify()
+  } catch (e: any) {
+    actionError.value = e?.data?.detail || 'ثبت درخواست ناموفق بود.'
+  } finally {
+    acting.value = false
+  }
 }
 </script>
 
@@ -129,6 +184,75 @@ const EVENT_LABEL: Record<string, string> = {
               <span class="tnum ms-auto text-xs text-ink-muted">{{ faDate(e.at) }}</span>
             </li>
           </ol>
+        </div>
+
+        <!-- Warranty (WO 7.8) -->
+        <div class="border-t border-line px-4 py-3">
+          <div v-if="result.warranty" class="flex items-center gap-2 text-sm">
+            <ShieldCheck :size="18" :class="result.warranty.active ? 'text-success' : 'text-ink-muted'" />
+            <span :class="result.warranty.active ? 'text-success' : 'text-ink-muted'">
+              {{ result.warranty.active ? 'گارانتی فعال است' : 'گارانتی منقضی شده' }}
+            </span>
+            <span class="tnum ms-auto text-xs text-ink-muted">تا {{ faDate(result.warranty.expires_at) }}</span>
+          </div>
+
+          <template v-else-if="result.warranty_available">
+            <button
+              v-if="!warrantyFormOpen"
+              type="button"
+              class="flex h-11 w-full items-center justify-center gap-2 bg-navy text-sm font-medium text-white hover:bg-gold"
+              @click="warrantyFormOpen = true; buybackFormOpen = false; actionError = ''"
+            >
+              <ShieldCheck :size="16" /> فعال‌سازی گارانتی
+            </button>
+            <div v-else class="space-y-3">
+              <p class="text-xs text-ink-muted">برای فعال‌سازی گارانتی ۱۲ ماهه، مشخصات خود را وارد کنید.</p>
+              <input v-model="who.full_name" placeholder="نام و نام خانوادگی" class="form-control h-11" />
+              <input v-model="who.phone" dir="ltr" inputmode="tel" placeholder="۰۹۱۲…" class="form-control h-11" />
+              <p v-if="actionError" class="text-xs text-danger">{{ actionError }}</p>
+              <button
+                type="button"
+                class="flex h-11 w-full items-center justify-center bg-navy text-sm font-medium text-white hover:bg-gold disabled:opacity-60"
+                :disabled="acting || who.full_name.trim().length < 3 || !who.phone"
+                @click="activateWarranty"
+              >
+                {{ acting ? 'در حال ثبت…' : 'فعال‌سازی' }}
+              </button>
+            </div>
+          </template>
+        </div>
+
+        <!-- Buyback (WO 7.9) -->
+        <div class="border-t border-line px-4 py-3">
+          <p v-if="result.buyback_status" class="flex items-center gap-2 text-sm text-ink-muted">
+            <Banknote :size="18" class="text-gold-text" />
+            {{ BUYBACK_LABEL[result.buyback_status] }}
+          </p>
+          <template v-if="result.buyback_status !== 'under_review'">
+            <button
+              v-if="!buybackFormOpen"
+              type="button"
+              class="mt-2 flex h-11 w-full items-center justify-center gap-2 border border-line text-sm hover:border-gold"
+              @click="buybackFormOpen = true; warrantyFormOpen = false; actionError = ''"
+            >
+              <Banknote :size="16" /> درخواست بازخرید
+            </button>
+            <div v-else class="mt-2 space-y-3">
+              <p class="text-xs text-ink-muted">کارشناسان دیدار پس از بررسی با شما تماس می‌گیرند.</p>
+              <input v-model="who.full_name" placeholder="نام و نام خانوادگی" class="form-control h-11" />
+              <input v-model="who.phone" dir="ltr" inputmode="tel" placeholder="۰۹۱۲…" class="form-control h-11" />
+              <input v-model="buybackNote" maxlength="300" placeholder="توضیحات (اختیاری)" class="form-control h-11" />
+              <p v-if="actionError" class="text-xs text-danger">{{ actionError }}</p>
+              <button
+                type="button"
+                class="flex h-11 w-full items-center justify-center bg-navy text-sm font-medium text-white hover:bg-gold disabled:opacity-60"
+                :disabled="acting || who.full_name.trim().length < 3 || !who.phone"
+                @click="requestBuyback"
+              >
+                {{ acting ? 'در حال ثبت…' : 'ثبت درخواست' }}
+              </button>
+            </div>
+          </template>
         </div>
       </div>
 

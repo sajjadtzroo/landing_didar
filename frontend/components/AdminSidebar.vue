@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   BadgeCheck,
+  Banknote,
   BarChart3,
   Coins,
   History,
@@ -46,7 +47,10 @@ const groups = computed(() => [
   },
   {
     label: 'مشتریان',
-    items: [{ to: '/admin/customers', label: 'احراز هویت مشتریان', icon: ShieldCheck }],
+    items: [
+      { to: '/admin/customers', label: 'احراز هویت مشتریان', icon: ShieldCheck },
+      { to: '/admin/buybacks', label: 'درخواست‌های بازخرید', icon: Banknote },
+    ],
   },
   ...(auth.isSuperadmin
     ? [

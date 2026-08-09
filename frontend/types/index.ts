@@ -275,6 +275,33 @@ export interface SerialVerify {
   weight_grams: string | null
   image_url: string | null
   issued_at: string
-  // Passport timeline: minted (derived) + sold, oldest first.
+  // Passport timeline: minted (derived) + public transitions, oldest first.
   events: { type: string; at: string }[]
+  // Warranty state (WO 7.8) — status only, no PII.
+  warranty: { started_at: string; expires_at: string; active: boolean } | null
+  warranty_available: boolean
+  // Latest buyback request status (WO 7.9), if any.
+  buyback_status: 'under_review' | 'accepted' | 'rejected' | null
+}
+
+// Admin buyback queue (WO 7.9)
+export interface BuybackRequest {
+  id: string
+  serial_id: string
+  code: string
+  product_name: string
+  requester_name: string
+  requester_phone: string
+  note: string | null
+  status: 'under_review' | 'accepted' | 'rejected'
+  offered_price: string | null
+  admin_note: string | null
+  created_at: string
+}
+
+export interface BuybackListResponse {
+  items: BuybackRequest[]
+  total: number
+  page: number
+  page_size: number
 }
