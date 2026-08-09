@@ -1,5 +1,6 @@
 import time
 import uuid
+from datetime import UTC, datetime, timedelta
 
 from fastapi import (
     APIRouter,
@@ -26,12 +27,14 @@ from app.models.order import Order
 from app.models.portfolio import Portfolio
 from app.models.product import Product
 from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialEvent
+from app.models.warranty import BuybackRequest, BuybackStatus, Warranty
 from app.schemas.faq import FAQOut
 from app.schemas.landing import LandingDetailOut, LandingGroupOut
 from app.schemas.order import OrderCreate, OrderCreatedOut, OrderTrackOut
 from app.schemas.portfolio import PortfolioPublicOut
 from app.schemas.product import ProductOut
-from app.schemas.serial import SerialEventOut, SerialVerifyOut
+from app.schemas.serial import SerialEventOut, SerialVerifyOut, WarrantyState
+from app.schemas.warranty import BuybackCreate, WarrantyActivate
 from app.services import orders as order_service
 from app.services import serials as serial_service
 from app.services.notifications import get_adapter
@@ -296,17 +299,44 @@ async def verify_serial(
     if serial is None or serial.status == ProductSerialStatus.revoked:
         raise HTTPException(404, detail="Not found")
     await serial_service.log_scan(db, serial.id, order_service.hash_ip(get_client_ip(request)))
-    # Passport timeline: mint is derived (created_at); only the sale is public.
+    # Passport timeline: mint is derived (created_at); public transitions only.
+    _PUBLIC_EVENTS = ("sold", "warranty_activated", "buyback_requested")
     stored = (
         await db.execute(
             select(SerialEvent)
-            .where(SerialEvent.serial_id == serial.id, SerialEvent.type == "sold")
+            .where(SerialEvent.serial_id == serial.id, SerialEvent.type.in_(_PUBLIC_EVENTS))
             .order_by(SerialEvent.created_at)
         )
     ).scalars().all()
     events = [SerialEventOut(type="minted", at=serial.created_at)] + [
         SerialEventOut(type=e.type, at=e.created_at) for e in stored
     ]
+
+    # Warranty state (WO 7.8) — status only, no PII.
+    now = datetime.now(UTC)
+    w = (
+        await db.execute(select(Warranty).where(Warranty.serial_id == serial.id))
+    ).scalar_one_or_none()
+    warranty = (
+        WarrantyState(started_at=w.started_at, expires_at=w.expires_at, active=now < w.expires_at)
+        if w
+        else None
+    )
+    warranty_available = False
+    if w is None and serial.status == ProductSerialStatus.sold:
+        product = await db.get(Product, serial.product_id)
+        warranty_available = bool(product and product.warrantable)
+
+    # Latest buyback status, if any (WO 7.9).
+    bb = (
+        await db.execute(
+            select(BuybackRequest.status)
+            .where(BuybackRequest.serial_id == serial.id)
+            .order_by(BuybackRequest.created_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
     return SerialVerifyOut(
         code=serial_service.format_code(serial.code),
         product_name=serial.product_name,
@@ -315,7 +345,88 @@ async def verify_serial(
         image_url=serial.image_url,
         issued_at=serial.created_at,
         events=events,
+        warranty=warranty,
+        warranty_available=warranty_available,
+        buyback_status=bb.value if bb else None,
     )
+
+
+async def _sold_serial_or_404(db: AsyncSession, code: str) -> ProductSerial:
+    normalized = serial_service.normalize(code)
+    serial = (
+        await db.execute(select(ProductSerial).where(ProductSerial.code == normalized))
+    ).scalar_one_or_none() if normalized else None
+    if serial is None or serial.status == ProductSerialStatus.revoked:
+        raise HTTPException(404, detail="Not found")
+    return serial
+
+
+@router.post("/serials/{code}/warranty", response_model=WarrantyState, status_code=201)
+@limiter.limit("10/hour")
+async def activate_warranty(
+    request: Request,
+    code: str,
+    payload: WarrantyActivate,
+    db: AsyncSession = Depends(get_db),
+):
+    """فعال‌سازی گارانتی (WO 7.8): only for a sold, warrantable piece without an
+    existing warranty. 12 months from activation."""
+    serial = await _sold_serial_or_404(db, code)
+    if serial.status != ProductSerialStatus.sold:
+        raise HTTPException(409, detail="این قطعه هنوز فروخته نشده است")
+    product = await db.get(Product, serial.product_id)
+    if not (product and product.warrantable):
+        raise HTTPException(409, detail="این محصول مشمول گارانتی نیست")
+    existing = (
+        await db.execute(select(Warranty).where(Warranty.serial_id == serial.id))
+    ).scalar_one_or_none()
+    if existing:
+        raise HTTPException(409, detail="گارانتی این قطعه قبلاً فعال شده است")
+
+    now = datetime.now(UTC)
+    warranty = Warranty(
+        serial_id=serial.id,
+        customer_name=payload.full_name,
+        customer_phone=payload.phone,
+        started_at=now,
+        expires_at=now + timedelta(days=365),
+    )
+    db.add(warranty)
+    serial_service.record_event(db, serial.id, "warranty_activated")
+    await db.commit()
+    return WarrantyState(started_at=now, expires_at=warranty.expires_at, active=True)
+
+
+@router.post("/serials/{code}/buyback", status_code=201)
+@limiter.limit("5/hour")
+async def request_buyback(
+    request: Request,
+    code: str,
+    payload: BuybackCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    """ثبت درخواست بازخرید (WO 7.9). One open request per piece at a time."""
+    serial = await _sold_serial_or_404(db, code)
+    open_req = (
+        await db.execute(
+            select(BuybackRequest.id).where(
+                BuybackRequest.serial_id == serial.id,
+                BuybackRequest.status == BuybackStatus.under_review,
+            )
+        )
+    ).scalar_one_or_none()
+    if open_req:
+        raise HTTPException(409, detail="برای این قطعه یک درخواست در حال بررسی وجود دارد")
+    req = BuybackRequest(
+        serial_id=serial.id,
+        requester_name=payload.full_name,
+        requester_phone=payload.phone,
+        note=payload.note,
+    )
+    db.add(req)
+    serial_service.record_event(db, serial.id, "buyback_requested")
+    await db.commit()
+    return {"status": "under_review"}
 
 
 @router.get("/serials/{code}/qr.png")

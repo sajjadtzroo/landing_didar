@@ -46,7 +46,7 @@ _TABLES = (
     "order_status_log, order_items, orders, "
     "landings, portfolios, products, faqs, "
     "favorites, customer_addresses, otp_codes, customers, "
-    "agent_visits, agent_retailers, users, audit_log"
+    "warranties, buyback_requests, agent_visits, agent_retailers, users, audit_log"
 )
 
 

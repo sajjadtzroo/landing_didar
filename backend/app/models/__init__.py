@@ -8,9 +8,13 @@ from app.models.product_serial import ProductSerial, ProductSerialStatus, Serial
 from app.models.product import Product
 from app.models.agent import AgentRetailer, AgentVisit
 from app.models.user import AdminRole, AuditLog, User
+from app.models.warranty import BuybackRequest, BuybackStatus, Warranty
 
 __all__ = [
     "Product",
+    "Warranty",
+    "BuybackRequest",
+    "BuybackStatus",
     "AgentRetailer",
     "AgentVisit",
     "User",

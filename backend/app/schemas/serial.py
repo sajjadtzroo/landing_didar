@@ -44,6 +44,12 @@ class SerialListOut(BaseModel):
     page_size: int
 
 
+class WarrantyState(BaseModel):
+    started_at: datetime
+    expires_at: datetime
+    active: bool
+
+
 class SerialEventOut(BaseModel):
     """One passport-timeline entry. `minted` is derived from created_at; stored
     types are sold/revoked/restored (+ warranty/buyback in later phases)."""
@@ -64,3 +70,9 @@ class SerialVerifyOut(BaseModel):
     image_url: str | None
     issued_at: datetime
     events: list[SerialEventOut] = []
+    # Warranty state (WO 7.8) — status only, no PII. `warranty_available` means
+    # the piece is sold + warrantable + not yet activated.
+    warranty: WarrantyState | None = None
+    warranty_available: bool = False
+    # Latest buyback request status, if any (WO 7.9) — no price, no PII.
+    buyback_status: str | None = None

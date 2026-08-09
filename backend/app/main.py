@@ -22,6 +22,7 @@ from app.api.v1 import (
     admin_stats,
     admin_users,
     admin_audit,
+    admin_buybacks,
     agent,
     auth,
     public,
@@ -202,3 +203,4 @@ app.include_router(
 app.include_router(admin_users.router, prefix=f"{API}/admin", tags=["admin:users"])
 app.include_router(admin_audit.router, prefix=f"{API}/admin", tags=["admin:audit"])
 app.include_router(agent.router, prefix=f"{API}/agent", tags=["agent"])
+app.include_router(admin_buybacks.router, prefix=f"{API}/admin", tags=["admin:buybacks"])
