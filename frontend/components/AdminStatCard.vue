@@ -17,7 +17,7 @@ defineProps<{ label: string; value: string | number; icon?: Component }>()
     </span>
     <div class="min-w-0">
       <p class="truncate text-xs text-ink-muted">{{ label }}</p>
-      <p class="tnum mt-1 text-xl font-medium text-gold-text">{{ value }}</p>
+      <p class="tnum mt-1 truncate text-xl font-medium text-gold-text">{{ value }}</p>
     </div>
   </div>
 </template>

@@ -21,12 +21,15 @@ export function formatGrams(value: number | string | null): string | null {
   return toFa(n.toLocaleString('en-US', { maximumFractionDigits: 2 })) + ' گرم'
 }
 
-/** Compact grams for KPI cards: "۵۵۳ گرم" / "۱٫۲ کیلوگرم". */
+/** Compact grams for KPI cards: "۵۵۳ گرم" / "۱٫۲ کیلوگرم" / "۳۶۳ تن".
+ *  Rolls up through kg→tonne and groups thousands so big totals stay one line. */
 export function formatGramsCompact(value: number | string | null): string {
   const n = typeof value === 'string' ? Number(value) : value
   if (n == null || Number.isNaN(n)) return '—'
-  if (n >= 1000) return `${toFa((n / 1000).toFixed(1))} کیلوگرم`
-  return `${toFa(n.toLocaleString('en-US', { maximumFractionDigits: 2 }))} گرم`
+  const fmt = (x: number) => toFa(x.toLocaleString('en-US', { maximumFractionDigits: 1 }))
+  if (n >= 1_000_000) return `${fmt(n / 1_000_000)} تن`
+  if (n >= 1000) return `${fmt(n / 1000)} کیلوگرم`
+  return `${fmt(n)} گرم`
 }
 
 /** Compact Toman for KPI cards: ۵۵۳ میلیون / ۱٫۲ میلیارد تومان (single line). */
