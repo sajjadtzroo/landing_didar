@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BadgeCheck } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import { CONTENT } from '~/constants/content'
 import type { OrderTrack } from '~/types'
@@ -59,6 +60,24 @@ useHead({ title: `${CONTENT.account.ordersTitle} | ${CONTENT.brand}` })
             {{ CONTENT.orderStatuses[s.to_status] }}
           </li>
         </ol>
+
+        <!-- Authenticity codes (minted on delivery) -->
+        <div v-if="o.serial_codes?.length" class="mt-4 border-t border-line pt-3">
+          <p class="mb-2 flex items-center gap-1.5 text-xs text-ink-muted">
+            <BadgeCheck :size="14" class="text-gold-text" /> کد اصالت قطعه‌ها
+          </p>
+          <ul class="flex flex-wrap gap-2">
+            <li v-for="c in o.serial_codes" :key="c">
+              <NuxtLink
+                :to="`/verify?code=${c}`"
+                class="tnum inline-flex items-center gap-1 border border-line px-2.5 py-1 text-xs text-gold-text hover:border-gold"
+                dir="ltr"
+              >
+                {{ c }}
+              </NuxtLink>
+            </li>
+          </ul>
+        </div>
       </li>
     </ul>
   </AccountShell>

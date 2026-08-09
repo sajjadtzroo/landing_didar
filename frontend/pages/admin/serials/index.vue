@@ -134,6 +134,7 @@ function faDate(iso: string) {
           <tr>
             <th class="p-3 text-start">کد سریال</th>
             <th class="p-3 text-start">محصول</th>
+            <th class="p-3 text-start">سفارش</th>
             <th class="p-3 text-start">وضعیت</th>
             <th class="p-3 text-start">بازدید اصالت</th>
             <th class="p-3 text-start">تاریخ صدور</th>
@@ -149,6 +150,7 @@ function faDate(iso: string) {
               </button>
             </td>
             <td class="p-3">{{ s.product_name }}</td>
+            <td class="tnum p-3 text-ink-muted" dir="ltr">{{ s.order_reference ?? '—' }}</td>
             <td class="p-3">
               <select
                 class="border-0 bg-transparent px-2 py-1 text-xs"
@@ -172,7 +174,7 @@ function faDate(iso: string) {
             </td>
           </tr>
           <tr v-if="!data?.items?.length">
-            <td colspan="6" class="p-12 text-center text-ink-muted">سریالی یافت نشد.</td>
+            <td colspan="7" class="p-12 text-center text-ink-muted">سریالی یافت نشد.</td>
           </tr>
         </tbody>
       </table>

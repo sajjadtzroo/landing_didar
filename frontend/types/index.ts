@@ -86,6 +86,7 @@ export type OrderStatus =
   | 'contacted'
   | 'confirmed'
   | 'shipped'
+  | 'delivered'
   | 'cancelled'
 
 // Public order-tracking payload (GET /orders/track). No PII beyond line items.
@@ -96,6 +97,7 @@ export interface OrderTrack {
   created_at: string
   items: OrderItem[]
   status_log: OrderStatusLogEntry[]
+  serial_codes: string[] // authenticity codes once delivered
 }
 
 export interface CustomerDocument {
@@ -162,6 +164,7 @@ export interface OrderStatusLogEntry {
 export interface AdminOrderDetail extends AdminOrder {
   items: OrderItem[]
   status_log: OrderStatusLogEntry[]
+  serial_codes: string[] // authenticity codes minted on delivery
 }
 
 export interface OrderListResponse {
@@ -198,6 +201,7 @@ export interface ProductSerial {
   batch_id: string
   note: string | null
   created_at: string
+  order_reference: string | null // set when minted for a delivered order
   verify_count: number
   first_verified_at: string | null
 }

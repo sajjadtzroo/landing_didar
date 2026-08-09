@@ -66,6 +66,7 @@ export const CONTENT = {
     contacted: 'در حال پیگیری',
     confirmed: 'تأیید شد',
     shipped: 'ارسال شد',
+    delivered: 'تحویل شد',
     cancelled: 'لغو شد',
   } as Record<string, string>,
 

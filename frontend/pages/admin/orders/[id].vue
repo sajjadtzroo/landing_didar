@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MessageSquare, Phone } from 'lucide-vue-next'
+import { BadgeCheck, MessageSquare, Phone } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import { CONTENT } from '~/constants/content'
 import { STATUS_FLOW, STATUS_LABEL } from '~/constants/orderStatus'
@@ -32,6 +32,20 @@ watch(
 async function setStatus(status: OrderStatus) {
   await apiFetch(`/admin/orders/${id}`, { method: 'PATCH', body: { status } })
   await refresh()
+}
+
+const minting = ref(false)
+async function genSerials() {
+  minting.value = true
+  try {
+    await apiFetch(`/admin/orders/${id}/generate-serials`, { method: 'POST' })
+    await refresh()
+  } finally {
+    minting.value = false
+  }
+}
+function copyCode(c: string) {
+  navigator.clipboard?.writeText(c)
 }
 
 async function saveNote() {
@@ -139,6 +153,38 @@ function faDateTime(iso: string) {
       </div>
       <p v-if="order.note" class="mt-4 border-t border-line pt-3 text-sm text-ink-muted">
         توضیحات مشتری: {{ order.note }}
+      </p>
+    </section>
+
+    <!-- Authenticity serials -->
+    <section class="admin-card mt-6">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <h2 class="flex items-center gap-2 text-lg font-medium">
+          <BadgeCheck :size="18" class="text-gold-text" /> سریال‌های اصالت
+        </h2>
+        <button
+          v-if="!order.serial_codes?.length"
+          class="flex h-10 items-center gap-2 border border-line px-4 text-sm hover:border-gold disabled:opacity-60"
+          :disabled="minting"
+          @click="genSerials"
+        >
+          {{ minting ? 'در حال تولید…' : 'تولید سریال برای این سفارش' }}
+        </button>
+      </div>
+      <ul v-if="order.serial_codes?.length" class="flex flex-wrap gap-2">
+        <li v-for="c in order.serial_codes" :key="c">
+          <button
+            class="tnum inline-flex items-center gap-1.5 border border-line px-3 py-1.5 text-sm text-gold-text hover:border-gold"
+            dir="ltr"
+            title="کپی"
+            @click="copyCode(c)"
+          >
+            {{ c }}
+          </button>
+        </li>
+      </ul>
+      <p v-else class="text-sm text-ink-muted">
+        با تحویل سفارش، برای هر قطعه یک کد اصالت ساخته می‌شود.
       </p>
     </section>
   </div>

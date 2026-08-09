@@ -5,6 +5,7 @@ export const STATUS_FLOW: OrderStatus[] = [
   'contacted',
   'confirmed',
   'shipped',
+  'delivered',
   'cancelled',
 ]
 
@@ -13,6 +14,7 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   contacted: 'تماس گرفته‌شده',
   confirmed: 'تأییدشده',
   shipped: 'ارسال‌شده',
+  delivered: 'تحویل‌شده',
   cancelled: 'لغوشده',
 }
 
@@ -22,5 +24,6 @@ export const STATUS_CLASS: Record<OrderStatus, string> = {
   contacted: 'bg-surface-soft text-ink-muted',
   confirmed: 'bg-success-soft text-success',
   shipped: 'bg-success-soft text-success',
+  delivered: 'bg-success-soft text-success',
   cancelled: 'bg-danger-soft text-danger',
 }
