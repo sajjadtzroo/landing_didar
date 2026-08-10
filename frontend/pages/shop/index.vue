@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ChevronLeft } from 'lucide-vue-next'
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { CONTENT } from '~/constants/content'
 import type { Portfolio, Product } from '~/types'
 import { toFa } from '~/utils/format'
@@ -38,6 +38,25 @@ function goToCategory(key: string) {
   navigateTo(key ? { path: '/products', query: { cat: key } } : '/products')
 }
 
+// Hero: brand campaign shots, slow crossfade. Static pre-optimized JPEGs (same
+// no-IPX reasoning as before). First slide SSRs eager; rotation is client-only
+// and skipped for prefers-reduced-motion.
+const HERO_SLIDES = [
+  '/shop-hero-1.jpg',
+  '/shop-hero-2.jpg',
+  '/shop-hero-3.jpg',
+  '/shop-hero-4.jpg',
+]
+const heroIndex = ref(0)
+let heroTimer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  heroTimer = setInterval(() => {
+    heroIndex.value = (heroIndex.value + 1) % HERO_SLIDES.length
+  }, 5000)
+})
+onUnmounted(() => clearInterval(heroTimer))
+
 const canonical = `${useSiteUrl()}/shop`
 useHead({
   title: `${CONTENT.shop.title} | ${CONTENT.brand}`,
@@ -58,16 +77,18 @@ useHead({
     <section class="mb-8 sm:mb-10">
       <!-- Mobile: shorter hero so the shopping surface starts near the fold -->
       <div class="relative aspect-[16/9] w-full overflow-hidden sm:aspect-[21/7]">
-        <!-- Plain img on purpose: one static, pre-optimized JPEG — IPX transforms
-             kept breaking it (missing rename, degenerate 1px srcset) and buy nothing. -->
         <img
-          src="/shop-hero-showroom.jpg"
-          :alt="CONTENT.shop.title"
-          class="h-full w-full object-cover"
-          width="1250"
-          height="884"
-          loading="eager"
-          fetchpriority="high"
+          v-for="(src, i) in HERO_SLIDES"
+          :key="src"
+          :src="src"
+          :alt="i === 0 ? CONTENT.shop.title : ''"
+          class="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
+          :class="i === heroIndex ? 'opacity-100' : 'opacity-0'"
+          width="1426"
+          height="1070"
+          :loading="i === 0 ? 'eager' : 'lazy'"
+          :fetchpriority="i === 0 ? 'high' : 'auto'"
+          :aria-hidden="i !== heroIndex"
         />
         <div
           class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent"
