@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://didar:didar@localhost:5432/didar"
 
+    # Redis (optional). Blank = in-process caches + per-worker rate limits (fine
+    # single-node). Set to share cache/limits across workers/instances; the app
+    # fails open if Redis is unreachable. e.g. redis://redis:6379/0
+    redis_url: str = ""
+
     # Logging (loguru sink level)
     log_level: str = "INFO"
 

@@ -59,7 +59,7 @@ async def update_landing(
         setattr(landing, k, v)
     await db.commit()
     await db.refresh(landing)
-    bust_landing_cache(landing.slug)
+    await bust_landing_cache(landing.slug)
     return _admin_out(landing)
 
 
@@ -69,4 +69,4 @@ async def delete_landing(landing_id: str, db: AsyncSession = Depends(get_db)):
     slug = landing.slug
     await db.delete(landing)
     await db.commit()
-    bust_landing_cache(slug)
+    await bust_landing_cache(slug)

@@ -267,9 +267,11 @@ async def test_get_landing_unknown_slug_is_404(client):
 
 
 async def test_bust_landing_cache_drops_entry(_sessionmaker):
-    _public._cache["landing:z"] = (9e9, "cached")
-    _public.bust_landing_cache("z")
-    assert "landing:z" not in _public._cache
+    from app.core.cache import cache_get, cache_set
+
+    await cache_set("cache:landing:z", "cached", ttl=999)
+    await _public.bust_landing_cache("z")
+    assert await cache_get("cache:landing:z") is None
 
 
 async def test_landing_null_content_falls_back_to_defaults(client, _sessionmaker):

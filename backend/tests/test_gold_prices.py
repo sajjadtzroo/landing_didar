@@ -47,9 +47,11 @@ class _Client:
 
 @pytest.fixture(autouse=True)
 def _reset_cache():
-    mod._cache.update({"at": 0.0, "items": None})
+    from app.core import cache as cache_mod
+
+    cache_mod.clear_all()
     yield
-    mod._cache.update({"at": 0.0, "items": None})
+    cache_mod.clear_all()
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -119,7 +121,9 @@ async def test_persists_snapshot_and_falls_back_after_restart(monkeypatch):
     assert snap and len(snap["items"]) == len(live["items"])  # written to the DB
 
     # ...so a cold start (empty cache) with TGJU down serves the DB snapshot, stale.
-    mod._cache.update({"at": 0.0, "items": None})
+    from app.core import cache as cache_mod
+
+    cache_mod.clear_all()
     monkeypatch.setattr(
         mod.httpx, "AsyncClient", lambda *a, **k: _Client(exc=RuntimeError("down"))
     )

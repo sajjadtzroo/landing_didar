@@ -8,13 +8,13 @@ ponytail: dict cache; TGJU covers every index the panel shows, so no second sour
 """
 
 import asyncio
-import time
 from datetime import datetime, timezone
 
 import httpx
 from loguru import logger
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from app.core.cache import cache_get, cache_set
 from app.core.db import SessionLocal
 from app.models.gold_price import GoldPriceSnapshot
 
@@ -37,7 +37,7 @@ SYMBOLS: list[tuple[str, str, str]] = [
     ("ons", "انس طلا", "usd"),
 ]
 
-_cache: dict = {"at": 0.0, "items": None}
+_CACHE_KEY = "cache:prices:board"  # shared via app.core.cache (dict or Redis)
 
 
 async def _save_snapshot(items: list[dict], source: str = "tgju") -> None:
@@ -112,9 +112,10 @@ def _parse(current: dict) -> list[dict]:
 
 async def get_gold_prices(force: bool = False) -> dict:
     """Return {items, source, cached, stale?, error?}. Cached within _TTL."""
-    now = time.monotonic()
-    if not force and _cache["items"] and now - _cache["at"] < _TTL:
-        return {"items": _cache["items"], "source": "tgju", "cached": True}
+    if not force:
+        cached = await cache_get(_CACHE_KEY)
+        if cached is not None:
+            return {"items": cached, "source": "tgju", "cached": True}
     try:
         async with httpx.AsyncClient(timeout=10, headers=_HEADERS) as client:
             resp = await client.get(TGJU_URL)
@@ -123,17 +124,18 @@ async def get_gold_prices(force: bool = False) -> dict:
         items = _parse(current)
         if not items:
             raise ValueError("no known symbols in TGJU payload")
-        _cache["at"], _cache["items"] = now, items
+        await cache_set(_CACHE_KEY, items, _TTL)
         await _save_snapshot(items)  # persist last-good so restarts survive
         return {"items": items, "source": "tgju", "cached": False}
     except Exception as e:  # noqa: BLE001 — never break the admin panel on a scrape error
         logger.warning("gold prices fetch failed: {}", e)
-        if _cache["items"]:
-            return {"items": _cache["items"], "source": "tgju", "cached": True, "stale": True}
-        # Cold start / no in-process cache: fall back to the DB last-good snapshot.
+        cached = await cache_get(_CACHE_KEY)  # another worker may hold a fresh board
+        if cached is not None:
+            return {"items": cached, "source": "tgju", "cached": True, "stale": True}
+        # Cold start / empty cache: fall back to the DB last-good snapshot.
         snap = await _load_snapshot()
         if snap:
-            _cache["at"], _cache["items"] = now, snap["items"]  # warm the cache too
+            await cache_set(_CACHE_KEY, snap["items"], _TTL)  # warm the cache too
             return {
                 "items": snap["items"],
                 "source": "tgju",

@@ -15,13 +15,30 @@ services:
     ports:
       - "5434:5432"   # 5432 often taken by another local pg; container-internal port unchanged
 
+  redis:
+    # Cache + shared rate limits only — nothing durable lives here (Postgres is
+    # the source of truth), so no volume/persistence; LRU-evict under pressure.
+    image: redis:7-alpine
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "6381:6379"   # 6379/6380 taken by other local stacks
+
   backend:
     build: ./backend
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql+asyncpg://didar:didar@db:5432/didar
+      # Shared cache + exact cross-worker rate limits. Blank = in-process mode.
+      REDIS_URL: redis://redis:6379/0
       FRONTEND_ORIGIN: http://localhost:3001
       # Dev defaults — override in a real .env. admin/admin123 hash below.
       ADMIN_USERNAME: admin

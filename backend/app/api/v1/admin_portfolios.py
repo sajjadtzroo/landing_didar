@@ -45,7 +45,7 @@ async def create_portfolio(
     db.add(portfolio)
     await db.commit()
     await db.refresh(portfolio)
-    bust_portfolios_cache()
+    await bust_portfolios_cache()
     return PortfolioAdminOut.model_validate(portfolio)
 
 
@@ -72,10 +72,10 @@ async def update_portfolio(
         setattr(portfolio, k, v)
     await db.commit()
     await db.refresh(portfolio)
-    bust_portfolios_cache()
-    bust_portfolio_cache(old_slug)  # bust old slug; new slug (if changed) was uncached
+    await bust_portfolios_cache()
+    await bust_portfolio_cache(old_slug)  # bust old slug; new slug (if changed) was uncached
     if portfolio.slug != old_slug:
-        bust_portfolio_cache(portfolio.slug)
+        await bust_portfolio_cache(portfolio.slug)
     return PortfolioAdminOut.model_validate(portfolio)
 
 
@@ -85,5 +85,5 @@ async def delete_portfolio(portfolio_id: str, db: AsyncSession = Depends(get_db)
     slug = portfolio.slug
     await db.delete(portfolio)
     await db.commit()
-    bust_portfolios_cache()
-    bust_portfolio_cache(slug)
+    await bust_portfolios_cache()
+    await bust_portfolio_cache(slug)

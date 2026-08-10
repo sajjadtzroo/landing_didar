@@ -1,5 +1,4 @@
 import asyncio
-import time
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -14,10 +13,12 @@ from fastapi import (
 )
 from loguru import logger
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_client_ip, require_customer
 from app.api.limiter import limiter
+from app.core.cache import cache_delete, cache_get, cache_set
 from app.core.config import settings
 from app.core.content_defaults import default_content
 from app.core.db import get_db
@@ -44,39 +45,29 @@ from app.services.notifications import get_adapter
 router = APIRouter()
 
 # Public catalog data changes rarely (admin edits) and is identical per visitor,
-# so a short in-process TTL cache removes the DB round-trip on the hot read paths
-# and collapses tail latency. Staleness ceiling = TTL; per-worker (no shared store
-# needed at this scale). ponytail: dict cache, swap for Redis if we go multi-node.
+# so a short TTL cache removes the DB round-trip on the hot read paths and
+# collapses tail latency. Backed by app.core.cache: in-process dict by default,
+# shared Redis when REDIS_URL is set (multi-worker/multi-node coherent busts).
 _CACHE_TTL = 60.0
-_cache: dict[str, tuple[float, object]] = {}
 _CACHE_CONTROL = "public, max-age=60"
 
 
-def _cache_get(key: str):
-    hit = _cache.get(key)
-    return hit[1] if hit and hit[0] > time.monotonic() else None
-
-
-def _cache_set(key: str, value: object) -> None:
-    _cache[key] = (time.monotonic() + _CACHE_TTL, value)
-
-
-def bust_landing_cache(slug: str) -> None:
+async def bust_landing_cache(slug: str) -> None:
     """Drop a landing's cached payload so an admin edit shows immediately instead
     of after the TTL. Called by admin_landings on mutate."""
-    _cache.pop(f"landing:{slug}", None)
+    await cache_delete(f"cache:landing:{slug}")
 
 
-def bust_portfolios_cache() -> None:
+async def bust_portfolios_cache() -> None:
     """Drop the cached /portfolios payload so an admin edit shows immediately.
     Called by admin_portfolios on mutate."""
-    _cache.pop("portfolios", None)
+    await cache_delete("cache:portfolios")
 
 
-def bust_portfolio_cache(slug: str) -> None:
+async def bust_portfolio_cache(slug: str) -> None:
     """Drop a single portfolio's cached detail payload. Called by admin_portfolios
     on mutate (alongside bust_portfolios_cache for the list)."""
-    _cache.pop(f"portfolio:{slug}", None)
+    await cache_delete(f"cache:portfolio:{slug}")
 
 
 def _as_uuid(value: object) -> uuid.UUID | None:
@@ -132,7 +123,7 @@ async def _resolve_groups(
 @router.get("/products", response_model=list[ProductOut])
 async def list_products(response: Response, db: AsyncSession = Depends(get_db)):
     response.headers["Cache-Control"] = _CACHE_CONTROL
-    cached = _cache_get("products")
+    cached = await cache_get("cache:products")
     if cached is not None:
         return cached
     res = await db.execute(
@@ -141,7 +132,7 @@ async def list_products(response: Response, db: AsyncSession = Depends(get_db)):
         .order_by(Product.sort_order)
     )
     items = [ProductOut.model_validate(p) for p in res.scalars().all()]
-    _cache_set("products", items)
+    await cache_set("cache:products", items, _CACHE_TTL)
     return items
 
 
@@ -165,7 +156,7 @@ async def get_landing(
     slug: str, response: Response, db: AsyncSession = Depends(get_db)
 ):
     response.headers["Cache-Control"] = _CACHE_CONTROL
-    cached = _cache_get(f"landing:{slug}")
+    cached = await cache_get(f"cache:landing:{slug}")
     if cached is not None:
         return cached
     landing = (
@@ -184,7 +175,7 @@ async def get_landing(
         content=content,
         groups=groups,
     )
-    _cache_set(f"landing:{slug}", out)
+    await cache_set(f"cache:landing:{slug}", out, _CACHE_TTL)
     return out
 
 
@@ -193,7 +184,7 @@ async def list_portfolios(response: Response, db: AsyncSession = Depends(get_db)
     """Active portfolios (curated /shop sections), ordered, with each group's
     products resolved from the live catalog. Cached like the other public reads."""
     response.headers["Cache-Control"] = _CACHE_CONTROL
-    cached = _cache_get("portfolios")
+    cached = await cache_get("cache:portfolios")
     if cached is not None:
         return cached
     portfolios = (
@@ -213,7 +204,7 @@ async def list_portfolios(response: Response, db: AsyncSession = Depends(get_db)
         )
         for p in portfolios
     ]
-    _cache_set("portfolios", out)
+    await cache_set("cache:portfolios", out, _CACHE_TTL)
     return out
 
 
@@ -224,7 +215,7 @@ async def get_portfolio(
     """A single curated collection by slug, for its /shop/<slug> page. Inactive
     portfolios 404 (matching the list). Cached per slug like get_landing."""
     response.headers["Cache-Control"] = _CACHE_CONTROL
-    cached = _cache_get(f"portfolio:{slug}")
+    cached = await cache_get(f"cache:portfolio:{slug}")
     if cached is not None:
         return cached
     portfolio = (
@@ -241,19 +232,19 @@ async def get_portfolio(
         cover_image_url=portfolio.cover_image_url,
         groups=await _resolve_groups(db, (portfolio.content or {}).get("groups") or []),
     )
-    _cache_set(f"portfolio:{slug}", out)
+    await cache_set(f"cache:portfolio:{slug}", out, _CACHE_TTL)
     return out
 
 
 @router.get("/faqs", response_model=list[FAQOut])
 async def list_faqs(response: Response, db: AsyncSession = Depends(get_db)):
     response.headers["Cache-Control"] = _CACHE_CONTROL
-    cached = _cache_get("faqs")
+    cached = await cache_get("cache:faqs")
     if cached is not None:
         return cached
     res = await db.execute(select(FAQ).where(FAQ.is_active).order_by(FAQ.sort_order))
     items = [FAQOut.model_validate(f) for f in res.scalars().all()]
-    _cache_set("faqs", items)
+    await cache_set("cache:faqs", items, _CACHE_TTL)
     return items
 
 
@@ -406,7 +397,12 @@ async def activate_warranty(
     )
     db.add(warranty)
     serial_service.record_event(db, serial.id, "warranty_activated")
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        # Concurrent activation won the race on the serial_id unique constraint.
+        await db.rollback()
+        raise HTTPException(409, detail="گارانتی این قطعه قبلاً فعال شده است")
     return WarrantyState(started_at=now, expires_at=warranty.expires_at, active=True)
 
 
@@ -438,7 +434,12 @@ async def request_buyback(
     )
     db.add(req)
     serial_service.record_event(db, serial.id, "buyback_requested")
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        # Concurrent request won the race on the partial-unique open-request index.
+        await db.rollback()
+        raise HTTPException(409, detail="برای این قطعه یک درخواست در حال بررسی وجود دارد")
     return BuybackCreatedOut(status=BuybackStatus.under_review)
 
 
