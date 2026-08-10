@@ -5,10 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import resolve_admin
 from app.core.config import settings
 from app.core.db import get_db
+from app.api.limiter import limiter
 from app.core.security import (
     SESSION_COOKIE,
     issue_session,
-    verify_password,
+    verify_password_async,
 )
 from app.models.user import AuditLog, User
 from app.schemas.auth import LoginIn, MeOut
@@ -29,7 +30,13 @@ def _set_cookie(response: Response, token: str) -> None:
 
 
 @router.post("/login", response_model=MeOut)
-async def login(payload: LoginIn, response: Response, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")  # brute-force guard; argon2 already slows each try
+async def login(
+    request: Request,
+    payload: LoginIn,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
     """Named users first; the env-var admin stays as a zero-config bootstrap
     superadmin. Both outcomes are audited (login is the one mutation the audit
     middleware can't attribute — there's no cookie yet)."""
@@ -39,9 +46,9 @@ async def login(payload: LoginIn, response: Response, db: AsyncSession = Depends
             select(User).where(User.username == payload.username, User.is_active)
         )
     ).scalar_one_or_none()
-    if user is not None and verify_password(payload.password, user.password_hash):
+    if user is not None and await verify_password_async(payload.password, user.password_hash):
         role = user.role.value
-    elif payload.username == settings.admin_username and verify_password(
+    elif payload.username == settings.admin_username and await verify_password_async(
         payload.password, settings.admin_password_hash
     ):
         role = "superadmin"

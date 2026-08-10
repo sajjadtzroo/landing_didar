@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
@@ -29,6 +30,8 @@ from app.api.v1 import (
     public,
 )
 from app.core.config import settings
+from sqlalchemy import text
+
 from app.core.db import engine
 from app.core.logging import setup_logging
 from app.services.gold_prices import refresh_loop
@@ -39,8 +42,12 @@ setup_logging()
 # Fail fast if a real (HTTPS/secure-cookie) deploy is running on a known default
 # secret — the session cookie is signed with it, so a default = forgeable admin.
 _WEAK_SECRETS = {"", "change-me-in-prod", "dev-secret-change-me"}
-if settings.cookie_secure and settings.secret_key in _WEAK_SECRETS:
-    raise RuntimeError("SECRET_KEY must be set to a strong value in production")
+if settings.cookie_secure and (
+    settings.secret_key in _WEAK_SECRETS or len(settings.secret_key) < 24
+):
+    raise RuntimeError(
+        "SECRET_KEY must be a strong value (24+ chars) in production"
+    )
 
 
 @asynccontextmanager
@@ -75,6 +82,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Large JSON payloads (catalog, admin lists) and CSV exports compress 5-20x.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
 # --- Audit trail (WO 7.15): every mutating admin request, one middleware ---
@@ -150,6 +160,8 @@ if isinstance(get_storage(), MinioStorage):
 
     @app.get(settings.media_url_prefix + "/{key:path}")
     async def media(key: str):
+        if ".." in key or key.startswith("/"):
+            raise HTTPException(404, detail="Not found")
         store = get_storage()
         try:
             resp = await asyncio.to_thread(store.open, key)
@@ -180,6 +192,12 @@ else:
 
 @app.get("/health")
 async def health():
+    """Liveness + real dependency check (a dead DB should fail the probe)."""
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+    except Exception:  # noqa: BLE001 — any DB failure means unhealthy
+        raise HTTPException(503, detail="database unavailable")
     return {"status": "ok"}
 
 

@@ -85,3 +85,24 @@ def get_storage() -> Storage:
         )
         _storage = MinioStorage() if configured else LocalStorage()
     return _storage
+
+# Content-Type can be spoofed by renaming a file; check the actual bytes for the
+# types we accept. Types without a listed signature pass through (permissive).
+_MAGIC: dict[str, tuple[bytes, ...]] = {
+    "image/jpeg": (b"\xff\xd8\xff",),
+    "image/png": (b"\x89PNG\r\n\x1a\n",),
+    "image/gif": (b"GIF87a", b"GIF89a"),
+    "image/webp": (b"RIFF",),  # + WEBP at offset 8, checked below
+    "application/pdf": (b"%PDF",),
+    "video/webm": (b"\x1a\x45\xdf\xa3",),
+}
+
+
+def sniff_ok(content_type: str | None, data: bytes) -> bool:
+    """True when the payload's magic bytes are consistent with its claimed type."""
+    sigs = _MAGIC.get(content_type or "")
+    if sigs is None:
+        return True  # no signature on file (e.g. mp4 ftyp variants) — allow
+    if content_type == "image/webp":
+        return data[:4] == b"RIFF" and data[8:12] == b"WEBP"
+    return any(data.startswith(s) for s in sigs)

@@ -27,9 +27,9 @@ from app.core.config import settings
 from app.core.db import get_db
 from app.core.security import (
     CUSTOMER_COOKIE,
-    hash_otp,
+    hash_otp_async,
     issue_customer_session,
-    verify_otp,
+    verify_otp_async,
 )
 from app.models.customer import (
     Customer,
@@ -87,7 +87,7 @@ async def request_otp(
     db.add(
         OtpCode(
             phone=payload.phone,
-            code_hash=hash_otp(code),
+            code_hash=await hash_otp_async(code),
             expires_at=datetime.now(UTC) + timedelta(seconds=OTP_TTL),
         )
     )
@@ -121,7 +121,7 @@ async def verify_otp_code(
     invalid = HTTPException(400, detail="کد نامعتبر یا منقضی شده است")
     if otp is None or otp.expires_at < now or otp.attempts >= OTP_MAX_ATTEMPTS:
         raise invalid
-    if not verify_otp(payload.code, otp.code_hash):
+    if not await verify_otp_async(payload.code, otp.code_hash):
         otp.attempts += 1
         await db.commit()
         raise invalid
@@ -186,6 +186,10 @@ async def upload_document(
     if len(c.verification_documents) >= _MAX_DOCS:
         raise HTTPException(400, detail="حداکثر تعداد مدارک بارگذاری شده است")
     data = await file.read()
+    from app.services.storage import sniff_ok
+
+    if not sniff_ok(file.content_type, data):
+        raise HTTPException(415, detail="محتوای فایل با نوع آن هم‌خوانی ندارد")
     if len(data) > _MAX_DOC_BYTES:
         raise HTTPException(413, detail="حجم فایل زیاد است (حداکثر ۱۰ مگابایت)")
     url = await get_storage().save(file.filename or "document", data)

@@ -22,7 +22,7 @@ from app.schemas.faq import FAQCreate, FAQOut, FAQUpdate
 from app.schemas.product import AdminProductOut, ProductCreate, ProductUpdate
 from app.schemas.import_job import ImportJobOut
 from app.services import product_import
-from app.services.storage import get_storage
+from app.services.storage import get_storage, sniff_ok
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
@@ -43,6 +43,8 @@ async def upload_media(file: UploadFile = File(...)):
     data = await file.read()
     if len(data) > _MAX_MEDIA_BYTES:
         raise HTTPException(413, detail="File too large (max 60MB)")
+    if not sniff_ok(file.content_type, data):
+        raise HTTPException(415, detail="File content does not match its type")
     url = await get_storage().save(file.filename or "upload", data)
     return {"url": url}
 

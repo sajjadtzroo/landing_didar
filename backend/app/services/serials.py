@@ -162,3 +162,10 @@ def qr_png(code: str, base_url: str) -> bytes:
 async def log_scan(db: AsyncSession, serial_id: uuid.UUID, ip_hash: str | None) -> None:
     db.add(SerialScan(serial_id=serial_id, ip_hash=ip_hash))
     await db.commit()
+
+def csv_safe(value: object) -> object:
+    """Neutralize spreadsheet formula injection in exported cells: a leading
+    = + - @ makes Excel execute the cell when the admin opens our CSV."""
+    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@"):
+        return "'" + value
+    return value

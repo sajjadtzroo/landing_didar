@@ -45,3 +45,20 @@ async def test_logout_clears_session(client):
     await client.post(LOGIN, json={"username": "admin", "password": "secret123"})
     assert (await client.post(LOGOUT)).status_code == 200
     assert (await client.get(ME)).status_code == 401  # cleared cookie => no session
+
+
+async def test_login_rate_limited(client):
+    """Brute-force guard: the 11th attempt in a minute is 429."""
+    from app.api.limiter import limiter
+
+    limiter.enabled = True
+    try:
+        limiter.reset()
+    except Exception:  # noqa: BLE001 — older slowapi lacks reset()
+        pass
+    codes = [
+        (await client.post(LOGIN, json={"username": "admin", "password": "wrong!!!"})).status_code
+        for _ in range(11)
+    ]
+    limiter.enabled = False
+    assert codes[-1] == 429 and codes[0] == 401

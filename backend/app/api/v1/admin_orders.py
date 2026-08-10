@@ -119,10 +119,11 @@ async def export_orders(
     )
     for o in rows:
         items = "; ".join(f"{i.product_name} x{i.quantity}" for i in o.items)
+        safe = serial_service.csv_safe
         w.writerow(
-            [o.reference, o.created_at.isoformat(), o.full_name, o.phone,
-             o.store_name, o.province, o.city or "", o.contact_method.value,
-             o.status.value, int(o.total), items, o.utm_source or ""]
+            [o.reference, o.created_at.isoformat(), safe(o.full_name), o.phone,
+             safe(o.store_name), o.province, safe(o.city or ""), o.contact_method.value,
+             o.status.value, int(o.total), safe(items), safe(o.utm_source or "")]
         )
     buf.seek(0)
     return StreamingResponse(

@@ -88,11 +88,12 @@ async def export_buybacks(
     w = csv.writer(buf)
     w.writerow(["code", "product", "requester", "phone", "status", "offered_price", "note", "admin_note", "created_at"])
     for b, s in rows:
+        safe = serial_service.csv_safe
         w.writerow([
-            serial_service.format_code(s.code), s.product_name, b.requester_name,
+            serial_service.format_code(s.code), safe(s.product_name), safe(b.requester_name),
             b.requester_phone, b.status.value,
             b.offered_price if b.offered_price is not None else "",
-            b.note or "", b.admin_note or "", b.created_at.isoformat(),
+            safe(b.note or ""), safe(b.admin_note or ""), b.created_at.isoformat(),
         ])
     buf.seek(0)
     return StreamingResponse(

@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_superadmin
 from app.core.db import get_db
-from app.core.security import hash_password, read_session
+from app.core.security import hash_password_async, read_session
 from app.core.security import SESSION_COOKIE
 from app.models.user import User
 from app.schemas.user import UserCreate, UserOut, UserUpdate
@@ -29,7 +29,7 @@ async def list_users(db: AsyncSession = Depends(get_db)):
 async def create_user(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     user = User(
         username=payload.username,
-        password_hash=hash_password(payload.password),
+        password_hash=await hash_password_async(payload.password),
         full_name=payload.full_name,
         phone=payload.phone,
         role=payload.role,
@@ -61,7 +61,7 @@ async def update_user(
     if user.username == _me(request) and "role" in data:
         raise HTTPException(400, detail="Cannot change your own role")
     if "password" in data:
-        user.password_hash = hash_password(data.pop("password"))
+        user.password_hash = await hash_password_async(data.pop("password"))
     for k, v in data.items():
         setattr(user, k, v)
     await db.commit()

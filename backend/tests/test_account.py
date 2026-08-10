@@ -177,7 +177,7 @@ async def test_upload_document_sets_pending(client):
     await _login(client, "09120000011")
     r = await client.post(
         f"{ACC}/me/documents",
-        files={"file": ("license.png", b"\x89PNG_fake", "image/png")},
+        files={"file": ("license.png", b"\x89PNG\r\n\x1a\n" + b"fake", "image/png")},
     )
     assert r.status_code == 200, r.text
     body = r.json()
@@ -199,7 +199,7 @@ async def test_delete_document_while_pending(client):
     await _login(client, "09120000013")
     await client.post(
         f"{ACC}/me/documents",
-        files={"file": ("l.png", b"x", "image/png")},
+        files={"file": ("l.png", b"\x89PNG\r\n\x1a\n" + b"fake", "image/png")},
     )
     r = await client.delete(f"{ACC}/me/documents/0")
     assert r.status_code == 200
@@ -295,3 +295,13 @@ async def test_otp_test_phone_reveals_code_in_prod(client, monkeypatch):
     assert r.status_code == 200
     assert r.json()["dev_code"] and len(r.json()["dev_code"]) == 6
     assert "09028068820" not in sent
+
+
+async def test_document_with_spoofed_type_rejected(client):
+    """A .png claim with non-PNG bytes must be refused (magic-byte check)."""
+    await _login(client, "09120000019")
+    r = await client.post(
+        f"{ACC}/me/documents",
+        files={"file": ("evil.png", b"MZ\x90\x00 not a png", "image/png")},
+    )
+    assert r.status_code == 415

@@ -11,7 +11,10 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from app.core.config import settings
 
-engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+# 2 gunicorn workers × (10 + 10 overflow) = 40 max conns — well under PG's 100.
+engine = create_async_engine(
+    settings.database_url, pool_pre_ping=True, pool_size=10, max_overflow=10
+)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 

@@ -27,6 +27,10 @@ class BuybackCreate(BaseModel):
     note: str | None = Field(default=None, max_length=300)
 
 
+class BuybackCreatedOut(BaseModel):
+    status: BuybackStatus
+
+
 class BuybackOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID

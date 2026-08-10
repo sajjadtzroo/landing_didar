@@ -18,7 +18,7 @@ async def _submit_docs(client, phone):
     await _login(client, phone)
     await client.post(
         f"{ACC}/me/documents",
-        files={"file": ("l.png", b"x", "image/png")},
+        files={"file": ("l.png", b"\x89PNG\r\n\x1a\n" + b"fake", "image/png")},
     )
 
 

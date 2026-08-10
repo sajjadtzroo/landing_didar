@@ -125,9 +125,10 @@ async def export_serials(
     w.writerow(["code", "product", "karat", "weight_grams", "status", "batch", "issued_at", "note"])
     for s in rows:
         w.writerow([
-            serial_service.format_code(s.code), s.product_name, s.karat or "",
+            serial_service.format_code(s.code), serial_service.csv_safe(s.product_name),
+            s.karat or "",
             s.weight_grams if s.weight_grams is not None else "", s.status.value,
-            str(s.batch_id), s.created_at.isoformat(), s.note or "",
+            str(s.batch_id), s.created_at.isoformat(), serial_service.csv_safe(s.note or ""),
         ])
     buf.seek(0)
     return StreamingResponse(

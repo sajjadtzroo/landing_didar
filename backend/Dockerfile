@@ -10,9 +10,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN chmod +x entrypoint.sh
+RUN chmod +x entrypoint.sh \
+    && useradd -m -u 1000 app \
+    && mkdir -p /app/media \
+    && chown -R app:app /app
+USER app
 
 EXPOSE 8000
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["gunicorn", "app.main:app", "-k", "uvicorn.workers.UvicornWorker", \
-     "-b", "0.0.0.0:8000", "-w", "2"]
+     "-b", "0.0.0.0:8000", "-w", "2", "--timeout", "60", "--graceful-timeout", "30"]

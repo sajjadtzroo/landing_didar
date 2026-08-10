@@ -1,3 +1,4 @@
+import asyncio
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -34,7 +35,7 @@ from app.schemas.order import OrderCreate, OrderCreatedOut, OrderTrackOut
 from app.schemas.portfolio import PortfolioPublicOut
 from app.schemas.product import ProductOut
 from app.schemas.serial import SerialEventOut, SerialVerifyOut, WarrantyState
-from app.schemas.warranty import BuybackCreate, WarrantyActivate
+from app.schemas.warranty import BuybackCreate, BuybackCreatedOut, WarrantyActivate
 from app.services import orders as order_service
 from app.services import serials as serial_service
 from app.services.gold_prices import get_gold_prices
@@ -409,7 +410,7 @@ async def activate_warranty(
     return WarrantyState(started_at=now, expires_at=warranty.expires_at, active=True)
 
 
-@router.post("/serials/{code}/buyback", status_code=201)
+@router.post("/serials/{code}/buyback", response_model=BuybackCreatedOut, status_code=201)
 @limiter.limit("5/hour")
 async def request_buyback(
     request: Request,
@@ -438,7 +439,7 @@ async def request_buyback(
     db.add(req)
     serial_service.record_event(db, serial.id, "buyback_requested")
     await db.commit()
-    return {"status": "under_review"}
+    return BuybackCreatedOut(status=BuybackStatus.under_review)
 
 
 @router.get("/serials/{code}/qr.png")
@@ -456,7 +457,8 @@ async def serial_qr(
     ).scalar_one_or_none()
     if not exists:
         raise HTTPException(404, detail="Not found")
-    png = serial_service.qr_png(normalized, settings.cors_origins[0])
+    # PNG encode is CPU work — keep it off the event loop
+    png = await asyncio.to_thread(serial_service.qr_png, normalized, settings.cors_origins[0])
     return Response(
         content=png,
         media_type="image/png",

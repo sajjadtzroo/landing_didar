@@ -3,6 +3,8 @@
 Run `python -m app.core.security <password>` to generate a hash for ADMIN_PASSWORD_HASH.
 """
 
+import asyncio
+
 import sys
 
 from itsdangerous import URLSafeTimedSerializer
@@ -83,3 +85,20 @@ if __name__ == "__main__":
         print("usage: python -m app.core.security <password>")
         raise SystemExit(1)
     print(hash_password(sys.argv[1]))
+
+
+async def hash_password_async(password: str) -> str:
+    """Argon2 is ~100ms of CPU — never run it on the event loop."""
+    return await asyncio.to_thread(hash_password, password)
+
+
+async def verify_password_async(password: str, hashed: str) -> bool:
+    return await asyncio.to_thread(verify_password, password, hashed)
+
+
+async def hash_otp_async(code: str) -> str:
+    return await asyncio.to_thread(hash_otp, code)
+
+
+async def verify_otp_async(code: str, hashed: str) -> bool:
+    return await asyncio.to_thread(verify_otp, code, hashed)
