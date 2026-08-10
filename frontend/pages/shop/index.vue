@@ -185,11 +185,12 @@ useHead({
       <!-- Shop by category — the single category control (filter bar no longer duplicates it) -->
       <ShopCategories v-model="category" :counts="categoryCounts" />
 
-      <!-- Admin-curated collections (hidden while the user is actively filtering).
-           Mobile: pushed below the catalogue (order-2) — they buried the products
-           several screens deep; browsing beats editorial on a phone. -->
+      <!-- Admin-curated collections: ONE carousel (2 per view) instead of stacked
+           per-collection product sections — every collection (eid, firooze, …)
+           visible in a swipe. Hidden while filtering. Mobile: below the catalogue
+           (order-2) so products stay near the fold. -->
       <section v-if="!hasFilters" class="order-2 sm:order-none">
-        <PortfolioSection v-for="pf in portfolios" :key="pf.id" :portfolio="pf" />
+        <CollectionCarousel :portfolios="portfolios" />
       </section>
 
       <section class="order-1 sm:order-none">
