@@ -7,9 +7,7 @@ import { toFa } from '~/utils/format'
 
 defineEmits<{ order: [] }>()
 
-const route = useRoute()
 const { open: promoOpen } = usePromo()
-const { y } = import.meta.client ? useWindowScroll() : { y: ref(0) }
 
 const cart = useCartStore()
 const favorites = useFavoritesStore()
@@ -18,9 +16,9 @@ const { openCart } = useUiState()
 // Section link: gold text + a gold underline that grows on hover, locked open
 // on the active route (nav-state-active).
 const linkClass =
-  'relative text-sm transition hover:text-gold-text after:absolute after:inset-x-0 ' +
-  'after:-bottom-1 after:h-px after:origin-center after:scale-x-0 after:bg-gold ' +
-  'after:transition-transform after:duration-300 hover:after:scale-x-100'
+  'relative text-[15px] tracking-wide transition hover:text-gold-text after:absolute ' +
+  'after:inset-x-0 after:-bottom-1.5 after:h-px after:origin-center after:scale-x-0 ' +
+  'after:bg-gold after:transition-transform after:duration-300 hover:after:scale-x-100'
 const linkActive = 'text-gold-text after:scale-x-100'
 
 // Curated collections menu — reuses the /shop portfolios payload (shared key, so
@@ -31,41 +29,31 @@ const { data: portfolios } = useFetch<Portfolio[]>('/portfolios', {
   key: 'portfolios',
 })
 const collections = computed(() => portfolios.value || [])
-
-// Transparent (light text) only while sitting over the dark hero on a landing
-// page; frosted glass (dark text) after scrolling, and on every inner page.
-const onLanding = computed(() => route.path === '/' || route.path.startsWith('/l/'))
-const overHero = computed(() => onLanding.value && y.value < 80)
 </script>
 
 <template>
+  <!-- Cream boutique bar (reference: logo right, links centered, actions left).
+       --header keeps it theme-aware: warm cream in light, navy in dark. -->
   <header
-    class="chrome-blur fixed inset-x-0 z-40 hidden transition-[colors,top] duration-300 sm:block"
-    :class="[
-      overHero
-        ? 'bg-transparent text-cream'
-        : 'border-b border-line bg-surface/70 text-ink backdrop-blur-xl backdrop-saturate-150',
-      promoOpen ? 'top-20 sm:top-14' : 'top-0',
-    ]"
+    class="chrome-blur fixed inset-x-0 z-40 hidden border-b border-line/60 bg-header
+      text-ink backdrop-blur-xl backdrop-saturate-150 transition-[top] duration-300 sm:block"
+    :class="promoOpen ? 'top-20 sm:top-14' : 'top-0'"
   >
-    <!-- Legibility scrim over the hero (only in the transparent state) -->
-    <div
-      v-if="overHero"
-      class="pointer-events-none absolute inset-0 bg-gradient-to-b from-navy-deep/50 to-transparent"
-      aria-hidden="true"
-    />
-
     <nav
-      class="relative mx-auto flex max-w-content items-center justify-between px-5 py-3 sm:px-10"
+      class="mx-auto grid max-w-hero grid-cols-[1fr_auto_1fr] items-center px-5 py-4 sm:px-10"
       aria-label="اصلی"
     >
-      <!-- Brand -->
-      <NuxtLink to="/" class="flex items-center" :aria-label="`${CONTENT.brand} — خانه`">
-        <BrandLogo :height="26" />
+      <!-- Brand (start = right in RTL) -->
+      <NuxtLink
+        to="/"
+        class="justify-self-start"
+        :aria-label="`${CONTENT.brand} — خانه`"
+      >
+        <BrandLogo :height="30" />
       </NuxtLink>
 
-      <!-- Section links -->
-      <div class="hidden items-center gap-6 sm:flex">
+      <!-- Section links, centered -->
+      <div class="hidden items-center gap-8 sm:flex">
         <NuxtLink to="/l/one" :class="linkClass" :active-class="linkActive">
           {{ CONTENT.nav.home }}
         </NuxtLink>
@@ -78,12 +66,16 @@ const overHero = computed(() => onLanding.value && y.value < 80)
         <div v-if="collections.length" class="group relative">
           <button
             type="button"
-            class="flex items-center gap-1 text-sm transition hover:text-gold-text
-              group-focus-within:text-gold-text"
+            class="flex items-center gap-1.5 text-[15px] tracking-wide transition
+              hover:text-gold-text group-focus-within:text-gold-text"
             aria-haspopup="true"
           >
             {{ CONTENT.nav.collections }}
-            <ChevronDown :size="14" aria-hidden="true" />
+            <ChevronDown
+              :size="14"
+              class="transition-transform duration-300 group-hover:rotate-180"
+              aria-hidden="true"
+            />
           </button>
           <div
             class="invisible absolute end-0 top-full z-50 min-w-48 border border-line bg-surface/95
@@ -103,13 +95,17 @@ const overHero = computed(() => onLanding.value && y.value < 80)
           </div>
         </div>
 
+        <NuxtLink to="/verify" :class="linkClass" :active-class="linkActive">
+          {{ CONTENT.nav.verify }}
+        </NuxtLink>
+
         <NuxtLink to="/account" :class="linkClass" :active-class="linkActive">
           {{ CONTENT.nav.account }}
         </NuxtLink>
       </div>
 
-      <!-- Actions -->
-      <div class="flex items-center gap-2 sm:gap-4">
+      <!-- Actions (end = left in RTL): heart, bag, then the navy order block -->
+      <div class="flex items-center gap-1 justify-self-end sm:gap-3">
         <NuxtLink
           to="/account"
           class="flex h-11 w-11 items-center justify-center transition hover:text-gold-text sm:hidden"
@@ -119,14 +115,16 @@ const overHero = computed(() => onLanding.value && y.value < 80)
         </NuxtLink>
         <NuxtLink
           to="/account/favorites"
-          class="relative hidden h-11 w-11 items-center justify-center transition hover:text-gold-text sm:flex"
+          class="relative hidden h-11 w-11 items-center justify-center transition
+            hover:text-gold-text sm:flex"
           :aria-label="CONTENT.nav.favorites"
         >
-          <Heart :size="20" aria-hidden="true" />
+          <Heart :size="21" aria-hidden="true" />
           <span
             v-if="favorites.count"
-            class="tnum absolute -end-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center
-              rounded-full bg-gold px-1 text-[11px] font-bold text-navy-deep"
+            class="tnum absolute -top-1 end-0 flex h-5 min-w-5 items-center justify-center
+              rounded-full bg-gold px-1 text-[11px] font-bold text-navy-deep
+              ring-2 ring-header"
           >
             {{ toFa(favorites.count) }}
           </span>
@@ -137,19 +135,20 @@ const overHero = computed(() => onLanding.value && y.value < 80)
           :aria-label="CONTENT.cart.title"
           @click="openCart"
         >
-          <ShoppingBag :size="20" aria-hidden="true" />
+          <ShoppingBag :size="21" aria-hidden="true" />
           <span
             v-if="cart.itemCount"
-            class="tnum absolute -end-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center
-              rounded-full bg-gold px-1 text-[11px] font-bold text-navy-deep"
+            class="tnum absolute -top-1 end-0 flex h-5 min-w-5 items-center justify-center
+              rounded-full bg-gold px-1 text-[11px] font-bold text-navy-deep
+              ring-2 ring-header"
           >
             {{ toFa(cart.itemCount) }}
           </span>
         </button>
         <button
           type="button"
-          class="flex h-11 items-center justify-center bg-navy px-5 text-sm font-medium
-            text-white transition duration-300 hover:bg-gold"
+          class="ms-1 flex h-12 items-center justify-center bg-navy px-8 text-[15px]
+            font-medium text-white transition duration-300 hover:bg-gold hover:text-navy-deep"
           @click="$emit('order')"
         >
           {{ CONTENT.nav.order }}

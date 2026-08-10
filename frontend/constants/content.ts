@@ -21,6 +21,7 @@ export const CONTENT = {
     home: 'خانه',
     shop: 'فروشگاه',
     collections: 'کالکشن‌ها',
+    verify: 'اصالت‌سنجی',
     account: 'حساب کاربری',
     accountShort: 'حساب',
     cart: 'سبد',
