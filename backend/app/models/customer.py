@@ -65,7 +65,7 @@ class CustomerAddress(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     customer_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("customers.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("customers.id", ondelete="CASCADE"), index=True, nullable=False
     )
     title: Mapped[str] = mapped_column(String(40), nullable=False)  # e.g. "منزل"
     province: Mapped[str] = mapped_column(String(40), nullable=False)
@@ -84,8 +84,9 @@ class Favorite(Base):
     customer_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("customers.id", ondelete="CASCADE"), primary_key=True
     )
+    # PK (customer_id, product_id) doesn't cover product-side lookups/CASCADEs
     product_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("products.id", ondelete="CASCADE"), primary_key=True
+        ForeignKey("products.id", ondelete="CASCADE"), primary_key=True, index=True
     )
 
     customer: Mapped["Customer"] = relationship(back_populates="favorites")

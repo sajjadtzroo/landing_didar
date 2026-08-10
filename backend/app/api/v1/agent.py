@@ -13,7 +13,7 @@ from app.core.db import get_db
 from app.models.agent import AgentRetailer, AgentVisit, MobileGalleryItem
 from app.models.customer import Customer
 from app.models.order import Order, OrderStatus
-from app.models.product_serial import ProductSerialStatus
+from app.models.product_serial import ProductSerial, ProductSerialStatus
 from app.models.user import AdminRole, User
 from app.schemas.agent import (
     AgentOrderCreate,
@@ -218,10 +218,18 @@ async def quick_sell(
         raise HTTPException(409, detail="این قطعه همراه شما نیست")
     if item.kind != "sellable":
         raise HTTPException(409, detail="کالای نمونه قابل فروش نیست")
-    if item.serial.status != ProductSerialStatus.in_stock:
+    # Row-lock the serial so two concurrent sells can't both pass the check.
+    serial = (
+        await db.execute(
+            select(ProductSerial)
+            .where(ProductSerial.id == item.serial_id)
+            .with_for_update()
+        )
+    ).scalar_one()
+    if serial.status != ProductSerialStatus.in_stock:
         raise HTTPException(409, detail="وضعیت سریال اجازه فروش نمی‌دهد")
 
-    item.serial.status = ProductSerialStatus.sold
+    serial.status = ProductSerialStatus.sold
     serial_service.record_event(
         db, item.serial_id, "sold", {"quick_sale": True, "agent": agent.username}
     )

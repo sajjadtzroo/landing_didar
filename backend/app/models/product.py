@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, CheckConstraint, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -9,6 +9,16 @@ from app.core.db import Base
 
 class Product(Base):
     __tablename__ = "products"
+    __table_args__ = (
+        CheckConstraint(
+            "category IN ('daily', 'lux_daily', 'luxury')",
+            name="ck_products_category",
+        ),
+        CheckConstraint(
+            "product_status IN ('sellable', 'sample', 'not_for_sale')",
+            name="ck_products_status",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4

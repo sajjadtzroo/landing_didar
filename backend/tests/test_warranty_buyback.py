@@ -98,6 +98,29 @@ async def test_buyback_duplicate_open_request_409(client, admin_client):
     assert (await client.post(_b(row["code"]), json=WHO)).status_code == 409
 
 
+async def test_buyback_open_request_unique_enforced_by_db(admin_client, _sessionmaker):
+    """The partial unique index (one under_review per serial) must hold even when
+    the app-level check is bypassed — that's the concurrent-request backstop."""
+    from sqlalchemy.exc import IntegrityError
+
+    from app.models.warranty import BuybackRequest
+
+    row = await _sold_serial(admin_client)
+    serial_id = uuid.UUID(row["id"])
+
+    def _req():
+        return BuybackRequest(
+            serial_id=serial_id, requester_name="علی", requester_phone="09121234567"
+        )
+
+    async with _sessionmaker() as db:
+        db.add(_req())
+        await db.commit()
+        db.add(_req())
+        with pytest.raises(IntegrityError):
+            await db.commit()
+
+
 async def test_admin_processes_buyback(client, admin_client):
     row = await _sold_serial(admin_client)
     await client.post(_b(row["code"]), json=WHO)

@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String
+from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -41,6 +41,16 @@ class BuybackRequest(Base):
     """بازخرید پایه (WO 7.9): a UID-anchored request, processed by the admin."""
 
     __tablename__ = "buyback_requests"
+    # One OPEN request per piece — the DB backstop for the public endpoint's
+    # check-then-insert (concurrent duplicates hit this, not the app check).
+    __table_args__ = (
+        Index(
+            "uq_buyback_open_serial",
+            "serial_id",
+            unique=True,
+            postgresql_where=text("status = 'under_review'"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4

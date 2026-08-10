@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Integer, Numeric, String
+from sqlalchemy import ForeignKey, Index, Integer, Numeric, String
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -91,6 +91,8 @@ class SerialScan(Base):
     (verify_count / distinct IPs / first_verified_at) in the admin list."""
 
     __tablename__ = "serial_scans"
+    # Unbounded append-only table — created_at index keeps a retention purge cheap.
+    __table_args__ = (Index("ix_serial_scans_created_at", "created_at"),)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4

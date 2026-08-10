@@ -125,7 +125,7 @@ class OrderItem(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     order_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("orders.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("orders.id", ondelete="CASCADE"), index=True, nullable=False
     )
     product_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("products.id", ondelete="SET NULL")
@@ -148,7 +148,7 @@ class OrderStatusLog(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     order_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("orders.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("orders.id", ondelete="CASCADE"), index=True, nullable=False
     )
     from_status: Mapped[OrderStatus | None] = mapped_column(
         Enum(OrderStatus, name="order_status", create_type=False)

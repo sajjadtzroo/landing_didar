@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,10 +17,18 @@ APPROVED_SMS = "احراز هویت شما با موفقیت انجام شد."
 
 
 @router.get("/customers", response_model=list[CustomerAdminOut])
-async def list_customers(status: str | None = None, db: AsyncSession = Depends(get_db)):
+async def list_customers(
+    status: str | None = None,
+    page: int = Query(1, ge=1),
+    # ponytail: generous default keeps the un-paginated admin UI working; wire
+    # real pagination into the frontend before customer count nears the cap.
+    page_size: int = Query(500, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+):
     q = select(Customer).order_by(Customer.created_at.desc())
     if status:
         q = q.where(Customer.verification_status == status)
+    q = q.offset((page - 1) * page_size).limit(page_size)
     return (await db.execute(q)).scalars().all()
 
 

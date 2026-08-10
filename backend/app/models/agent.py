@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import CheckConstraint, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,8 +15,9 @@ class AgentRetailer(Base):
     agent_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
+    # PK (agent_id, customer_id) doesn't cover customer-side lookups/CASCADEs
     customer_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("customers.id", ondelete="CASCADE"), primary_key=True
+        ForeignKey("customers.id", ondelete="CASCADE"), primary_key=True, index=True
     )
 
 
@@ -26,6 +27,12 @@ class MobileGalleryItem(Base):
     is in at most one bag at a time. Quick-sale flips the serial to sold."""
 
     __tablename__ = "mobile_gallery_items"
+    __table_args__ = (
+        CheckConstraint("kind IN ('sample', 'sellable')", name="ck_gallery_kind"),
+        CheckConstraint(
+            "status IN ('with_agent', 'returned', 'sold')", name="ck_gallery_status"
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
