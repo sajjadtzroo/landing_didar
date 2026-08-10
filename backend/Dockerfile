@@ -1,6 +1,8 @@
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+# Aggregate Prometheus metrics across gunicorn workers (mmap files live here).
+ENV PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential \
@@ -12,8 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN chmod +x entrypoint.sh \
     && useradd -m -u 1000 app \
-    && mkdir -p /app/media \
-    && chown -R app:app /app
+    && mkdir -p /app/media /tmp/prometheus \
+    && chown -R app:app /app /tmp/prometheus
 USER app
 
 EXPOSE 8000

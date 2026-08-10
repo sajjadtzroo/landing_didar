@@ -3,6 +3,10 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: true },
 
+  // Server sourcemaps make SSR stack traces readable in production logs.
+  // Client maps stay off: they'd expose readable source to every visitor.
+  sourcemap: { server: true, client: false },
+
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
@@ -52,6 +56,17 @@ export default defineNuxtConfig({
 
   // SSR on for SEO; admin is client-only (session-gated, no SEO value).
   routeRules: {
+    // First-party API proxy: didar-gold.liara.run and didar-gold-api.liara.run
+    // are different SITES (liara.run is on the Public Suffix List), so a session
+    // cookie set by the API is a third-party cookie — iOS Safari drops it and
+    // mobile login breaks. Proxying makes every browser see one origin.
+    // Override the target at build time with NUXT_PROXY_API_ORIGIN if needed.
+    '/api/v1/**': {
+      proxy: `${process.env.NUXT_PROXY_API_ORIGIN || 'https://didar-gold-api.liara.run'}/api/v1/**`,
+    },
+    '/media/**': {
+      proxy: `${process.env.NUXT_PROXY_API_ORIGIN || 'https://didar-gold-api.liara.run'}/media/**`,
+    },
     '/admin/**': { ssr: false },
     '/agent/**': { ssr: false },
     // Customer panel is session-gated (no SEO value) — render client-side.

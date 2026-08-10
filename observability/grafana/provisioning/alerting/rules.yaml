@@ -1,0 +1,236 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: didar-alerts
+    folder: Didar
+    interval: 1m
+    rules:
+      # 1. >5% of requests failing with 5xx for 5 minutes. 5% (not 1%) because
+      #    at this traffic volume a single burst of retries would false-alarm
+      #    a tighter threshold; 5% sustained = users are definitely affected.
+      - uid: didar-high-error-rate
+        title: High 5xx error rate
+        condition: B
+        for: 5m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "5xx ratio above 5% for 5m — check Loki: {level=\"ERROR\"}"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 0.001)
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.05] }
+
+      # 2. p95 latency > 1s for 10m. Baseline p95 is <200ms (measured); 1s
+      #    sustained means something structural (DB, pool, CPU), not a blip.
+      - uid: didar-high-latency
+        title: API p95 latency above 1s
+        condition: B
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "p95 > 1s for 10m — check slow queries and container CPU"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [1] }
+
+      # 3. Backend scrape target down for 2m. 2m (not instant) tolerates a
+      #    deploy restart; anything longer is an outage.
+      - uid: didar-backend-down
+        title: Backend down
+        condition: B
+        for: 2m
+        noDataState: Alerting
+        execErrState: Error
+        annotations:
+          summary: "Prometheus cannot scrape backend:8000/metrics"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: up{job="didar-backend"}
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+
+      # 4. Rate-limit trips > 0.5/s for 15m. Normal traffic trips limits almost
+      #    never (limits are 5-60/min per IP); sustained trips = scraping,
+      #    brute force on /admin/login, or a serial-enumeration attempt.
+      - uid: didar-ratelimit-surge
+        title: Rate-limit trip surge (possible abuse)
+        condition: B
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Sustained rate-limit trips — check security events in Loki"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: sum(rate(ratelimit_trips_total[15m]))
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.5] }
+
+      # 5. Slow queries (>SLOW_QUERY_MS) above 0.2/s for 10m. Baseline is ~0
+      #    (all hot paths are indexed after the DB review); a sustained rate
+      #    means a regression or data-growth tipping point.
+      - uid: didar-slow-queries
+        title: Slow query surge
+        condition: B
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "db.query.slow events rising — check the query in Loki module=db.query"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: rate(db_slow_queries_total[10m])
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.2] }
+
+      # 6. Root filesystem < 15% free for 15m. 15% on a 100GB disk = 15GB —
+      #    enough runway to react before Postgres/Loki writes start failing.
+      - uid: didar-disk-full
+        title: Disk almost full
+        condition: B
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Host disk < 15% free — prune images, check Loki/pg growth"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: min(node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [0.15] }
+
+      # 7. Host memory < 10% available for 15m. Below that the OOM killer
+      #    starts choosing victims (Postgres is a favorite).
+      - uid: didar-memory-pressure
+        title: Host memory pressure
+        condition: B
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Host memory < 10% available — check container_memory panel"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [0.10] }
+
+      # 8. Backend log silence: the API always logs (access records, gold-price
+      #    refresh every 2m). Zero lines in 10m = crashed/hung process or a
+      #    broken log pipeline — either way, page. noDataState=Alerting is the
+      #    actual detector here.
+      - uid: didar-log-silence
+        title: Backend log silence
+        condition: B
+        for: 10m
+        noDataState: Alerting
+        execErrState: Error
+        annotations:
+          summary: "No backend log lines in 10m — process hung or pipeline broken"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: loki
+            model:
+              refId: A
+              queryType: instant
+              expr: sum(count_over_time({service="backend"}[10m]))
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [1] }

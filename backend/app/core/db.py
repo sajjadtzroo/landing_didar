@@ -17,6 +17,31 @@ engine = create_async_engine(
 )
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
+# --- slow-query logging (db.query namespace, SLOW_QUERY_MS threshold) -----------
+if settings.slow_query_ms > 0:
+    import time as _time
+
+    from sqlalchemy import event
+
+    from app.core.logging import get_logger
+
+    _qlog = get_logger("db.query")
+
+    @event.listens_for(engine.sync_engine, "before_cursor_execute")
+    def _q_start(conn, cursor, statement, parameters, context, executemany):
+        context._query_start = _time.perf_counter()
+
+    @event.listens_for(engine.sync_engine, "after_cursor_execute")
+    def _q_end(conn, cursor, statement, parameters, context, executemany):
+        ms = (_time.perf_counter() - getattr(context, "_query_start", _time.perf_counter())) * 1000
+        if ms >= settings.slow_query_ms:
+            from app.core.metrics import SLOW_QUERIES
+
+            SLOW_QUERIES.inc()
+            _qlog.bind(event="db.query.slow", duration_ms=round(ms, 1)).warning(
+                "slow query ({} ms): {}", round(ms, 1), statement[:500]
+            )
+
 
 class Base(DeclarativeBase):
     """created_at / updated_at on every row (TIMESTAMPTZ)."""

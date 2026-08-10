@@ -16,6 +16,15 @@ class Settings(BaseSettings):
 
     # Logging (loguru sink level)
     log_level: str = "INFO"
+    # JSON logs for collectors (Loki/Alloy); false = human-readable dev output.
+    log_json: bool = False
+    # Per-module overrides, e.g. "db.query=DEBUG,api.auth=DEBUG" — everything
+    # else stays at log_level. Namespaces come from get_logger(<module>).
+    log_levels: str = ""
+    log_service: str = "didar-api"  # `service` field on every record
+    app_env: str = "dev"  # `env` field on every record (dev | production)
+    # Queries slower than this are logged on the db.query namespace (0 = off).
+    slow_query_ms: int = 200
 
     # Auth / session (single admin account, no user table)
     admin_username: str = "admin"

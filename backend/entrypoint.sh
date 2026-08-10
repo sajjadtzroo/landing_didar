@@ -28,6 +28,11 @@ if [ -z "$ADMIN_PASSWORD_HASH" ] && [ -n "$ADMIN_PASSWORD" ]; then
   export ADMIN_PASSWORD_HASH
 fi
 
+# Stale metric files from dead workers would double-count after a restart.
+if [ -n "$PROMETHEUS_MULTIPROC_DIR" ]; then
+  mkdir -p "$PROMETHEUS_MULTIPROC_DIR" && rm -f "$PROMETHEUS_MULTIPROC_DIR"/*.db
+fi
+
 echo "Running migrations..."
 alembic upgrade head
 

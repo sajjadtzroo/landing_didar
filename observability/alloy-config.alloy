@@ -1,0 +1,65 @@
+// Alloy: discover every Docker container on the host, tail its stdout/stderr,
+// label by compose service, extract `level` from JSON logs, push to Loki.
+// New containers are picked up automatically — no per-service config needed.
+
+discovery.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "15s"
+}
+
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  // "/landing_didar-backend-1" -> container="landing_didar-backend-1"
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  // compose service name ("backend", "frontend", "db", "redis", "loki", ...)
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+
+  // compose project ("landing_didar" vs "didar-observability")
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    target_label  = "project"
+  }
+}
+
+loki.source.docker "containers" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.containers.output
+  forward_to = [loki.process.pipeline.receiver]
+}
+
+loki.process "pipeline" {
+  // Best-effort JSON parse (backend + Nitro emit the shared contract shape).
+  // Non-JSON lines (postgres, redis) pass through untouched.
+  stage.json {
+    expressions = {
+      level  = "level",
+      module = "module",
+    }
+  }
+
+  // `level` as an indexed label: bounded cardinality (7 values), enables
+  // fast {level="ERROR"} queries. module/request_id stay in the line —
+  // they'd explode the index as labels.
+  stage.labels {
+    values = {
+      level = "",
+    }
+  }
+
+  forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

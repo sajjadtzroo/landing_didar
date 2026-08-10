@@ -1,8 +1,10 @@
 import asyncio
+import time
+import uuid
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -27,13 +29,20 @@ from app.api.v1 import (
     admin_gallery,
     agent,
     auth,
+    client_logs,
     public,
 )
 from app.core.config import settings
 from sqlalchemy import text
 
 from app.core.db import engine
-from app.core.logging import setup_logging
+from app.core.logging import get_logger, setup_logging
+from app.core.metrics import (
+    HTTP_DURATION,
+    HTTP_REQUESTS,
+    RATELIMIT_TRIPS,
+    metrics_endpoint,
+)
 from app.services.gold_prices import refresh_loop
 
 # Route everything (app + uvicorn + sqlalchemy) through loguru's single sink.
@@ -122,6 +131,62 @@ async def audit_admin_mutations(request, call_next):
                 logger.warning("audit write failed for {} {}", request.method, path)
     return response
 
+
+# --- Request context: X-Request-ID + one access record + metrics per request ---
+# Added after the audit middleware so it runs OUTERMOST: every log line emitted
+# while handling the request (handlers, services, audit) carries the request_id.
+_access_log = get_logger("api.access")
+_error_log = get_logger("api.error")
+_UNLOGGED_PATHS = {"/health", "/ready", "/metrics"}
+
+
+@app.middleware("http")
+async def request_context(request: Request, call_next):
+    from loguru import logger as _logger
+
+    rid = (request.headers.get("X-Request-ID") or uuid.uuid4().hex)[:64]
+    start = time.perf_counter()
+    with _logger.contextualize(request_id=rid):
+        try:
+            response = await call_next(request)
+        except Exception:  # noqa: BLE001 — last-resort: log with context, 500 envelope
+            duration = round((time.perf_counter() - start) * 1000, 1)
+            _error_log.bind(
+                event="api.error.unhandled",
+                status_code=500,
+                duration_ms=duration,
+            ).opt(exception=True).error(
+                "{} {} failed", request.method, request.url.path
+            )
+            route = request.scope.get("route")
+            HTTP_REQUESTS.labels(
+                request.method, route.path if route else "unmatched", "500"
+            ).inc()
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error", "field": None},
+                headers={"X-Request-ID": rid},
+            )
+        duration = round((time.perf_counter() - start) * 1000, 1)
+        path = request.url.path
+        route = request.scope.get("route")
+        route_path = route.path if route else "unmatched"
+        if path not in _UNLOGGED_PATHS and not path.startswith(
+            settings.media_url_prefix + "/"
+        ):
+            HTTP_REQUESTS.labels(
+                request.method, route_path, str(response.status_code)
+            ).inc()
+            HTTP_DURATION.labels(request.method, route_path).observe(duration / 1000)
+            _access_log.bind(
+                event="http.request",
+                status_code=response.status_code,
+                duration_ms=duration,
+            ).info("{} {} -> {}", request.method, path, response.status_code)
+        response.headers["X-Request-ID"] = rid
+        return response
+
+
 # --- Consistent error envelope: {"detail": "...", "field": "..."} everywhere ---
 
 
@@ -138,6 +203,13 @@ async def validation_handler(request: Request, exc: RequestValidationError):
 
 @app.exception_handler(RateLimitExceeded)
 async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
+    from app.api.deps import get_client_ip
+
+    route = request.scope.get("route")
+    RATELIMIT_TRIPS.labels(route.path if route else "unmatched").inc()
+    get_logger("security").bind(
+        event="security.ratelimit.tripped", status_code=429
+    ).warning("rate limit on {} from {}", request.url.path, get_client_ip(request))
     return JSONResponse(
         status_code=429,
         content={"detail": "Too many requests. Please try again later.", "field": None},
@@ -201,8 +273,38 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/ready")
+async def ready():
+    """Readiness: DB + Redis (when configured). Fails while a dependency is
+    down so an orchestrator/proxy stops routing traffic here."""
+    checks = {"db": "ok", "redis": "ok" if settings.redis_url else "disabled"}
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+    except Exception:  # noqa: BLE001
+        checks["db"] = "down"
+    if settings.redis_url:
+        try:
+            from app.core import cache as _cache
+
+            await asyncio.wait_for(_cache._client().ping(), timeout=1.0)
+        except Exception:  # noqa: BLE001
+            checks["redis"] = "down"
+    if "down" in checks.values():
+        raise HTTPException(503, detail=checks)
+    return checks
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus scrape target (aggregates across gunicorn workers when
+    PROMETHEUS_MULTIPROC_DIR is set)."""
+    return metrics_endpoint()
+
+
 API = "/api/v1"
 app.include_router(public.router, prefix=API, tags=["public"])
+app.include_router(client_logs.router, prefix=API, tags=["client-logs"])
 app.include_router(account.router, prefix=f"{API}/account", tags=["account"])
 app.include_router(auth.router, prefix=f"{API}/admin", tags=["auth"])
 app.include_router(admin_orders.router, prefix=f"{API}/admin", tags=["admin:orders"])

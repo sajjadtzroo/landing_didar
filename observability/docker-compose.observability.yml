@@ -1,0 +1,110 @@
+# Self-hosted observability: Loki (logs) + Alloy (collector) + Grafana (UI +
+# alerting) + Prometheus (metrics) + cAdvisor/node-exporter (infra metrics).
+# Sized for a 4 vCPU / 8 GB VPS: the whole stack fits in ~1.2 GB RAM.
+#
+# Run from the repo root (joins the app stack's network to scrape /metrics):
+#   docker compose -f observability/docker-compose.observability.yml up -d
+#
+# Grafana: http://localhost:3002  (admin / set GRAFANA_ADMIN_PASSWORD)
+# Loki + Prometheus are NOT port-mapped — internal networks only.
+
+name: didar-observability
+
+services:
+  loki:
+    image: grafana/loki:3.3.2
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki-data:/loki
+    networks: [observability]
+    mem_limit: 512m
+    restart: unless-stopped
+
+  alloy:
+    # Promtail is EOL (LTS ended early 2026); Alloy is Grafana's collector now.
+    image: grafana/alloy:v1.6.1
+    command: run /etc/alloy/config.alloy --storage.path=/var/lib/alloy
+    volumes:
+      - ./alloy-config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy-data:/var/lib/alloy
+    networks: [observability]
+    mem_limit: 256m
+    restart: unless-stopped
+    depends_on: [loki]
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=30d
+      - --storage.tsdb.retention.size=2GB
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks: [observability, app]
+    mem_limit: 512m
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.5.1
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      # Telegram alerting: create a bot, set both vars, restart. Placeholders
+      # let Grafana boot (provisioning rejects empty tokens); deliveries fail
+      # until the real values are set.
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-0:placeholder-set-me}
+      # Keep a non-numeric placeholder: Grafana type-infers provisioning values
+      # after env expansion, and a bare number fails the string-typed chatid.
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-chat-id-set-me}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3002:3000"
+    networks: [observability]
+    mem_limit: 512m
+    restart: unless-stopped
+    depends_on: [loki, prometheus]
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    networks: [observability]
+    mem_limit: 256m
+    restart: unless-stopped
+
+  node-exporter:
+    # Linux-only (rootfs rslave mount fails on Docker Desktop/macOS). On the
+    # VPS run with: docker compose --profile linux -f ... up -d
+    profiles: [linux]
+    image: prom/node-exporter:v1.8.2
+    command: ["--path.rootfs=/host"]
+    volumes:
+      - /:/host:ro,rslave
+    networks: [observability]
+    mem_limit: 64m
+    restart: unless-stopped
+
+networks:
+  observability:
+  app:
+    # The application stack's network (compose project "landing_didar"), so
+    # Prometheus can scrape backend:8000/metrics by service name.
+    name: landing_didar_default
+    external: true
+
+volumes:
+  loki-data:
+  alloy-data:
+  prometheus-data:
+  grafana-data:
