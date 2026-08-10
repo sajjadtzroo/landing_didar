@@ -34,13 +34,19 @@ function pick(key: string) {
 <template>
   <section class="mb-10">
     <h2 class="mb-4 text-lg font-medium text-ink sm:text-xl">{{ CONTENT.shop.categoriesTitle }}</h2>
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
+    <!-- Mobile: one horizontal snap row (the 2×2 tile grid ate ~40vh and pushed
+         the catalogue below the fold); desktop keeps the four big tiles. -->
+    <div
+      class="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2
+        sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0"
+    >
       <button
         v-for="c in CATS"
         :key="c.key || 'all'"
         type="button"
-        class="group relative flex flex-col items-center gap-3 overflow-hidden border p-4
-          text-center transition duration-300 hover:-translate-y-1 sm:p-6"
+        class="group relative flex w-[124px] shrink-0 snap-start flex-col items-center gap-2
+          overflow-hidden border p-3 text-center transition duration-300 hover:-translate-y-1
+          sm:w-auto sm:shrink sm:gap-3 sm:p-6"
         :class="model === c.key
           ? 'border-navy bg-navy text-white shadow-luxury'
           : 'border-line bg-surface-raised text-ink hover:border-navy'"
@@ -49,14 +55,14 @@ function pick(key: string) {
       >
         <!-- Icon in a gold ring -->
         <span
-          class="flex h-14 w-14 items-center justify-center rounded-full border transition-colors sm:h-16 sm:w-16"
+          class="flex h-11 w-11 items-center justify-center rounded-full border transition-colors sm:h-16 sm:w-16"
           :class="model === c.key ? 'border-white/25 bg-white/10' : 'border-line group-hover:border-gold'"
           aria-hidden="true"
         >
           <svg
             viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4"
             stroke-linecap="round" stroke-linejoin="round"
-            class="h-8 w-8 transition-colors sm:h-9 sm:w-9"
+            class="h-6 w-6 transition-colors sm:h-9 sm:w-9"
             :class="model === c.key ? 'text-gold' : 'text-gold-text'"
           >
             <!-- all → four facets -->
@@ -85,7 +91,7 @@ function pick(key: string) {
           </svg>
         </span>
 
-        <span class="text-sm font-medium sm:text-base">{{ c.label }}</span>
+        <span class="whitespace-nowrap text-xs font-medium sm:whitespace-normal sm:text-base">{{ c.label }}</span>
 
         <!-- Count as a pill -->
         <span

@@ -32,11 +32,15 @@ const gram18 = computed(() =>
 </script>
 
 <template>
-  <!-- Renders nothing when the rate is unavailable — no empty chrome. -->
+  <!-- Renders nothing when the rate is unavailable — no empty chrome.
+       Mobile: sticky at the top of the scroll (price always visible while
+       browsing — the anchor number of a gold purchase); desktop stays in flow. -->
   <div
     v-if="gram18"
-    class="corner-soft mb-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border
-      border-gold/30 bg-surface-raised px-4 py-3 text-sm sm:justify-between sm:px-6"
+    class="corner-soft sticky top-2 z-30 mb-6 flex flex-wrap items-center justify-center gap-x-4
+      gap-y-1 border border-gold/30 bg-surface-raised/95 px-4 py-2.5 text-sm shadow-sm
+      backdrop-blur sm:static sm:mb-8 sm:justify-between sm:bg-surface-raised sm:px-6 sm:py-3
+      sm:shadow-none sm:backdrop-blur-none"
   >
     <span class="flex items-center gap-2 text-ink-muted">
       <span class="relative flex h-2 w-2" aria-hidden="true">

@@ -120,7 +120,8 @@ useHead({
   <main class="pt-16 sm:pt-28">
     <!-- Hero banner (full-bleed showroom image) -->
     <section class="mb-8 sm:mb-10">
-      <div class="relative aspect-[3/2] w-full overflow-hidden sm:aspect-[21/7]">
+      <!-- Mobile: shorter hero so the shopping surface starts near the fold -->
+      <div class="relative aspect-[16/9] w-full overflow-hidden sm:aspect-[21/7]">
         <!-- Plain img on purpose: one static, pre-optimized JPEG — IPX transforms
              kept breaking it (missing rename, degenerate 1px srcset) and buy nothing. -->
         <img
@@ -146,7 +147,9 @@ useHead({
       </div>
     </section>
 
-    <div class="mx-auto max-w-content px-5 sm:px-10">
+    <!-- flex-col so mobile can reorder: catalog rises above the (tall) curated
+         portfolio sections via CSS order; desktop keeps the editorial order. -->
+    <div class="mx-auto flex max-w-content flex-col px-5 sm:px-10">
       <!-- نرخ روز: live 18k market rate (the anchor of every gold storefront) -->
       <GoldPriceStrip />
 
@@ -156,12 +159,14 @@ useHead({
       <!-- Shop by category — the single category control (filter bar no longer duplicates it) -->
       <ShopCategories v-model="category" :counts="categoryCounts" />
 
-      <!-- Admin-curated collections (hidden while the user is actively filtering;
-           v-if so the DOM drops entirely rather than hiding) -->
-      <template v-if="!hasFilters">
+      <!-- Admin-curated collections (hidden while the user is actively filtering).
+           Mobile: pushed below the catalogue (order-2) — they buried the products
+           several screens deep; browsing beats editorial on a phone. -->
+      <section v-if="!hasFilters" class="order-2 sm:order-none">
         <PortfolioSection v-for="pf in portfolios" :key="pf.id" :portfolio="pf" />
-      </template>
+      </section>
 
+      <section class="order-1 sm:order-none">
       <!-- Catalogue section anchor -->
       <SectionDivider :eyebrow="CONTENT.shop.catalogEyebrow" :title="CONTENT.shop.catalogTitle" />
 
@@ -303,6 +308,7 @@ useHead({
           {{ CONTENT.shop.clearFilters }}
         </button>
       </div>
+      </section>
     </div>
 
     <!-- Advanced filters sheet (weight / اجرت / عیار) -->
