@@ -78,7 +78,7 @@ const collections = computed(() => portfolios.value || [])
             />
           </button>
           <div
-            class="invisible absolute end-0 top-full z-50 min-w-48 border border-line bg-surface/95
+            class="invisible absolute start-0 top-full z-50 min-w-48 border border-line bg-surface/95
               py-2 opacity-0 shadow-lg backdrop-blur-xl transition
               group-hover:visible group-hover:opacity-100
               group-focus-within:visible group-focus-within:opacity-100"

@@ -1,69 +1,30 @@
 <script setup lang="ts">
-import { SlidersHorizontal, X } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
+import { ChevronLeft } from 'lucide-vue-next'
+import { computed } from 'vue'
 import { CONTENT } from '~/constants/content'
 import type { Portfolio, Product } from '~/types'
 import { toFa } from '~/utils/format'
 
-// Storefront: full catalogue with add-to-cart (no online payment — the cart →
-// order flow captures the order as a lead). Reuses the 'products' payload.
+// Storefront SHOWCASE: hero, live rate, trust, categories, collections and the
+// top 10 pieces. The full filterable catalogue lives on /products — category
+// tiles and the "view all" CTA link there (?cat=… is read by useShopFilters).
 const { data: products, pending } = await useFetch<Product[]>('/products', {
   baseURL: useApiBase(),
   key: 'products',
   default: () => [],
 })
 
-// Admin-curated collections shown as sections atop the catalogue.
 const { data: portfolios } = await useFetch<Portfolio[]>('/portfolios', {
   baseURL: useApiBase(),
   key: 'portfolios',
   default: () => [],
 })
 
-const CATEGORIES = [
-  { key: 'daily', label: CONTENT.products.daily.title },
-  { key: 'lux_daily', label: CONTENT.products.lux_daily.title },
-  { key: 'luxury', label: CONTENT.products.luxury.title },
-] as const
-
-// URL-synced filter state (shareable, survives reload + back/forward).
-const { search, category, collection, sort, weightMin, weightMax, ojratMin, ojratMax, karat, clear } =
-  useShopFilters()
-
-// Advanced filters live in a sheet (all viewports — 3 controls, no need to
-// duplicate an inline desktop panel).
-const filtersOpen = ref(false)
-
-// Distinct karat values present (sorted). The control only shows when there's
-// more than one — most items are 18k.
-const karats = computed(() =>
-  [...new Set((products.value || []).map((p) => p.karat).filter((k): k is number => k != null))]
-    .sort((a, b) => a - b),
-)
-
-// Collection (= portfolio) filter options with live facet counts, plus a
-// membership set per collection for the client-side filter step. Counts are
-// unique products across the portfolio's groups.
-const collectionOptions = computed(() => {
-  return (portfolios.value || []).map((pf) => {
-    const ids = new Set<string>()
-    for (const g of pf.groups) for (const pr of g.products) ids.add(pr.id)
-    return { slug: pf.slug, name: pf.name, count: ids.size, ids }
-  })
-})
-const collectionIds = computed(
-  () => collectionOptions.value.find((c) => c.slug === collection.value)?.ids ?? null,
-)
-const collectionLabel = computed(
-  () => collectionOptions.value.find((c) => c.slug === collection.value)?.name,
-)
-
-// Facet counts per عیار (spec 3.5 — cheap client-side aggregate).
-const karatCounts = computed(() => {
-  const c: Record<number, number> = {}
-  for (const p of products.value || []) if (p.karat != null) c[p.karat] = (c[p.karat] || 0) + 1
-  return c
-})
+// Top 8 by the admin's sort order (the API already returns them sorted) —
+// fills the grid evenly: 4 rows of 2 on mobile, 2 rows of 4 on desktop.
+const SHOWCASE_COUNT = 8
+const showcase = computed(() => (products.value || []).slice(0, SHOWCASE_COUNT))
+const total = computed(() => (products.value || []).length)
 
 // Active-product count per category, for the category cards.
 const categoryCounts = computed(() => {
@@ -72,61 +33,10 @@ const categoryCounts = computed(() => {
   return c
 })
 
-// Count of active advanced-filter *groups*, for the filter button badge.
-const advancedCount = computed(
-  () =>
-    (collection.value ? 1 : 0) +
-    (weightMin.value || weightMax.value ? 1 : 0) +
-    (ojratMin.value || ojratMax.value ? 1 : 0) +
-    (karat.value !== '' ? 1 : 0),
-)
-const hasFilters = computed(
-  () => !!category.value || !!search.value.trim() || advancedCount.value > 0,
-)
-const categoryLabel = computed(() => CATEGORIES.find((c) => c.key === category.value)?.label)
-
-const SORT_OPTIONS = [
-  { value: 'newest', label: CONTENT.shop.sortNewest },
-  { value: 'weight_asc', label: CONTENT.shop.sortWeightAsc },
-  { value: 'weight_desc', label: CONTENT.shop.sortWeightDesc },
-] as const
-
-// A nullable numeric field passes only when present and inside any active bound.
-function inRange(val: string | null, min: string, max: string) {
-  if (!min && !max) return true
-  if (val == null) return false
-  const n = Number(val)
-  if (min && n < Number(min)) return false
-  if (max && n > Number(max)) return false
-  return true
+// Category tiles navigate to the catalogue pre-filtered (no local filtering here).
+function goToCategory(key: string) {
+  navigateTo(key ? { path: '/products', query: { cat: key } } : '/products')
 }
-
-const filtered = computed(() => {
-  const q = search.value.trim().toLowerCase()
-  let list = (products.value || []).filter((p) => {
-    if (category.value && p.category !== category.value) return false
-    if (collectionIds.value && !collectionIds.value.has(p.id)) return false
-    if (q && !p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q)) return false
-    if (!inRange(p.weight_grams, weightMin.value, weightMax.value)) return false
-    if (!inRange(p.ojrat_percent, ojratMin.value, ojratMax.value)) return false
-    if (karat.value !== '' && p.karat !== karat.value) return false
-    return true
-  })
-  // Weight sorts: nulls (unknown weight) always sink to the end.
-  const weight = (p: Product) => (p.weight_grams == null ? null : Number(p.weight_grams))
-  if (sort.value === 'weight_asc' || sort.value === 'weight_desc') {
-    const dir = sort.value === 'weight_asc' ? 1 : -1
-    list = [...list].sort((a, b) => {
-      const pa = weight(a); const pb = weight(b)
-      if (pa == null) return 1
-      if (pb == null) return -1
-      return (pa - pb) * dir
-    })
-  } else {
-    list = [...list].sort((a, b) => a.sort_order - b.sort_order)
-  }
-  return list
-})
 
 const canonical = `${useSiteUrl()}/shop`
 useHead({
@@ -173,8 +83,8 @@ useHead({
       </div>
     </section>
 
-    <!-- flex-col so mobile can reorder: catalog rises above the (tall) curated
-         portfolio sections via CSS order; desktop keeps the editorial order. -->
+    <!-- flex-col so mobile can reorder: the showcase grid rises above the curated
+         collections via CSS order; desktop keeps the editorial order. -->
     <div class="mx-auto flex max-w-content flex-col px-5 sm:px-10">
       <!-- نرخ روز: live 18k market rate (the anchor of every gold storefront) -->
       <GoldPriceStrip />
@@ -182,229 +92,46 @@ useHead({
       <!-- Trust: authenticity (→ /verify), warranty, buyback -->
       <ShopTrust />
 
-      <!-- Shop by category — the single category control (filter bar no longer duplicates it) -->
-      <ShopCategories v-model="category" :counts="categoryCounts" />
+      <!-- Shop by category — tiles open the catalogue pre-filtered -->
+      <ShopCategories :counts="categoryCounts" @update:model-value="goToCategory" />
 
-      <!-- Admin-curated collections: ONE carousel (2 per view) instead of stacked
-           per-collection product sections — every collection (eid, firooze, …)
-           visible in a swipe. Hidden while filtering. Mobile: below the catalogue
-           (order-2) so products stay near the fold. -->
-      <section v-if="!hasFilters" class="order-2 sm:order-none">
+      <!-- Admin-curated collections: ONE carousel (2 per view), every collection
+           (eid, firooze, …) reachable in a swipe. -->
+      <section class="order-2 sm:order-none">
         <CollectionCarousel :portfolios="portfolios" />
       </section>
 
       <section class="order-1 sm:order-none">
-      <!-- Catalogue section anchor -->
-      <SectionDivider :eyebrow="CONTENT.shop.catalogEyebrow" :title="CONTENT.shop.catalogTitle" />
+        <!-- Showcase: the top pieces + CTA into the full catalogue -->
+        <SectionDivider :eyebrow="CONTENT.shop.catalogEyebrow" :title="CONTENT.shop.catalogTitle" />
 
-      <!-- Filter toolbar: search · sort · advanced -->
-      <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <input
-          v-model="search"
-          type="search"
-          :placeholder="CONTENT.shop.searchPlaceholder"
-          class="form-control h-11 sm:max-w-xs"
-          aria-label="جستجو"
-        />
-        <div class="flex items-center gap-3 sm:ms-auto">
-          <!-- Sort segmented control -->
-          <div class="corner-soft flex overflow-hidden border border-line" role="group" :aria-label="CONTENT.shop.sortLabel">
-            <button
-              v-for="(o, i) in SORT_OPTIONS"
-              :key="o.value"
-              type="button"
-              class="h-11 whitespace-nowrap px-3 text-sm transition"
-              :class="[
-                sort === o.value ? 'bg-navy text-white' : 'text-ink-muted hover:text-ink',
-                i > 0 ? 'border-s border-line' : '',
-              ]"
-              :aria-pressed="sort === o.value"
-              @click="sort = o.value"
-            >
-              {{ o.label }}
-            </button>
-          </div>
-          <!-- Advanced filters (opens sheet) -->
-          <button
-            type="button"
-            class="flex h-11 shrink-0 items-center gap-2 border px-3 text-sm transition lg:hidden"
-            :class="advancedCount ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
-            @click="filtersOpen = true"
+        <div v-if="pending && !showcase.length" class="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+          <ProductCardSkeleton v-for="n in 8" :key="n" />
+        </div>
+
+        <div v-else class="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+          <ProductCard
+            v-for="(p, i) in showcase"
+            :key="p.id"
+            :product="p"
+            :index="i"
+            shop
+          />
+        </div>
+
+        <!-- CTA: the full catalogue (search, sort, filters) lives on /products -->
+        <div class="mb-16 mt-8 flex justify-center">
+          <NuxtLink
+            to="/products"
+            class="flex h-12 items-center gap-2 bg-navy px-8 text-sm font-medium text-white
+              transition duration-300 hover:bg-gold"
           >
-            <SlidersHorizontal :size="16" aria-hidden="true" />
-            {{ CONTENT.shop.advancedToggle }}
-            <span
-              v-if="advancedCount"
-              class="tnum flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 text-[11px] font-bold text-navy-deep"
-            >{{ toFa(advancedCount) }}</span>
-          </button>
+            {{ CONTENT.shop.viewAllProducts }}
+            <span v-if="total > SHOWCASE_COUNT" class="tnum text-white/80">({{ toFa(total) }})</span>
+            <ChevronLeft :size="16" class="rotate-180" aria-hidden="true" />
+          </NuxtLink>
         </div>
-      </div>
-
-      <!-- Active-filter chips + clear-all -->
-      <div v-if="hasFilters" class="mb-4 flex flex-wrap items-center gap-2">
-        <button
-          v-if="search.trim()"
-          type="button"
-          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
-            text-ink-muted transition hover:border-navy hover:text-ink"
-          :aria-label="`${CONTENT.shop.clearFilters}: ${CONTENT.shop.searchChip(search.trim())}`"
-          @click="search = ''"
-        >
-          {{ CONTENT.shop.searchChip(search.trim()) }}
-          <X :size="13" aria-hidden="true" />
-        </button>
-        <button
-          v-if="category"
-          type="button"
-          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
-            text-ink-muted transition hover:border-navy hover:text-ink"
-          :aria-label="`${CONTENT.shop.clearFilters}: ${categoryLabel}`"
-          @click="category = ''"
-        >
-          {{ categoryLabel }}
-          <X :size="13" aria-hidden="true" />
-        </button>
-        <button
-          v-if="collection"
-          type="button"
-          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
-            text-ink-muted transition hover:border-navy hover:text-ink"
-          :aria-label="`${CONTENT.shop.clearFilters}: ${collectionLabel}`"
-          @click="collection = ''"
-        >
-          {{ collectionLabel }}
-          <X :size="13" aria-hidden="true" />
-        </button>
-        <button
-          v-if="weightMin || weightMax"
-          type="button"
-          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
-            text-ink-muted transition hover:border-navy hover:text-ink"
-          @click="weightMin = ''; weightMax = ''"
-        >
-          {{ CONTENT.shop.weightChip(weightMin, weightMax) }}
-          <X :size="13" aria-hidden="true" />
-        </button>
-        <button
-          v-if="ojratMin || ojratMax"
-          type="button"
-          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
-            text-ink-muted transition hover:border-navy hover:text-ink"
-          @click="ojratMin = ''; ojratMax = ''"
-        >
-          {{ CONTENT.shop.ojratChip(ojratMin, ojratMax) }}
-          <X :size="13" aria-hidden="true" />
-        </button>
-        <button
-          v-if="karat !== ''"
-          type="button"
-          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
-            text-ink-muted transition hover:border-navy hover:text-ink"
-          @click="karat = ''"
-        >
-          {{ CONTENT.shop.karatChip(karat) }}
-          <X :size="13" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          class="text-xs text-gold-text underline underline-offset-2 hover:no-underline"
-          @click="clear"
-        >
-          {{ CONTENT.shop.clearAll }}
-        </button>
-      </div>
-
-      <!-- Desktop: sticky filter sidebar (RTL: first column = right) + results.
-           Instant apply here; the <lg sheet keeps staged confirm. -->
-      <div class="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start lg:gap-8">
-        <aside class="hidden lg:block" aria-label="فیلترها">
-          <div class="corner-soft sticky top-28 max-h-[calc(100dvh-8rem)] overflow-y-auto border border-line bg-surface-raised p-5">
-            <h2 class="mb-5 text-base font-medium">{{ CONTENT.shop.filtersTitle }}</h2>
-            <ShopFilterGroups
-              v-model:collection="collection"
-              v-model:weight-min="weightMin"
-              v-model:weight-max="weightMax"
-              v-model:ojrat-min="ojratMin"
-              v-model:ojrat-max="ojratMax"
-              v-model:karat="karat"
-              :collections="collectionOptions"
-              :karats="karats"
-              :karat-counts="karatCounts"
-            />
-          </div>
-        </aside>
-
-        <div>
-      <p class="mb-4 text-sm text-ink-muted" aria-live="polite">
-        {{ CONTENT.shop.resultCount(filtered.length) }}
-      </p>
-
-      <!-- Loading skeletons (client-side navigations / refetch) -->
-      <div v-if="pending && !filtered.length" class="grid grid-cols-2 gap-4 pb-16 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <ProductCardSkeleton v-for="n in 8" :key="n" />
-      </div>
-
-      <div v-else-if="filtered.length" class="grid grid-cols-2 gap-4 pb-16 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <ProductCard
-          v-for="(p, i) in filtered"
-          :key="p.id"
-          :product="p"
-          :index="i"
-          shop
-        />
-      </div>
-
-      <div v-else class="py-16 text-center">
-        <p class="text-ink-muted">{{ CONTENT.shop.empty }}</p>
-        <button
-          v-if="hasFilters"
-          type="button"
-          class="corner-soft mt-4 border border-navy px-4 py-2 text-sm text-ink transition
-            hover:bg-navy hover:text-white"
-          @click="clear"
-        >
-          {{ CONTENT.shop.clearFilters }}
-        </button>
-      </div>
-        </div>
-      </div>
       </section>
     </div>
-
-    <!-- Advanced filters sheet (weight / اجرت / عیار) -->
-    <BaseSheet v-model="filtersOpen" :title="CONTENT.shop.filtersTitle">
-      <ShopFilterGroups
-        v-model:collection="collection"
-        v-model:weight-min="weightMin"
-        v-model:weight-max="weightMax"
-        v-model:ojrat-min="ojratMin"
-        v-model:ojrat-max="ojratMax"
-        v-model:karat="karat"
-        :collections="collectionOptions"
-        :karats="karats"
-        :karat-counts="karatCounts"
-      />
-
-      <template #footer>
-        <div class="flex items-center gap-3">
-          <button
-            v-if="advancedCount"
-            type="button"
-            class="h-12 border border-line px-4 text-sm text-ink-muted transition hover:border-navy hover:text-ink"
-            @click="weightMin = ''; weightMax = ''; ojratMin = ''; ojratMax = ''; karat = ''"
-          >
-            {{ CONTENT.shop.clearAll }}
-          </button>
-          <button
-            type="button"
-            class="flex h-12 flex-1 items-center justify-center bg-navy text-base font-medium text-white transition hover:bg-gold"
-            @click="filtersOpen = false"
-          >
-            {{ CONTENT.shop.applyFilters }}
-          </button>
-        </div>
-      </template>
-    </BaseSheet>
   </main>
 </template>
