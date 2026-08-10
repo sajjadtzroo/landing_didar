@@ -76,7 +76,7 @@ useHead({
     <!-- Hero banner (full-bleed showroom image) -->
     <section class="mb-8 sm:mb-10">
       <!-- Mobile: shorter hero so the shopping surface starts near the fold -->
-      <div class="relative aspect-[16/9] w-full overflow-hidden sm:aspect-[21/7]">
+      <div class="relative aspect-[2/1] w-full overflow-hidden sm:aspect-[16/5]">
         <img
           v-for="(src, i) in HERO_SLIDES"
           :key="src"
@@ -90,17 +90,9 @@ useHead({
           :fetchpriority="i === 0 ? 'high' : 'auto'"
           :aria-hidden="i !== heroIndex"
         />
-        <div
-          class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent"
-          aria-hidden="true"
-        />
-        <div class="absolute inset-0 flex flex-col items-center justify-end px-5 pb-6 text-center sm:pb-12">
-          <p class="mb-2 text-[11px] tracking-[0.3em] text-gold sm:text-sm">{{ CONTENT.shop.heroEyebrow }}</p>
-          <h1 class="text-2xl font-medium text-white drop-shadow sm:text-5xl">{{ CONTENT.shop.title }}</h1>
-          <p class="mt-3 hidden max-w-2xl text-sm leading-7 text-white/85 sm:block sm:text-base">
-            {{ CONTENT.shop.description }}
-          </p>
-        </div>
+        <!-- Finished brand banners carry their own logo/copy, so no text overlay.
+             Keep the h1 for SEO/a11y, visually hidden. -->
+        <h1 class="sr-only">{{ CONTENT.shop.title }}</h1>
       </div>
     </section>
 
