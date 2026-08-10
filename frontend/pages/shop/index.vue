@@ -121,17 +121,16 @@ useHead({
     <!-- Hero banner (full-bleed showroom image) -->
     <section class="mb-8 sm:mb-10">
       <div class="relative aspect-[3/2] w-full overflow-hidden sm:aspect-[21/7]">
-        <NuxtImg
+        <!-- Plain img on purpose: one static, pre-optimized JPEG — IPX transforms
+             kept breaking it (missing rename, degenerate 1px srcset) and buy nothing. -->
+        <img
           src="/shop-hero-showroom.jpg"
           :alt="CONTENT.shop.title"
           class="h-full w-full object-cover"
           width="1250"
           height="884"
-          format="webp"
-          sizes="100vw"
           loading="eager"
           fetchpriority="high"
-          preload
         />
         <div
           class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent"
