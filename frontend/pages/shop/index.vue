@@ -27,7 +27,7 @@ const CATEGORIES = [
 ] as const
 
 // URL-synced filter state (shareable, survives reload + back/forward).
-const { search, category, sort, weightMin, weightMax, ojratMin, ojratMax, karat, clear } =
+const { search, category, collection, sort, weightMin, weightMax, ojratMin, ojratMax, karat, clear } =
   useShopFilters()
 
 // Advanced filters live in a sheet (all viewports — 3 controls, no need to
@@ -41,6 +41,30 @@ const karats = computed(() =>
     .sort((a, b) => a - b),
 )
 
+// Collection (= portfolio) filter options with live facet counts, plus a
+// membership set per collection for the client-side filter step. Counts are
+// unique products across the portfolio's groups.
+const collectionOptions = computed(() => {
+  return (portfolios.value || []).map((pf) => {
+    const ids = new Set<string>()
+    for (const g of pf.groups) for (const pr of g.products) ids.add(pr.id)
+    return { slug: pf.slug, name: pf.name, count: ids.size, ids }
+  })
+})
+const collectionIds = computed(
+  () => collectionOptions.value.find((c) => c.slug === collection.value)?.ids ?? null,
+)
+const collectionLabel = computed(
+  () => collectionOptions.value.find((c) => c.slug === collection.value)?.name,
+)
+
+// Facet counts per عیار (spec 3.5 — cheap client-side aggregate).
+const karatCounts = computed(() => {
+  const c: Record<number, number> = {}
+  for (const p of products.value || []) if (p.karat != null) c[p.karat] = (c[p.karat] || 0) + 1
+  return c
+})
+
 // Active-product count per category, for the category cards.
 const categoryCounts = computed(() => {
   const c: Record<string, number> = { daily: 0, lux_daily: 0, luxury: 0 }
@@ -51,6 +75,7 @@ const categoryCounts = computed(() => {
 // Count of active advanced-filter *groups*, for the filter button badge.
 const advancedCount = computed(
   () =>
+    (collection.value ? 1 : 0) +
     (weightMin.value || weightMax.value ? 1 : 0) +
     (ojratMin.value || ojratMax.value ? 1 : 0) +
     (karat.value !== '' ? 1 : 0),
@@ -80,6 +105,7 @@ const filtered = computed(() => {
   const q = search.value.trim().toLowerCase()
   let list = (products.value || []).filter((p) => {
     if (category.value && p.category !== category.value) return false
+    if (collectionIds.value && !collectionIds.value.has(p.id)) return false
     if (q && !p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q)) return false
     if (!inRange(p.weight_grams, weightMin.value, weightMax.value)) return false
     if (!inRange(p.ojrat_percent, ojratMin.value, ojratMax.value)) return false
@@ -200,7 +226,7 @@ useHead({
           <!-- Advanced filters (opens sheet) -->
           <button
             type="button"
-            class="flex h-11 shrink-0 items-center gap-2 border px-3 text-sm transition"
+            class="flex h-11 shrink-0 items-center gap-2 border px-3 text-sm transition lg:hidden"
             :class="advancedCount ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
             @click="filtersOpen = true"
           >
@@ -236,6 +262,17 @@ useHead({
           @click="category = ''"
         >
           {{ categoryLabel }}
+          <X :size="13" aria-hidden="true" />
+        </button>
+        <button
+          v-if="collection"
+          type="button"
+          class="corner-soft inline-flex items-center gap-1 border border-line px-2 py-1 text-xs
+            text-ink-muted transition hover:border-navy hover:text-ink"
+          :aria-label="`${CONTENT.shop.clearFilters}: ${collectionLabel}`"
+          @click="collection = ''"
+        >
+          {{ collectionLabel }}
           <X :size="13" aria-hidden="true" />
         </button>
         <button
@@ -277,16 +314,37 @@ useHead({
         </button>
       </div>
 
+      <!-- Desktop: sticky filter sidebar (RTL: first column = right) + results.
+           Instant apply here; the <lg sheet keeps staged confirm. -->
+      <div class="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <aside class="hidden lg:block" aria-label="فیلترها">
+          <div class="corner-soft sticky top-28 max-h-[calc(100dvh-8rem)] overflow-y-auto border border-line bg-surface-raised p-5">
+            <h2 class="mb-5 text-base font-medium">{{ CONTENT.shop.filtersTitle }}</h2>
+            <ShopFilterGroups
+              v-model:collection="collection"
+              v-model:weight-min="weightMin"
+              v-model:weight-max="weightMax"
+              v-model:ojrat-min="ojratMin"
+              v-model:ojrat-max="ojratMax"
+              v-model:karat="karat"
+              :collections="collectionOptions"
+              :karats="karats"
+              :karat-counts="karatCounts"
+            />
+          </div>
+        </aside>
+
+        <div>
       <p class="mb-4 text-sm text-ink-muted" aria-live="polite">
         {{ CONTENT.shop.resultCount(filtered.length) }}
       </p>
 
       <!-- Loading skeletons (client-side navigations / refetch) -->
-      <div v-if="pending && !filtered.length" class="grid grid-cols-2 gap-4 pb-16 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+      <div v-if="pending && !filtered.length" class="grid grid-cols-2 gap-4 pb-16 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
         <ProductCardSkeleton v-for="n in 8" :key="n" />
       </div>
 
-      <div v-else-if="filtered.length" class="grid grid-cols-2 gap-4 pb-16 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+      <div v-else-if="filtered.length" class="grid grid-cols-2 gap-4 pb-16 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
         <ProductCard
           v-for="(p, i) in filtered"
           :key="p.id"
@@ -308,52 +366,24 @@ useHead({
           {{ CONTENT.shop.clearFilters }}
         </button>
       </div>
+        </div>
+      </div>
       </section>
     </div>
 
     <!-- Advanced filters sheet (weight / اجرت / عیار) -->
     <BaseSheet v-model="filtersOpen" :title="CONTENT.shop.filtersTitle">
-      <div class="space-y-6">
-        <div class="flex flex-col gap-1.5">
-          <span class="text-sm text-ink-muted">{{ CONTENT.shop.weightLabel }}</span>
-          <div class="flex items-center gap-2">
-            <input v-model="weightMin" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.minLabel" class="form-control h-11" :aria-label="`${CONTENT.shop.weightLabel} ${CONTENT.shop.minLabel}`" />
-            <span class="text-ink-muted">–</span>
-            <input v-model="weightMax" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.maxLabel" class="form-control h-11" :aria-label="`${CONTENT.shop.weightLabel} ${CONTENT.shop.maxLabel}`" />
-          </div>
-        </div>
-        <div class="flex flex-col gap-1.5">
-          <span class="text-sm text-ink-muted">{{ CONTENT.shop.ojratLabel }}</span>
-          <div class="flex items-center gap-2">
-            <input v-model="ojratMin" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.minLabel" class="form-control h-11" :aria-label="`${CONTENT.shop.ojratLabel} ${CONTENT.shop.minLabel}`" />
-            <span class="text-ink-muted">–</span>
-            <input v-model="ojratMax" type="number" min="0" inputmode="decimal" :placeholder="CONTENT.shop.maxLabel" class="form-control h-11" :aria-label="`${CONTENT.shop.ojratLabel} ${CONTENT.shop.maxLabel}`" />
-          </div>
-        </div>
-        <div v-if="karats.length > 1" class="flex flex-col gap-1.5">
-          <span class="text-sm text-ink-muted">{{ CONTENT.shop.karatLabel }}</span>
-          <div class="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              class="h-11 border px-4 text-sm transition"
-              :class="karat === '' ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
-              @click="karat = ''"
-            >
-              {{ CONTENT.shop.all }}
-            </button>
-            <button
-              v-for="k in karats"
-              :key="k"
-              type="button"
-              class="tnum h-11 border px-4 text-sm transition"
-              :class="karat === k ? 'border-navy bg-navy text-white' : 'border-line text-ink-muted hover:border-navy'"
-              @click="karat = k"
-            >
-              {{ toFa(k) }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <ShopFilterGroups
+        v-model:collection="collection"
+        v-model:weight-min="weightMin"
+        v-model:weight-max="weightMax"
+        v-model:ojrat-min="ojratMin"
+        v-model:ojrat-max="ojratMax"
+        v-model:karat="karat"
+        :collections="collectionOptions"
+        :karats="karats"
+        :karat-counts="karatCounts"
+      />
 
       <template #footer>
         <div class="flex items-center gap-3">

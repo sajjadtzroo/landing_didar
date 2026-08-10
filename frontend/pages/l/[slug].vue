@@ -109,6 +109,7 @@ if (import.meta.client) {
         :eyebrow="g.eyebrow ?? undefined"
         :title="g.title"
         :description="g.description ?? undefined"
+        :view-all-to="i === groups.length - 1 ? '/shop' : undefined"
       />
     </template>
     <FaqAccordion v-if="c.sections.faq" id="faq" :faqs="c.faq" />

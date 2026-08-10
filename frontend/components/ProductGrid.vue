@@ -15,6 +15,9 @@ withDefaults(
     description?: string
     anchorId?: string
     flush?: boolean // stacked carousel: continue the previous section's band
+    // Route for the closing "view all products" CTA (spec: outline treatment,
+    // navigational <NuxtLink>, prefetched on viewport entry — NuxtLink default).
+    viewAllTo?: string
   }>(),
   {
     eyebrow: () => CONTENT.products.eyebrow,
@@ -120,6 +123,20 @@ if (import.meta.client) {
           <ChevronRight :size="20" />
         </button>
       </div>
+    </div>
+
+    <!-- Closing CTA: browse the whole catalogue. Outline = never competes with
+         the per-card add-to-cart primary. -->
+    <div v-if="viewAllTo" class="mt-10 px-5 text-center sm:px-10">
+      <NuxtLink
+        :to="viewAllTo"
+        class="inline-flex h-12 w-full max-w-md items-center justify-center gap-2 border
+          border-navy text-sm font-medium text-ink transition duration-300
+          hover:bg-navy hover:text-white sm:w-auto sm:px-10"
+      >
+        {{ CONTENT.shop.viewAllProducts }}
+        <ChevronLeft :size="16" aria-hidden="true" />
+      </NuxtLink>
     </div>
   </section>
 </template>

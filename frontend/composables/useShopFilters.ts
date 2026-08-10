@@ -28,6 +28,7 @@ export function useShopFilters() {
 
   const search = ref(str(q0.q))
   const category = ref(str(q0.cat)) // '' = all
+  const collection = ref(str(q0.col)) // portfolio slug; '' = all
   const sort = ref<ShopSort>(asSort(q0.sort))
   const weightMin = ref(str(q0.wmin))
   const weightMax = ref(str(q0.wmax))
@@ -40,12 +41,13 @@ export function useShopFilters() {
 
   // state → URL (replace: no history spam, filters aren't navigation steps)
   watch(
-    [search, category, sort, weightMin, weightMax, ojratMin, ojratMax, karat],
+    [search, category, collection, sort, weightMin, weightMax, ojratMin, ojratMax, karat],
     () => {
       if (syncing) return
       const query: Record<string, string> = {}
       if (search.value.trim()) query.q = search.value.trim()
       if (category.value) query.cat = category.value
+      if (collection.value) query.col = collection.value
       if (sort.value !== 'newest') query.sort = sort.value
       if (weightMin.value) query.wmin = weightMin.value
       if (weightMax.value) query.wmax = weightMax.value
@@ -63,6 +65,7 @@ export function useShopFilters() {
       syncing = true
       search.value = str(nq.q)
       category.value = str(nq.cat)
+      collection.value = str(nq.col)
       sort.value = asSort(nq.sort)
       weightMin.value = str(nq.wmin)
       weightMax.value = str(nq.wmax)
@@ -78,6 +81,7 @@ export function useShopFilters() {
   function clear() {
     search.value = ''
     category.value = ''
+    collection.value = ''
     weightMin.value = ''
     weightMax.value = ''
     ojratMin.value = ''
@@ -88,6 +92,7 @@ export function useShopFilters() {
   return {
     search,
     category,
+    collection,
     sort,
     weightMin,
     weightMax,
