@@ -46,6 +46,7 @@ const HERO_SLIDES = [
   '/shop-hero-2.jpg',
   '/shop-hero-3.jpg',
   '/shop-hero-4.jpg',
+  '/shop-hero-5.jpg',
 ]
 const heroIndex = ref(0)
 let heroTimer: ReturnType<typeof setInterval> | undefined
@@ -76,7 +77,7 @@ useHead({
     <!-- Hero banner (full-bleed showroom image) -->
     <section class="mb-8 sm:mb-10">
       <!-- Mobile: shorter hero so the shopping surface starts near the fold -->
-      <div class="relative aspect-[2/1] w-full overflow-hidden sm:aspect-[16/5]">
+      <div class="relative aspect-[16/5] w-full overflow-hidden">
         <img
           v-for="(src, i) in HERO_SLIDES"
           :key="src"
@@ -84,8 +85,8 @@ useHead({
           :alt="i === 0 ? CONTENT.shop.title : ''"
           class="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
           :class="i === heroIndex ? 'opacity-100' : 'opacity-0'"
-          width="1426"
-          height="1070"
+          width="1280"
+          height="400"
           :loading="i === 0 ? 'eager' : 'lazy'"
           :fetchpriority="i === 0 ? 'high' : 'auto'"
           :aria-hidden="i !== heroIndex"
