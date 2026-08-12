@@ -2,17 +2,17 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import resolve_admin
+from app.api.limiter import limiter
 from app.core.config import settings
 from app.core.db import get_db
-from app.api.limiter import limiter
 from app.core.security import (
     SESSION_COOKIE,
     issue_session,
     verify_password_async,
 )
-from app.models.user import AuditLog, User
-from app.schemas.auth import LoginIn, MeOut
+from app.domains.users.dependencies import resolve_admin
+from app.domains.users.models import AuditLog, User
+from app.domains.users.schemas import LoginIn, MeOut
 
 router = APIRouter()
 

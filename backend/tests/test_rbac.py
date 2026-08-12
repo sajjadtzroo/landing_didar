@@ -33,7 +33,7 @@ async def _login_env_admin(client):
 
 async def _insert_user(_sessionmaker, username, role, password="secret-123"):
     from app.core.security import hash_password
-    from app.models.user import User
+    from app.domains.users import User
 
     async with _sessionmaker() as s:
         u = User(username=username, password_hash=hash_password(password), role=role)
@@ -82,7 +82,7 @@ async def test_deactivated_user_locked_out_immediately(client, _sessionmaker):
     assert (await client.get(ME)).status_code == 200
     from sqlalchemy import update
 
-    from app.models.user import User
+    from app.domains.users import User
 
     async with _sessionmaker() as s:
         await s.execute(update(User).where(User.id == u.id).values(is_active=False))

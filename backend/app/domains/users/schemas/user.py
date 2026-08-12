@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.user import AdminRole
+from app.domains.users.models import AdminRole
 
 
 class UserCreate(BaseModel):

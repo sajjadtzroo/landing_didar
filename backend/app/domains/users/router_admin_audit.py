@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_superadmin
 from app.core.db import get_db
-from app.models.user import AuditLog
-from app.schemas.user import AuditListOut, AuditOut
+from app.domains.users.dependencies import require_superadmin
+from app.domains.users.models import AuditLog
+from app.domains.users.schemas import AuditListOut, AuditOut
 
 router = APIRouter(dependencies=[Depends(require_superadmin)])
 

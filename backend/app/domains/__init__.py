@@ -10,3 +10,4 @@ app factory both rely on that.
 
 from app.domains.content import models as _content_models  # noqa: F401
 from app.domains.pricing import models as _pricing_models  # noqa: F401
+from app.domains.users import models as _users_models  # noqa: F401

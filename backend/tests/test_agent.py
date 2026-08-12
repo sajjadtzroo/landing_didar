@@ -15,7 +15,7 @@ PRODUCTS = "/api/v1/admin/products"
 
 async def _mk_agent(_sessionmaker, username="agent1", password="agent-pass-99"):
     from app.core.security import hash_password
-    from app.models.user import User
+    from app.domains.users import User
 
     async with _sessionmaker() as s:
         u = User(
@@ -70,7 +70,7 @@ async def _mk_product(admin_client, weight=5):
 
 async def test_agent_endpoints_require_agent_role(client, _sessionmaker):
     from app.core.security import hash_password
-    from app.models.user import User
+    from app.domains.users import User
 
     async with _sessionmaker() as s:
         s.add(User(username="op9", password_hash=hash_password("operator-pass"), role="operator"))
@@ -214,7 +214,7 @@ async def test_agent_orders_hide_admin_fields(client, admin_client, _sessionmake
 async def test_superadmin_can_deliver_agent_order(client, admin_client, _sessionmaker):
     """Review fix: the oversight path — superadmin delivers any agent order."""
     from app.core.security import hash_password
-    from app.models.user import User
+    from app.domains.users import User
 
     agent = await _mk_agent(_sessionmaker)
     retailer = await _mk_retailer(_sessionmaker)
@@ -240,7 +240,7 @@ async def test_agent_mutations_are_audited(client, admin_client, _sessionmaker):
     """Review fix: agent order placement/delivery land in the audit trail."""
     from sqlalchemy import select
 
-    from app.models.user import AuditLog
+    from app.domains.users import AuditLog
 
     agent = await _mk_agent(_sessionmaker)
     retailer = await _mk_retailer(_sessionmaker)

@@ -5,12 +5,11 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_superadmin
 from app.core.db import get_db
-from app.core.security import hash_password_async, read_session
-from app.core.security import SESSION_COOKIE
-from app.models.user import User
-from app.schemas.user import UserCreate, UserOut, UserUpdate
+from app.core.security import SESSION_COOKIE, hash_password_async, read_session
+from app.domains.users.dependencies import require_superadmin
+from app.domains.users.models import User
+from app.domains.users.schemas import UserCreate, UserOut, UserUpdate
 
 router = APIRouter(dependencies=[Depends(require_superadmin)])
 

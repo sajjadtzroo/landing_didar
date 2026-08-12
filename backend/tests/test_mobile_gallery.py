@@ -16,7 +16,7 @@ VERIFY = "/api/v1/serials/verify"
 
 async def _mk_agent(_sessionmaker, username="galagent"):
     from app.core.security import hash_password
-    from app.models.user import User
+    from app.domains.users import User
 
     async with _sessionmaker() as s:
         u = User(username=username, password_hash=hash_password("agent-pass-99"), role="agent")

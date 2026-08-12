@@ -11,23 +11,30 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
+from sqlalchemy import text
 
 from app.api.limiter import limiter
 from app.api.v1 import (
     account,
+    admin_buybacks,
     admin_catalog,
     admin_customers,
+    admin_gallery,
     admin_orders,
     admin_serials,
     admin_stats,
-    admin_users,
-    admin_audit,
-    admin_buybacks,
-    admin_gallery,
     agent,
-    auth,
     client_logs,
     public,
+)
+from app.core.config import settings
+from app.core.db import engine
+from app.core.logging import get_logger, setup_logging
+from app.core.metrics import (
+    HTTP_DURATION,
+    HTTP_REQUESTS,
+    RATELIMIT_TRIPS,
+    metrics_endpoint,
 )
 from app.domains.content.router_admin_faqs import router as content_admin_faqs
 from app.domains.content.router_admin_landings import router as content_admin_landings
@@ -38,17 +45,9 @@ from app.domains.content.router_public import router as content_public
 from app.domains.pricing import refresh_loop
 from app.domains.pricing.router_admin import router as pricing_admin
 from app.domains.pricing.router_public import router as pricing_public
-from app.core.config import settings
-from sqlalchemy import text
-
-from app.core.db import engine
-from app.core.logging import get_logger, setup_logging
-from app.core.metrics import (
-    HTTP_DURATION,
-    HTTP_REQUESTS,
-    RATELIMIT_TRIPS,
-    metrics_endpoint,
-)
+from app.domains.users.router_admin_audit import router as users_admin_audit
+from app.domains.users.router_admin_users import router as users_admin_users
+from app.domains.users.router_auth import router as users_auth
 
 # Route everything (app + uvicorn + sqlalchemy) through loguru's single sink.
 setup_logging()
@@ -116,7 +115,7 @@ async def audit_admin_mutations(request, call_next):
     ):
         from app.core.db import SessionLocal
         from app.core.security import SESSION_COOKIE, read_session
-        from app.models.user import AuditLog
+        from app.domains.users import AuditLog
 
         actor = read_session(request.cookies.get(SESSION_COOKIE))
         if actor:
@@ -313,7 +312,7 @@ app.include_router(content_public, prefix=API, tags=["public"])
 app.include_router(pricing_public, prefix=API, tags=["public"])
 app.include_router(client_logs.router, prefix=API, tags=["client-logs"])
 app.include_router(account.router, prefix=f"{API}/account", tags=["account"])
-app.include_router(auth.router, prefix=f"{API}/admin", tags=["auth"])
+app.include_router(users_auth, prefix=f"{API}/admin", tags=["auth"])
 app.include_router(admin_orders.router, prefix=f"{API}/admin", tags=["admin:orders"])
 app.include_router(admin_catalog.router, prefix=f"{API}/admin", tags=["admin:catalog"])
 app.include_router(
@@ -331,8 +330,8 @@ app.include_router(admin_serials.router, prefix=f"{API}/admin", tags=["admin:ser
 app.include_router(
     admin_customers.router, prefix=f"{API}/admin", tags=["admin:customers"]
 )
-app.include_router(admin_users.router, prefix=f"{API}/admin", tags=["admin:users"])
-app.include_router(admin_audit.router, prefix=f"{API}/admin", tags=["admin:audit"])
+app.include_router(users_admin_users, prefix=f"{API}/admin", tags=["admin:users"])
+app.include_router(users_admin_audit, prefix=f"{API}/admin", tags=["admin:audit"])
 app.include_router(agent.router, prefix=f"{API}/agent", tags=["agent"])
 app.include_router(admin_buybacks.router, prefix=f"{API}/admin", tags=["admin:buybacks"])
 app.include_router(admin_gallery.router, prefix=f"{API}/admin", tags=["admin:gallery"])

@@ -9,10 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
 from app.core.db import get_db
+from app.models import AdminRole, User
 from app.models.agent import MobileGalleryItem
 from app.models.product import Product
 from app.models.product_serial import ProductSerial, ProductSerialStatus
-from app.models.user import AdminRole, User
 from app.schemas.agent import GalleryAssignIn, GalleryItemOut, GalleryOut
 from app.services import serials as serial_service
 
