@@ -1,82 +1,125 @@
-"""Unit tests for the one-off SMS sender (OTP codes). The Kavenegar HTTP call is
-mocked — no real network — and the log fallback is asserted to skip HTTP entirely.
-"""
+"""Unit tests for the PayamSMS client (OTP codes + order alerts share it).
+All HTTP is faked at the module's client — no real network."""
 
 import pytest
 
 from app.core.config import settings
 from app.shared import sms as sms_mod
+from app.shared.sms import SmsSendError, _to98
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
+TOKEN_RESP = {"access_token": "TOK1", "expires_in": 3600, "scope": "webservice"}
+SEND_OK = [{"customerId": None, "mobile": 989121234567, "serverId": "SRV1"}]
+
 
 class _FakeResp:
-    def __init__(self, raise_exc=None):
-        self._raise = raise_exc
-        self.raise_called = False
+    def __init__(self, json_data, status_code=200):
+        self._json = json_data
+        self.status_code = status_code
+
+    def json(self):
+        return self._json
 
     def raise_for_status(self):
-        self.raise_called = True
-        if self._raise:
-            raise self._raise
+        if self.status_code >= 400:
+            raise RuntimeError(f"http {self.status_code}")
 
 
-class _FakeClient:
-    """Stands in for httpx.AsyncClient as an async context manager."""
+class _FakeHttp:
+    """Stands in for the module-level httpx.AsyncClient."""
 
-    last = None  # captures the outgoing request for assertions
+    def __init__(self, responses):
+        # responses: list of (path-substring, _FakeResp) consumed in order for /send;
+        # /token always answered from token_resp (counted).
+        self.calls = []
+        self.send_responses = list(responses)
+        self.login_count = 0
 
-    def __init__(self, resp, *a, **k):
-        self._resp = resp
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *a):
-        return False
-
-    async def get(self, url, params=None):
-        _FakeClient.last = {"url": url, "params": params}
-        return self._resp
-
-
-def _install(monkeypatch, resp):
-    _FakeClient.last = None
-    monkeypatch.setattr(settings, "sms_provider", "kavenegar")
-    monkeypatch.setattr(settings, "sms_api_key", "KEY123")
-    monkeypatch.setattr(settings, "sms_sender", "10004321")
-    monkeypatch.setattr(sms_mod.httpx, "AsyncClient", lambda *a, **k: _FakeClient(resp))
+    async def post(self, path, headers=None, json=None):
+        self.calls.append({"path": path, "headers": headers, "json": json})
+        if "oauth/token" in path:
+            self.login_count += 1
+            return _FakeResp(TOKEN_RESP)
+        return self.send_responses.pop(0)
 
 
-async def test_send_sms_calls_kavenegar_with_expected_request(monkeypatch):
-    resp = _FakeResp()
-    _install(monkeypatch, resp)
+def _install(monkeypatch, send_responses):
+    fake = _FakeHttp(send_responses)
+    monkeypatch.setattr(settings, "sms_provider", "payamsms")
+    monkeypatch.setattr(settings, "payamsms_username", "didar")
+    monkeypatch.setattr(settings, "payamsms_password", "pw")
+    monkeypatch.setattr(settings, "payamsms_system_name", "didargold")
+    monkeypatch.setattr(settings, "payamsms_client_id", "cid")
+    monkeypatch.setattr(settings, "payamsms_client_secret", "csecret")
+    monkeypatch.setattr(settings, "sms_sender", "9820001234")
+    monkeypatch.setattr(sms_mod, "_client", fake)
+    # reset token cache between tests
+    monkeypatch.setattr(sms_mod, "_token", None)
+    monkeypatch.setattr(sms_mod, "_token_expires_at", 0.0)
+    return fake
+
+
+def test_to98_normalizes_local_numbers():
+    assert _to98("09121234567") == "989121234567"
+    assert _to98("989121234567") == "989121234567"
+    assert _to98("+989121234567") == "989121234567"
+
+
+async def test_send_logs_in_then_sends_with_bearer_and_98_number(monkeypatch):
+    fake = _install(monkeypatch, [_FakeResp(SEND_OK)])
 
     await sms_mod.send_sms("09121234567", "کد ورود دیدار: 424242")
 
-    assert _FakeClient.last is not None
-    assert "KEY123/sms/send.json" in _FakeClient.last["url"]
-    assert _FakeClient.last["params"] == {
-        "receptor": "09121234567",
-        "sender": "10004321",
-        "message": "کد ورود دیدار: 424242",
-    }
-    assert resp.raise_called is True  # HTTP errors are surfaced
+    login, send = fake.calls
+    assert "oauth/token" in login["path"]
+    assert login["headers"]["Authorization"].startswith("Basic ")
+    assert login["json"]["grant_type"] == "password"
+    assert login["json"]["scope"] == "webservice"
+
+    assert send["path"] == "/panel/webservice/send"
+    assert send["headers"]["Authorization"] == "Bearer TOK1"
+    assert send["json"] == [
+        {
+            "sender": "9820001234",
+            "recipient": "989121234567",
+            "body": "کد ورود دیدار: 424242",
+        }
+    ]
 
 
-async def test_send_sms_propagates_http_error(monkeypatch):
-    _install(monkeypatch, _FakeResp(raise_exc=RuntimeError("502")))
-    with pytest.raises(RuntimeError, match="502"):
+async def test_token_is_cached_across_sends(monkeypatch):
+    fake = _install(monkeypatch, [_FakeResp(SEND_OK), _FakeResp(SEND_OK)])
+    await sms_mod.send_sms("09121234567", "one")
+    await sms_mod.send_sms("09121234567", "two")
+    assert fake.login_count == 1  # second send reused the cached token
+
+
+async def test_401_triggers_one_relogin_and_retry(monkeypatch):
+    fake = _install(
+        monkeypatch, [_FakeResp({}, status_code=401), _FakeResp(SEND_OK)]
+    )
+    await sms_mod.send_sms("09121234567", "hi")
+    assert fake.login_count == 2  # initial login + re-login after 401
+    assert len([c for c in fake.calls if c["path"].endswith("/send")]) == 2
+
+
+async def test_error_code_in_response_raises(monkeypatch):
+    _install(
+        monkeypatch,
+        [_FakeResp([{"mobile": 989121234567, "errorCode": "E6",
+                     "description": "no credit"}])],
+    )
+    with pytest.raises(SmsSendError) as exc:
         await sms_mod.send_sms("09121234567", "hi")
+    assert exc.value.error_code == "E6"
 
 
-async def test_send_sms_logs_instead_of_calling_when_no_key(monkeypatch):
-    # No API key => log fallback; httpx must NOT be constructed at all.
-    monkeypatch.setattr(settings, "sms_provider", "kavenegar")
-    monkeypatch.setattr(settings, "sms_api_key", "")
+async def test_log_provider_skips_http_entirely(monkeypatch):
+    monkeypatch.setattr(settings, "sms_provider", "log")
 
-    def _boom(*a, **k):  # fail loudly if the HTTP path is taken
-        raise AssertionError("httpx should not be used in the log fallback")
+    def _boom():
+        raise AssertionError("http client must not be touched in log mode")
 
-    monkeypatch.setattr(sms_mod.httpx, "AsyncClient", _boom)
+    monkeypatch.setattr(sms_mod, "_http", _boom)
     assert await sms_mod.send_sms("09121234567", "hi") is None

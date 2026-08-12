@@ -70,7 +70,13 @@ services:
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
       COOKIE_SECURE: "false"
-      SMS_PROVIDER: log
+      SMS_PROVIDER: ${SMS_PROVIDER:-log}
+      SMS_SENDER: ${SMS_SENDER:-}
+      PAYAMSMS_SYSTEM_NAME: ${PAYAMSMS_SYSTEM_NAME:-}
+      PAYAMSMS_USERNAME: ${PAYAMSMS_USERNAME:-}
+      PAYAMSMS_PASSWORD: ${PAYAMSMS_PASSWORD:-}
+      PAYAMSMS_CLIENT_ID: ${PAYAMSMS_CLIENT_ID:-}
+      PAYAMSMS_CLIENT_SECRET: ${PAYAMSMS_CLIENT_SECRET:-}
       # Structured logs for the observability stack (human-readable if false).
       LOG_JSON: ${LOG_JSON:-true}
       APP_ENV: dev

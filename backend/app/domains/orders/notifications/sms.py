@@ -1,29 +1,19 @@
-import httpx
 from loguru import logger
 
 from app.core.config import settings
 from app.domains.orders.models import Order
 from app.domains.orders.notifications.base import format_order_message
+from app.shared.sms import send_sms
 
 
 class SmsAdapter:
-    """Kavenegar-style HTTP SMS. Swap the provider by changing the URL/params here
-    (or add another branch keyed on settings.sms_provider) — the protocol stays put.
-    """
+    """Order alerts ride the shared PayamSMS client — one provider integration
+    (app/shared/sms.py) serves both OTP codes and these notifications."""
 
     async def send_new_order(self, order: Order, admin_url: str) -> None:
-        message = format_order_message(order, admin_url)
-        url = (
-            f"https://api.kavenegar.com/v1/{settings.sms_api_key}/sms/send.json"
+        await send_sms(
+            settings.sms_admin_phone, format_order_message(order, admin_url)
         )
-        params = {
-            "receptor": settings.sms_admin_phone,
-            "sender": settings.sms_sender,
-            "message": message,
-        }
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.get(url, params=params)
-            resp.raise_for_status()
 
 
 class LogSmsAdapter:

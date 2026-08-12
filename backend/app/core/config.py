@@ -51,11 +51,16 @@ class Settings(BaseSettings):
     minio_bucket: str = ""
     minio_secure: bool = True  # https
 
-    # SMS notification (primary). Kavenegar-style HTTP by default; provider-swappable.
-    sms_provider: str = "kavenegar"  # kavenegar | log
-    sms_api_key: str = ""
-    sms_sender: str = ""
+    # SMS via PayamSMS REST v2.1 (OTP codes + admin order alerts).
+    # "log" stubs sends to the log so dev/tests work without creds.
+    sms_provider: str = "log"  # payamsms | log
+    sms_sender: str = ""  # dedicated line, 98-prefixed (e.g. 982000xxxx)
     sms_admin_phone: str = ""  # where new-order alerts go
+    payamsms_system_name: str = ""
+    payamsms_username: str = ""
+    payamsms_password: str = ""
+    payamsms_client_id: str = ""
+    payamsms_client_secret: str = ""
     admin_order_base_url: str = "http://localhost:3000/admin/orders"
 
     # Test phones: OTP dev_code is returned (and the real SMS skipped) for these

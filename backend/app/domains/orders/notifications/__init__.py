@@ -9,7 +9,7 @@ from app.domains.orders.notifications.sms import LogSmsAdapter, SmsAdapter
 
 
 def get_adapter() -> NotificationAdapter:
-    if not settings.sms_api_key or settings.sms_provider.lower() == "log":
+    if settings.sms_provider.lower() != "payamsms" or not settings.payamsms_username:
         # No creds configured => log to stdout so dev/tests never fail on a real send.
         return LogSmsAdapter()
     return SmsAdapter()

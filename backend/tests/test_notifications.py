@@ -26,15 +26,15 @@ def _fake_order():
 
 
 def test_get_adapter_falls_back_to_log_without_creds():
-    # Default config has no SMS_API_KEY, so the log adapter is used.
+    # Default config has no PayamSMS creds, so the log adapter is used.
     assert isinstance(get_adapter(), LogSmsAdapter)
 
 
 def test_get_adapter_uses_sms_when_configured(monkeypatch):
     from app.core.config import settings
 
-    monkeypatch.setattr(settings, "sms_provider", "kavenegar")
-    monkeypatch.setattr(settings, "sms_api_key", "test-key")
+    monkeypatch.setattr(settings, "sms_provider", "payamsms")
+    monkeypatch.setattr(settings, "payamsms_username", "didar")
     assert isinstance(get_adapter(), SmsAdapter)
 
 
@@ -51,65 +51,35 @@ async def test_log_adapter_send_does_not_raise():
     await LogSmsAdapter().send_new_order(_fake_order(), "http://x/admin/orders")
 
 
-# ---- SmsAdapter real HTTP path (mocked httpx, no network) ----
+# ---- SmsAdapter delegates to the shared PayamSMS client ----
 from app.domains.orders.notifications import sms as notif_sms  # noqa: E402
 
 
-class _FakeResp:
-    def __init__(self, raise_exc=None):
-        self._raise = raise_exc
-        self.raise_called = False
-
-    def raise_for_status(self):
-        self.raise_called = True
-        if self._raise:
-            raise self._raise
-
-
-class _FakeClient:
-    last = None
-
-    def __init__(self, resp, *a, **k):
-        self._resp = resp
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *a):
-        return False
-
-    async def get(self, url, params=None):
-        _FakeClient.last = {"url": url, "params": params}
-        return self._resp
-
-
 @pytest.mark.asyncio(loop_scope="session")
-async def test_sms_adapter_sends_formatted_order(monkeypatch):
+async def test_sms_adapter_sends_formatted_order_via_shared_client(monkeypatch):
     from app.core.config import settings
 
-    resp = _FakeResp()
-    _FakeClient.last = None
-    monkeypatch.setattr(settings, "sms_api_key", "KEY123")
-    monkeypatch.setattr(settings, "sms_sender", "10004321")
+    sent = {}
+
+    async def _fake_send(to, message):
+        sent["to"] = to
+        sent["message"] = message
+
     monkeypatch.setattr(settings, "sms_admin_phone", "09120000000")
-    monkeypatch.setattr(notif_sms.httpx, "AsyncClient", lambda *a, **k: _FakeClient(resp))
+    monkeypatch.setattr(notif_sms, "send_sms", _fake_send)
 
     order = _fake_order()
     await SmsAdapter().send_new_order(order, "http://x/admin/orders")
 
-    assert "KEY123/sms/send.json" in _FakeClient.last["url"]
-    p = _FakeClient.last["params"]
-    assert p["receptor"] == "09120000000" and p["sender"] == "10004321"
-    assert order.reference in p["message"]  # the formatted message is sent
-    assert resp.raise_called is True
+    assert sent["to"] == "09120000000"
+    assert order.reference in sent["message"]  # the formatted message is sent
 
 
 @pytest.mark.asyncio(loop_scope="session")
-async def test_sms_adapter_propagates_http_error(monkeypatch):
-    monkeypatch.setattr(
-        notif_sms.httpx,
-        "AsyncClient",
-        lambda *a, **k: _FakeClient(_FakeResp(raise_exc=RuntimeError("boom"))),
-    )
+async def test_sms_adapter_propagates_send_error(monkeypatch):
+    async def _boom(to, message):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(notif_sms, "send_sms", _boom)
     with pytest.raises(RuntimeError, match="boom"):
         await SmsAdapter().send_new_order(_fake_order(), "http://x/admin/orders")
