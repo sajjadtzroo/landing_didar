@@ -32,7 +32,6 @@ from app import domains as _domains  # noqa: F401  — registers migrated domain
 from app.models import (  # noqa: F401
     customer,
     order,
-    product,
 )
 
 TEST_DB_URL = os.getenv(

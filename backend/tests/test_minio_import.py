@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 
-import app.services.minio_import as mod
+import app.domains.catalog.minio_import as mod
 from app.core.config import settings
-from app.models.product import Product
+from app.domains.catalog import Product
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

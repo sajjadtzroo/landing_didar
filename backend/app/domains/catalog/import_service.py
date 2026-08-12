@@ -23,8 +23,7 @@ from loguru import logger
 from sqlalchemy import select
 
 from app.core import db as _db  # SessionLocal resolved at call time (test-patchable)
-from app.models.import_job import ImportJob
-from app.models.product import Product
+from app.domains.catalog.models import ImportJob, Product
 
 # CSV template — header order is the documented contract.
 COLUMNS = [
@@ -215,7 +214,7 @@ async def run_products_import(
 async def _sync_photos(skus: list[str]) -> dict:
     """Pull `{sku}/` photo folders from MinIO for the touched products (reuses
     the existing importer). Missing MinIO config → reported, not fatal."""
-    from app.services import minio_import
+    from app.domains.catalog import minio_import
 
     try:
         return await minio_import.import_product_images(skus=skus)

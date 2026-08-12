@@ -16,9 +16,9 @@ from pathlib import Path
 from loguru import logger
 from sqlalchemy import select
 
-from app.core.config import settings
 from app.core import db as _db  # SessionLocal resolved at call time (test-patchable)
-from app.models.product import Product
+from app.core.config import settings
+from app.domains.catalog.models import Product
 
 _IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".avif"}
 

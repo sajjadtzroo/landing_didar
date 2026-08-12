@@ -8,8 +8,8 @@ from sqlalchemy import func, select
 
 from app.core.content_defaults import default_content, groups_from_category_rows
 from app.core.db import SessionLocal
+from app.domains.catalog import Product
 from app.domains.content import FAQ, Landing
-from app.models.product import Product
 
 IMG = "https://didargold.com/images"
 

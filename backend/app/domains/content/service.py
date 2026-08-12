@@ -8,8 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.cache import cache_delete
+from app.domains.catalog import Product
 from app.domains.content.schemas import LandingGroupOut
-from app.models.product import Product
 
 
 async def bust_landing_cache(slug: str) -> None:

@@ -15,11 +15,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
 from app.core.db import get_db
-from app.models.import_job import ImportJob
-from app.models.product import Product
-from app.schemas.product import AdminProductOut, ProductCreate, ProductUpdate
-from app.schemas.import_job import ImportJobOut
-from app.services import product_import
+from app.domains.catalog import import_service as product_import
+from app.domains.catalog.models import ImportJob, Product
+from app.domains.catalog.schemas import (
+    AdminProductOut,
+    ImportJobOut,
+    ProductCreate,
+    ProductUpdate,
+)
 from app.services.storage import get_storage, sniff_ok
 
 router = APIRouter(dependencies=[Depends(require_admin)])

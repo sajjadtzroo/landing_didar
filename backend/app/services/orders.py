@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import Order, OrderItem, OrderStatus, OrderStatusLog
-from app.models.product import Product
+from app.models import Product
 from app.schemas.order import OrderCreate
 
 _REF_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no ambiguous chars

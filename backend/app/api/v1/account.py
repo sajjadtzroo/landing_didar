@@ -39,7 +39,7 @@ from app.models.customer import (
     OtpCode,
 )
 from app.models.order import Order
-from app.models.product import Product
+from app.models import Product
 from app.schemas.customer import (
     AddressIn,
     AddressOut,
@@ -51,7 +51,7 @@ from app.schemas.customer import (
     OtpVerifyIn,
 )
 from app.schemas.order import OrderTrackOut
-from app.schemas.product import ProductOut
+from app.domains.catalog import ProductOut
 from app.services.sms import send_sms
 from app.services.storage import get_storage
 

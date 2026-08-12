@@ -17,7 +17,6 @@ from app.api.limiter import limiter
 from app.api.v1 import (
     account,
     admin_buybacks,
-    admin_catalog,
     admin_customers,
     admin_gallery,
     admin_orders,
@@ -36,6 +35,8 @@ from app.core.metrics import (
     RATELIMIT_TRIPS,
     metrics_endpoint,
 )
+from app.domains.catalog.router_admin import router as catalog_admin
+from app.domains.catalog.router_public import router as catalog_public
 from app.domains.content.router_admin_faqs import router as content_admin_faqs
 from app.domains.content.router_admin_landings import router as content_admin_landings
 from app.domains.content.router_admin_portfolios import (
@@ -308,13 +309,14 @@ async def metrics():
 
 API = "/api/v1"
 app.include_router(public.router, prefix=API, tags=["public"])
+app.include_router(catalog_public, prefix=API, tags=["public"])
 app.include_router(content_public, prefix=API, tags=["public"])
 app.include_router(pricing_public, prefix=API, tags=["public"])
 app.include_router(client_logs.router, prefix=API, tags=["client-logs"])
 app.include_router(account.router, prefix=f"{API}/account", tags=["account"])
 app.include_router(users_auth, prefix=f"{API}/admin", tags=["auth"])
 app.include_router(admin_orders.router, prefix=f"{API}/admin", tags=["admin:orders"])
-app.include_router(admin_catalog.router, prefix=f"{API}/admin", tags=["admin:catalog"])
+app.include_router(catalog_admin, prefix=f"{API}/admin", tags=["admin:catalog"])
 app.include_router(
     content_admin_faqs, prefix=f"{API}/admin", tags=["admin:catalog"]
 )
