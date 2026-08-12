@@ -52,7 +52,8 @@ async def _login() -> str:
     resp = await _http().post(
         "/auth/oauth/token",
         headers={"Authorization": f"Basic {basic}"},
-        json={
+        # Must be form-encoded: the endpoint 403s on a JSON body.
+        data={
             "systemName": settings.payamsms_system_name,
             "username": settings.payamsms_username,
             "password": settings.payamsms_password,

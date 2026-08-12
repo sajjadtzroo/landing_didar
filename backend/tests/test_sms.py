@@ -36,8 +36,10 @@ class _FakeHttp:
         self.send_responses = list(responses)
         self.login_count = 0
 
-    async def post(self, path, headers=None, json=None):
-        self.calls.append({"path": path, "headers": headers, "json": json})
+    async def post(self, path, headers=None, json=None, data=None):
+        self.calls.append(
+            {"path": path, "headers": headers, "json": json, "data": data}
+        )
         if "oauth/token" in path:
             self.login_count += 1
             return _FakeResp(TOKEN_RESP)
@@ -74,8 +76,10 @@ async def test_send_logs_in_then_sends_with_bearer_and_98_number(monkeypatch):
     login, send = fake.calls
     assert "oauth/token" in login["path"]
     assert login["headers"]["Authorization"].startswith("Basic ")
-    assert login["json"]["grant_type"] == "password"
-    assert login["json"]["scope"] == "webservice"
+    # form-encoded, not JSON — the endpoint 403s on a JSON body
+    assert login["json"] is None
+    assert login["data"]["grant_type"] == "password"
+    assert login["data"]["scope"] == "webservice"
 
     assert send["path"] == "/panel/webservice/send"
     assert send["headers"]["Authorization"] == "Bearer TOK1"
