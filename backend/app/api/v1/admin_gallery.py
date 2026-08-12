@@ -12,9 +12,9 @@ from app.core.db import get_db
 from app.models import AdminRole, User
 from app.models.agent import MobileGalleryItem
 from app.models import Product
-from app.models.product_serial import ProductSerial, ProductSerialStatus
+from app.models import ProductSerial, ProductSerialStatus
 from app.schemas.agent import GalleryAssignIn, GalleryItemOut, GalleryOut
-from app.services import serials as serial_service
+from app.domains.serials import service as serial_service
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 

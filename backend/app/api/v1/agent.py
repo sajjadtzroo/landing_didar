@@ -14,7 +14,7 @@ from app.models import AdminRole, User
 from app.models.agent import AgentRetailer, AgentVisit, MobileGalleryItem
 from app.models import Customer
 from app.models import Order, OrderStatus
-from app.models.product_serial import ProductSerial, ProductSerialStatus
+from app.models import ProductSerial, ProductSerialStatus
 from app.schemas.agent import (
     AgentOrderCreate,
     AgentOrderDetailOut,
@@ -28,7 +28,7 @@ from app.schemas.agent import (
 )
 from app.domains.orders import DeliveryProof, OrderCreate
 from app.domains.orders import service as order_service
-from app.services import serials as serial_service
+from app.domains.serials import service as serial_service
 
 router = APIRouter()
 

@@ -15,13 +15,10 @@ from sqlalchemy import text
 
 from app.api.limiter import limiter
 from app.api.v1 import (
-    admin_buybacks,
     admin_gallery,
-    admin_serials,
     admin_stats,
     agent,
     client_logs,
-    public,
 )
 from app.core.config import settings
 from app.core.db import engine
@@ -47,6 +44,9 @@ from app.domains.orders.router_public import router as orders_public
 from app.domains.pricing import refresh_loop
 from app.domains.pricing.router_admin import router as pricing_admin
 from app.domains.pricing.router_public import router as pricing_public
+from app.domains.serials.router_admin import router as serials_admin
+from app.domains.serials.router_admin_buybacks import router as serials_admin_buybacks
+from app.domains.serials.router_public import router as serials_public
 from app.domains.users.router_admin_audit import router as users_admin_audit
 from app.domains.users.router_admin_users import router as users_admin_users
 from app.domains.users.router_auth import router as users_auth
@@ -309,9 +309,9 @@ async def metrics():
 
 
 API = "/api/v1"
-app.include_router(public.router, prefix=API, tags=["public"])
 app.include_router(catalog_public, prefix=API, tags=["public"])
 app.include_router(orders_public, prefix=API, tags=["public"])
+app.include_router(serials_public, prefix=API, tags=["public"])
 app.include_router(content_public, prefix=API, tags=["public"])
 app.include_router(pricing_public, prefix=API, tags=["public"])
 app.include_router(client_logs.router, prefix=API, tags=["client-logs"])
@@ -330,12 +330,12 @@ app.include_router(
 )
 app.include_router(admin_stats.router, prefix=f"{API}/admin", tags=["admin:stats"])
 app.include_router(pricing_admin, prefix=f"{API}/admin", tags=["admin:prices"])
-app.include_router(admin_serials.router, prefix=f"{API}/admin", tags=["admin:serials"])
+app.include_router(serials_admin, prefix=f"{API}/admin", tags=["admin:serials"])
 app.include_router(
     customers_admin, prefix=f"{API}/admin", tags=["admin:customers"]
 )
 app.include_router(users_admin_users, prefix=f"{API}/admin", tags=["admin:users"])
 app.include_router(users_admin_audit, prefix=f"{API}/admin", tags=["admin:audit"])
 app.include_router(agent.router, prefix=f"{API}/agent", tags=["agent"])
-app.include_router(admin_buybacks.router, prefix=f"{API}/admin", tags=["admin:buybacks"])
+app.include_router(serials_admin_buybacks, prefix=f"{API}/admin", tags=["admin:buybacks"])
 app.include_router(admin_gallery.router, prefix=f"{API}/admin", tags=["admin:gallery"])

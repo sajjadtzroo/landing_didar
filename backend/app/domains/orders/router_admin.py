@@ -16,7 +16,7 @@ from app.domains.orders.schemas import (
     OrderListOut,
     OrderUpdate,
 )
-from app.services import serials as serial_service
+from app.domains.serials import service as serial_service
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 

@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.product_serial import ProductSerialStatus
+from app.domains.serials.serial_models import ProductSerialStatus
 
 
 class SerialGenerate(BaseModel):

@@ -103,7 +103,7 @@ async def test_buyback_open_request_unique_enforced_by_db(admin_client, _session
     the app-level check is bypassed — that's the concurrent-request backstop."""
     from sqlalchemy.exc import IntegrityError
 
-    from app.models.warranty import BuybackRequest
+    from app.domains.serials import BuybackRequest
 
     row = await _sold_serial(admin_client)
     serial_id = uuid.UUID(row["id"])

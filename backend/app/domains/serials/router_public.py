@@ -1,3 +1,9 @@
+"""Public serial-passport routes: authenticity verify, QR label, warranty
+activation and buyback requests.
+
+Moved verbatim from app/api/v1/public.py during the domain migration;
+registered with tags=["public"] so OpenAPI is unchanged."""
+
 import asyncio
 from datetime import UTC, datetime, timedelta
 
@@ -10,13 +16,29 @@ from app.api.deps import get_client_ip
 from app.api.limiter import limiter
 from app.core.config import settings
 from app.core.db import get_db
+from app.domains.catalog import Product
 from app.domains.orders import hash_ip
-from app.models import Product
-from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialEvent
-from app.models.warranty import BuybackRequest, BuybackStatus, Warranty
-from app.schemas.serial import SerialEventOut, SerialVerifyOut, WarrantyState
-from app.schemas.warranty import BuybackCreate, BuybackCreatedOut, WarrantyActivate
-from app.services import serials as serial_service
+from app.domains.serials import service as serial_service
+from app.domains.serials.serial_models import (
+    ProductSerial,
+    ProductSerialStatus,
+    SerialEvent,
+)
+from app.domains.serials.serial_schemas import (
+    SerialEventOut,
+    SerialVerifyOut,
+    WarrantyState,
+)
+from app.domains.serials.warranty_models import (
+    BuybackRequest,
+    BuybackStatus,
+    Warranty,
+)
+from app.domains.serials.warranty_schemas import (
+    BuybackCreate,
+    BuybackCreatedOut,
+    WarrantyActivate,
+)
 
 router = APIRouter()
 

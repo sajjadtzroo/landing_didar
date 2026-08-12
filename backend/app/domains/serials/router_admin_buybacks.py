@@ -9,10 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
 from app.core.db import get_db
-from app.models.product_serial import ProductSerial
-from app.models.warranty import BuybackRequest, BuybackStatus
-from app.schemas.warranty import BuybackListOut, BuybackOut, BuybackUpdate
-from app.services import serials as serial_service
+from app.domains.serials import service as serial_service
+from app.domains.serials.serial_models import ProductSerial
+from app.domains.serials.warranty_models import BuybackRequest, BuybackStatus
+from app.domains.serials.warranty_schemas import (
+    BuybackListOut,
+    BuybackOut,
+    BuybackUpdate,
+)
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
