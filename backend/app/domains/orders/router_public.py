@@ -16,6 +16,7 @@ from fastapi import (
 )
 from loguru import logger
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.cache import cache_get, cache_set
@@ -135,6 +136,25 @@ async def create_order(
     order = await order_service.create_order(
         db, payload, idempotency_key, get_client_ip(request)
     )
+    # Auto-register the guest as a customer (identity = phone) so they show up
+    # in the admin customers panel immediately; a later OTP login with the same
+    # phone lands on this account. Separate commit — never rolls back the order.
+    if customer_id is None:
+        exists = (
+            await db.execute(select(Customer).where(Customer.phone == payload.phone))
+        ).scalar_one_or_none()
+        if exists is None:
+            db.add(
+                Customer(
+                    phone=payload.phone,
+                    full_name=payload.full_name,
+                    store_name=payload.store_name,
+                )
+            )
+            try:
+                await db.commit()
+            except IntegrityError:
+                await db.rollback()  # concurrent order with same phone won the race
     # Notify AFTER commit, in the background — never rolls back the order.
     background.add_task(_notify, order.id, settings.admin_order_base_url)
     return OrderCreatedOut(reference=order.reference, total=order.total)

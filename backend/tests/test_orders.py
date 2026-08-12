@@ -77,6 +77,17 @@ async def test_guest_order_claimed_after_otp_login(client, order_payload):
 
 
 @_asyncio
+async def test_guest_order_registers_customer(client, admin_client, order_payload):
+    # A guest order auto-creates a Customer (identity = phone) in the admin panel.
+    phone = "09126666666"
+    r = await client.post("/api/v1/orders", json=order_payload(phone=phone))
+    assert r.status_code == 201, r.text
+    customers = (await admin_client.get("/api/v1/admin/customers")).json()
+    match = [c for c in customers if c["phone"] == phone]
+    assert match and match[0]["full_name"] == "Ali Rezaei"
+
+
+@_asyncio
 async def test_logged_in_order_binds_session_phone(client, order_payload):
     # A session phone overrides whatever the client sends in the payload.
     await _login(client, "09128888888")
