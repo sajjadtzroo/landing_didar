@@ -18,7 +18,6 @@ from app.api.v1 import (
     admin_catalog,
     admin_customers,
     admin_orders,
-    admin_prices,
     admin_serials,
     admin_stats,
     admin_users,
@@ -36,6 +35,9 @@ from app.domains.content.router_admin_portfolios import (
     router as content_admin_portfolios,
 )
 from app.domains.content.router_public import router as content_public
+from app.domains.pricing import refresh_loop
+from app.domains.pricing.router_admin import router as pricing_admin
+from app.domains.pricing.router_public import router as pricing_public
 from app.core.config import settings
 from sqlalchemy import text
 
@@ -47,7 +49,6 @@ from app.core.metrics import (
     RATELIMIT_TRIPS,
     metrics_endpoint,
 )
-from app.services.gold_prices import refresh_loop
 
 # Route everything (app + uvicorn + sqlalchemy) through loguru's single sink.
 setup_logging()
@@ -309,6 +310,7 @@ async def metrics():
 API = "/api/v1"
 app.include_router(public.router, prefix=API, tags=["public"])
 app.include_router(content_public, prefix=API, tags=["public"])
+app.include_router(pricing_public, prefix=API, tags=["public"])
 app.include_router(client_logs.router, prefix=API, tags=["client-logs"])
 app.include_router(account.router, prefix=f"{API}/account", tags=["account"])
 app.include_router(auth.router, prefix=f"{API}/admin", tags=["auth"])
@@ -324,7 +326,7 @@ app.include_router(
     content_admin_portfolios, prefix=f"{API}/admin", tags=["admin:portfolios"]
 )
 app.include_router(admin_stats.router, prefix=f"{API}/admin", tags=["admin:stats"])
-app.include_router(admin_prices.router, prefix=f"{API}/admin", tags=["admin:prices"])
+app.include_router(pricing_admin, prefix=f"{API}/admin", tags=["admin:prices"])
 app.include_router(admin_serials.router, prefix=f"{API}/admin", tags=["admin:serials"])
 app.include_router(
     admin_customers.router, prefix=f"{API}/admin", tags=["admin:customers"]

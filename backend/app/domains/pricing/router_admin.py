@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 
 from app.api.deps import require_admin
-from app.services.gold_prices import get_gold_prices
+from app.domains.pricing.service import get_gold_prices
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 

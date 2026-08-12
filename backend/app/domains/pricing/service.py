@@ -16,7 +16,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.core.cache import cache_get, cache_set
 from app.core.db import SessionLocal
-from app.models.gold_price import GoldPriceSnapshot
+from app.domains.pricing.models import GoldPriceSnapshot
 
 TGJU_URL = "https://call.tgju.org/ajax.json"
 _TTL = 90.0  # seconds; TGJU updates every few seconds but the panel polls ~60s

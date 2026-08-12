@@ -32,7 +32,6 @@ from app.schemas.serial import SerialEventOut, SerialVerifyOut, WarrantyState
 from app.schemas.warranty import BuybackCreate, BuybackCreatedOut, WarrantyActivate
 from app.services import orders as order_service
 from app.services import serials as serial_service
-from app.services.gold_prices import get_gold_prices
 from app.services.notifications import get_adapter
 
 router = APIRouter()
@@ -74,15 +73,6 @@ async def get_product(slug: str, db: AsyncSession = Depends(get_db)):
     if product is None:
         raise HTTPException(404, detail="Product not found")
     return product
-
-
-@router.get("/prices")
-async def public_prices(response: Response) -> dict:
-    """Live market rates (TGJU) for the storefront نرخ روز strip. Same payload as
-    the admin board — it's public market data; the service's in-process cache +
-    background refresh_loop do the throttling, so this adds no TGJU load."""
-    response.headers["Cache-Control"] = "public, max-age=120"
-    return await get_gold_prices()
 
 
 @router.get("/orders/track", response_model=OrderTrackOut)

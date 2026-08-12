@@ -3,7 +3,7 @@
 # cleanup step of the migration. remove in step 10.
 from app.domains.content.models import FAQ, Landing, Portfolio
 from app.models.customer import Customer, CustomerAddress, Favorite, OtpCode
-from app.models.gold_price import GoldPriceSnapshot
+from app.domains.pricing.models import GoldPriceSnapshot
 from app.models.import_job import ImportJob
 from app.models.order import Order, OrderItem, OrderStatus, OrderStatusLog
 from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialScan

@@ -2,7 +2,7 @@
 
 import pytest
 
-import app.api.v1.public as public
+import app.domains.pricing.router_public as public
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
