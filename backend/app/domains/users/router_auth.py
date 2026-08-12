@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.limiter import limiter
 from app.core.config import settings
 from app.core.db import get_db
+from app.core.limiter import limiter
 from app.core.security import (
     SESSION_COOKIE,
     issue_session,

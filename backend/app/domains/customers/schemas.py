@@ -3,8 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.constants.provinces import IRAN_PROVINCES
-from app.domains.orders import PHONE_RE
+from app.shared.provinces import IRAN_PROVINCES
+from app.shared.validation import PHONE_RE
 
 VALID_PROVINCES = set(IRAN_PROVINCES)
 

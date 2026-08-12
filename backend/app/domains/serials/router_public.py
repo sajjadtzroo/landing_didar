@@ -12,10 +12,10 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_client_ip
-from app.api.limiter import limiter
 from app.core.config import settings
 from app.core.db import get_db
+from app.core.limiter import limiter
+from app.core.security import get_client_ip
 from app.domains.catalog import Product
 from app.domains.orders import hash_ip
 from app.domains.serials import service as serial_service
@@ -168,7 +168,7 @@ async def activate_warranty(
     except IntegrityError:
         # Concurrent activation won the race on the serial_id unique constraint.
         await db.rollback()
-        raise HTTPException(409, detail="گارانتی این قطعه قبلاً فعال شده است")
+        raise HTTPException(409, detail="گارانتی این قطعه قبلاً فعال شده است") from None
     return WarrantyState(started_at=now, expires_at=warranty.expires_at, active=True)
 
 
@@ -205,7 +205,7 @@ async def request_buyback(
     except IntegrityError:
         # Concurrent request won the race on the partial-unique open-request index.
         await db.rollback()
-        raise HTTPException(409, detail="برای این قطعه یک درخواست در حال بررسی وجود دارد")
+        raise HTTPException(409, detail="برای این قطعه یک درخواست در حال بررسی وجود دارد") from None
     return BuybackCreatedOut(status=BuybackStatus.under_review)
 
 

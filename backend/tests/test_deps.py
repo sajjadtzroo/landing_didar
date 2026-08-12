@@ -3,7 +3,7 @@ request-like object, so no app/DB needed."""
 
 from types import SimpleNamespace
 
-from app.api.deps import get_client_ip
+from app.core.security import get_client_ip
 
 
 def _req(xff=None, client_host=None):

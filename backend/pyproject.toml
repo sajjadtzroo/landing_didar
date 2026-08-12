@@ -26,10 +26,28 @@ ignore = ["B008"]  # FastAPI Depends() in defaults is idiomatic
 # Persian seed copy and long connection-string defaults read fine over 88 cols.
 "app/seed.py" = ["E501"]
 "app/core/config.py" = ["E501"]
+# Pre-existing long lines (mostly Persian copy / query builders), carried through
+# the domain migration untouched. Burn down opportunistically, then delete lines.
+"app/core/content_defaults.py" = ["E501"]
+"app/core/db.py" = ["E501"]
+"app/main.py" = ["E501"]
+"app/domains/agents/router_admin_gallery.py" = ["E501"]
+"app/domains/catalog/import_service.py" = ["E501"]
+"app/domains/catalog/minio_import.py" = ["E501"]
+"app/domains/catalog/models/import_job.py" = ["E501"]
+"app/domains/catalog/router_admin.py" = ["E501"]
+"app/domains/content/router_admin_portfolios.py" = ["E501"]
+"app/domains/pricing/models.py" = ["E501"]
+"app/domains/serials/router_admin.py" = ["E501"]
+"app/domains/serials/router_admin_buybacks.py" = ["E501"]
+"app/domains/serials/router_public.py" = ["E501"]
+"app/domains/serials/serial_models.py" = ["E501"]
+"app/domains/serials/warranty_models.py" = ["E501"]
+"app/domains/users/router_admin_users.py" = ["E501"]
+"app/domains/users/router_auth.py" = ["E501"]
 
-# Architecture contract (G2/G8): run `lint-imports` locally and in CI.
-# Contracts grow as domains migrate; the DAG contract is completed in the
-# final cleanup commit.
+# Architecture contract (G2/G8): run `lint-imports` locally and in CI
+# (.github/workflows/backend.yml). Structure: docs/architecture/02-domain-map.md.
 [tool.importlinter]
 root_package = "app"
 
@@ -37,3 +55,220 @@ root_package = "app"
 name = "Framework layering: domains -> shared -> core, never the reverse"
 type = "layers"
 layers = ["app.domains", "app.shared", "app.core"]
+
+[[tool.importlinter.contracts]]
+name = "Domain DAG (02-domain-map.md) — three documented router-level exceptions"
+type = "layers"
+containers = ["app.domains"]
+layers = [
+  "agents",
+  "dashboard",
+  "serials",
+  "orders",
+  "customers",
+  "content",
+  "catalog",
+  "pricing",
+  "users",
+]
+ignore_imports = [
+  "app.domains.orders.router_admin -> app.domains.serials.service",
+  "app.domains.customers.router_account -> app.domains.orders",
+  "app.domains.users.router_admin_users -> app.domains.agents",
+]
+
+[[tool.importlinter.contracts]]
+name = "agents: internals only via the domain public API"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+  "app.domains.dashboard",
+  "app.domains.serials",
+  "app.domains.orders",
+  "app.domains.customers",
+  "app.domains.content",
+  "app.domains.catalog",
+  "app.domains.pricing",
+  "app.domains.users",
+]
+forbidden_modules = [
+  "app.domains.agents.models",
+  "app.domains.agents.schemas",
+  "app.domains.agents.router_agent",
+  "app.domains.agents.router_admin_gallery",
+]
+
+[[tool.importlinter.contracts]]
+name = "dashboard: internals only via the domain public API"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+  "app.domains.agents",
+  "app.domains.serials",
+  "app.domains.orders",
+  "app.domains.customers",
+  "app.domains.content",
+  "app.domains.catalog",
+  "app.domains.pricing",
+  "app.domains.users",
+]
+forbidden_modules = [
+  "app.domains.dashboard.router_admin",
+]
+
+[[tool.importlinter.contracts]]
+name = "serials: internals only via the domain public API"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+  "app.domains.agents",
+  "app.domains.dashboard",
+  "app.domains.orders",
+  "app.domains.customers",
+  "app.domains.content",
+  "app.domains.catalog",
+  "app.domains.pricing",
+  "app.domains.users",
+]
+forbidden_modules = [
+  "app.domains.serials.serial_models",
+  "app.domains.serials.warranty_models",
+  "app.domains.serials.serial_schemas",
+  "app.domains.serials.warranty_schemas",
+  "app.domains.serials.router_admin",
+  "app.domains.serials.router_admin_buybacks",
+  "app.domains.serials.router_public",
+]
+
+[[tool.importlinter.contracts]]
+name = "orders: internals only via the domain public API"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+  "app.domains.agents",
+  "app.domains.dashboard",
+  "app.domains.serials",
+  "app.domains.customers",
+  "app.domains.content",
+  "app.domains.catalog",
+  "app.domains.pricing",
+  "app.domains.users",
+]
+forbidden_modules = [
+  "app.domains.orders.models",
+  "app.domains.orders.schemas",
+  "app.domains.orders.router_admin",
+  "app.domains.orders.router_public",
+]
+
+[[tool.importlinter.contracts]]
+name = "customers: internals only via the domain public API"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+  "app.domains.agents",
+  "app.domains.dashboard",
+  "app.domains.serials",
+  "app.domains.orders",
+  "app.domains.content",
+  "app.domains.catalog",
+  "app.domains.pricing",
+  "app.domains.users",
+]
+forbidden_modules = [
+  "app.domains.customers.models",
+  "app.domains.customers.schemas",
+  "app.domains.customers.dependencies",
+  "app.domains.customers.router_account",
+  "app.domains.customers.router_admin",
+]
+
+[[tool.importlinter.contracts]]
+name = "content: internals only via the domain public API"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+  "app.domains.agents",
+  "app.domains.dashboard",
+  "app.domains.serials",
+  "app.domains.orders",
+  "app.domains.customers",
+  "app.domains.catalog",
+  "app.domains.pricing",
+  "app.domains.users",
+]
+forbidden_modules = [
+  "app.domains.content.models",
+  "app.domains.content.schemas",
+  "app.domains.content.router_admin_faqs",
+  "app.domains.content.router_admin_landings",
+  "app.domains.content.router_admin_portfolios",
+  "app.domains.content.router_public",
+  "app.domains.content.service",
+]
+
+[[tool.importlinter.contracts]]
+name = "catalog: internals only via the domain public API"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+  "app.domains.agents",
+  "app.domains.dashboard",
+  "app.domains.serials",
+  "app.domains.orders",
+  "app.domains.customers",
+  "app.domains.content",
+  "app.domains.pricing",
+  "app.domains.users",
+]
+forbidden_modules = [
+  "app.domains.catalog.models",
+  "app.domains.catalog.schemas",
+  "app.domains.catalog.router_admin",
+  "app.domains.catalog.router_public",
+  "app.domains.catalog.import_service",
+  "app.domains.catalog.minio_import",
+]
+
+[[tool.importlinter.contracts]]
+name = "pricing: internals only via the domain public API"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+  "app.domains.agents",
+  "app.domains.dashboard",
+  "app.domains.serials",
+  "app.domains.orders",
+  "app.domains.customers",
+  "app.domains.content",
+  "app.domains.catalog",
+  "app.domains.users",
+]
+forbidden_modules = [
+  "app.domains.pricing.models",
+  "app.domains.pricing.router_admin",
+  "app.domains.pricing.router_public",
+]
+
+[[tool.importlinter.contracts]]
+name = "users: internals only via the domain public API"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+  "app.domains.agents",
+  "app.domains.dashboard",
+  "app.domains.serials",
+  "app.domains.orders",
+  "app.domains.customers",
+  "app.domains.content",
+  "app.domains.catalog",
+  "app.domains.pricing",
+]
+forbidden_modules = [
+  "app.domains.users.models",
+  "app.domains.users.schemas",
+  "app.domains.users.dependencies",
+  "app.domains.users.router_auth",
+  "app.domains.users.router_admin_users",
+  "app.domains.users.router_admin_audit",
+]

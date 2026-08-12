@@ -8,7 +8,7 @@ from typing import Literal
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel, Field
 
-from app.api.limiter import limiter
+from app.core.limiter import limiter
 from app.core.logging import get_logger
 
 router = APIRouter()

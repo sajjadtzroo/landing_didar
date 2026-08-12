@@ -107,7 +107,7 @@ def _parse_row(cells: dict, lineno: int) -> dict:
             try:
                 n = _num(v)
             except InvalidOperation:
-                raise ValueError(f"{field} عدد معتبر نیست: «{v}»")
+                raise ValueError(f"{field} عدد معتبر نیست: «{v}»") from None
             if n < 0 or (upper is not None and n > upper):
                 raise ValueError(f"{field} خارج از بازه است: «{v}»")
             out[field] = n
@@ -115,7 +115,7 @@ def _parse_row(cells: dict, lineno: int) -> dict:
         try:
             k = int(_num(v))
         except InvalidOperation:
-            raise ValueError(f"karat عدد معتبر نیست: «{v}»")
+            raise ValueError(f"karat عدد معتبر نیست: «{v}»") from None
         if not 1 <= k <= 24:
             raise ValueError(f"karat باید بین ۱ و ۲۴ باشد: «{v}»")
         out["karat"] = k
@@ -123,7 +123,7 @@ def _parse_row(cells: dict, lineno: int) -> dict:
         try:
             out["sort_order"] = int(_num(v))
         except InvalidOperation:
-            raise ValueError(f"sort_order عدد معتبر نیست: «{v}»")
+            raise ValueError(f"sort_order عدد معتبر نیست: «{v}»") from None
 
     if v := cells.get("category"):
         if v not in _CATEGORY:

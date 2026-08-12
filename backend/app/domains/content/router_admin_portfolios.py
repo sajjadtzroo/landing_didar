@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_admin
 from app.core.db import get_db
 from app.domains.content.models import Portfolio
 from app.domains.content.schemas import (
@@ -11,6 +10,7 @@ from app.domains.content.schemas import (
     PortfolioUpdate,
 )
 from app.domains.content.service import bust_portfolio_cache, bust_portfolios_cache
+from app.domains.users import require_admin
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 

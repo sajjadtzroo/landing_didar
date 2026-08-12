@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_admin
 from app.core.db import get_db
 from app.domains.customers.models import Customer, CustomerVerificationStatus
 from app.domains.customers.schemas import CustomerAdminOut, VerificationUpdate
+from app.domains.users import require_admin
 from app.shared.sms import send_sms
 
 router = APIRouter(dependencies=[Depends(require_admin)])

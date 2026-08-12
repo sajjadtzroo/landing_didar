@@ -7,14 +7,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_admin
 from app.core.db import get_db
 from app.domains.agents.models import MobileGalleryItem
 from app.domains.agents.schemas import GalleryAssignIn, GalleryItemOut, GalleryOut
 from app.domains.catalog import Product
 from app.domains.serials import ProductSerial, ProductSerialStatus
 from app.domains.serials import service as serial_service
-from app.domains.users import AdminRole, User
+from app.domains.users import AdminRole, User, require_admin
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 

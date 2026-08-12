@@ -7,7 +7,6 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_admin
 from app.core.db import get_db
 from app.domains.catalog import Product
 from app.domains.orders import Order
@@ -23,6 +22,7 @@ from app.domains.serials.serial_schemas import (
     SerialOut,
     SerialUpdate,
 )
+from app.domains.users import require_admin
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 

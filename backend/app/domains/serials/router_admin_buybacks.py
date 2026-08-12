@@ -7,7 +7,6 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_admin
 from app.core.db import get_db
 from app.domains.serials import service as serial_service
 from app.domains.serials.serial_models import ProductSerial
@@ -17,6 +16,7 @@ from app.domains.serials.warranty_schemas import (
     BuybackOut,
     BuybackUpdate,
 )
+from app.domains.users import require_admin
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 

@@ -4,11 +4,11 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.constants.provinces import IRAN_PROVINCES
 from app.domains.orders.models import ContactMethod, OrderStatus
+from app.shared.provinces import IRAN_PROVINCES
+from app.shared.validation import PHONE_RE
 
 # Mirror of the client Zod rules — server is the source of truth.
-PHONE_RE = r"^09\d{9}$"
 
 
 class OrderItemIn(BaseModel):

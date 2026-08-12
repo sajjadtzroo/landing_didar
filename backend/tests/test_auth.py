@@ -49,7 +49,7 @@ async def test_logout_clears_session(client):
 
 async def test_login_rate_limited(client):
     """Brute-force guard: the 11th attempt in a minute is 429."""
-    from app.api.limiter import limiter
+    from app.core.limiter import limiter
 
     limiter.enabled = True
     try:

@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_agent
 from app.core.db import get_db
 from app.domains.agents.models import AgentRetailer, AgentVisit, MobileGalleryItem
 from app.domains.agents.schemas import (
@@ -27,7 +26,7 @@ from app.domains.orders import DeliveryProof, Order, OrderCreate, OrderStatus
 from app.domains.orders import service as order_service
 from app.domains.serials import ProductSerial, ProductSerialStatus
 from app.domains.serials import service as serial_service
-from app.domains.users import AdminRole, User
+from app.domains.users import AdminRole, User, require_agent
 
 router = APIRouter()
 

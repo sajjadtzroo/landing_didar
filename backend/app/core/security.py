@@ -4,7 +4,6 @@ Run `python -m app.core.security <password>` to generate a hash for ADMIN_PASSWO
 """
 
 import asyncio
-
 import sys
 
 from itsdangerous import URLSafeTimedSerializer
@@ -102,3 +101,13 @@ async def hash_otp_async(code: str) -> str:
 
 async def verify_otp_async(code: str, hashed: str) -> bool:
     return await asyncio.to_thread(verify_otp, code, hashed)
+
+
+def get_client_ip(request) -> str | None:
+    """Real client IP behind a proxy — X-Forwarded-For's first hop is the client.
+    Lives here (not in a router layer) because rate-limit keys, scan logging and
+    order IP-hashing all depend on it."""
+    fwd = request.headers.get("x-forwarded-for")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.client.host if request.client else None

@@ -13,10 +13,10 @@ from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
-from app.api.limiter import limiter
-from app.api.v1 import client_logs
+from app.core import client_logs
 from app.core.config import settings
 from app.core.db import engine
+from app.core.limiter import limiter
 from app.core.logging import get_logger, setup_logging
 from app.core.metrics import (
     HTTP_DURATION,
@@ -207,7 +207,7 @@ async def validation_handler(request: Request, exc: RequestValidationError):
 
 @app.exception_handler(RateLimitExceeded)
 async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
-    from app.api.deps import get_client_ip
+    from app.core.security import get_client_ip
 
     route = request.scope.get("route")
     RATELIMIT_TRIPS.labels(route.path if route else "unmatched").inc()
@@ -227,7 +227,7 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
 media_dir = Path(settings.media_root)
 media_dir.mkdir(parents=True, exist_ok=True)
 
-from app.services.storage import MinioStorage, get_storage  # noqa: E402
+from app.core.storage import MinioStorage, get_storage  # noqa: E402
 
 if isinstance(get_storage(), MinioStorage):
     from fastapi import HTTPException
@@ -273,7 +273,7 @@ async def health():
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
     except Exception:  # noqa: BLE001 — any DB failure means unhealthy
-        raise HTTPException(503, detail="database unavailable")
+        raise HTTPException(503, detail="database unavailable") from None
     return {"status": "ok"}
 
 

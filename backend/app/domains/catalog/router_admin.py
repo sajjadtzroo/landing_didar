@@ -13,8 +13,8 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_admin
 from app.core.db import get_db
+from app.core.storage import get_storage, sniff_ok
 from app.domains.catalog import import_service as product_import
 from app.domains.catalog.models import ImportJob, Product
 from app.domains.catalog.schemas import (
@@ -23,7 +23,7 @@ from app.domains.catalog.schemas import (
     ProductCreate,
     ProductUpdate,
 )
-from app.services.storage import get_storage, sniff_ok
+from app.domains.users import require_admin
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
@@ -81,7 +81,7 @@ async def import_products(
     try:
         rows, parse_errors = product_import.parse_csv(data)
     except ValueError as e:
-        raise HTTPException(422, detail=str(e))
+        raise HTTPException(422, detail=str(e)) from None
     if len(rows) > _MAX_ROWS:
         raise HTTPException(422, detail=f"حداکثر {_MAX_ROWS} ردیف در هر فایل")
     if not rows and not parse_errors:

@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 
 import app.core.db as _db_mod
-from app.api.limiter import limiter
+from app.core.limiter import limiter
 from app.domains.content import Landing
 from app.domains.content import service as _content_service
 from app.domains.orders import router_public as _orders_public

@@ -23,3 +23,14 @@
 7. **`app/core/content_defaults.py` cannot move to the content domain**: the
    committed migration `alembic/versions/0007_landing_content.py` imports it, and
    migrations are immutable. It stays in core/ permanently.
+8. **`alembic upgrade head` fails on a FRESH database** (pre-existing, unrelated
+   to this migration — `git diff a18ee5d..HEAD -- alembic/versions` is empty):
+   a committed migration adds enum value `'delivered'` to `order_status` and
+   UPDATEs with it in the same transaction → Postgres
+   `UnsafeNewEnumValueUsageError`. Existing databases (already past that
+   revision) are unaffected. Fix (separate change, needs approval since it
+   touches migrations/): wrap the backfill in `op.get_context().autocommit_block()`
+   or split the revision.
+9. **Pre-existing E501 long lines (44)** carried through the moves untouched;
+   now held by explicit per-file-ignores in pyproject.toml so `ruff check app`
+   gates CI. Burn down opportunistically, then delete the ignore lines.

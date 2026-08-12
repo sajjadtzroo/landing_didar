@@ -23,8 +23,8 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 import app.domains.orders.router_public as orders_public
 from app import domains as _domains  # noqa: F401  — registers migrated domain models
-from app.api.deps import require_admin
-from app.api.limiter import limiter
+from app.domains.users import require_admin
+from app.core.limiter import limiter
 
 # Import every model so Base.metadata knows all tables before create_all.
 from app.core.db import Base, get_db
@@ -135,7 +135,7 @@ async def admin_client():
 @pytest_asyncio.fixture
 async def super_client():
     """Superadmin-guarded routes (users/audit) without the cookie round-trip."""
-    from app.api.deps import require_superadmin
+    from app.domains.users import require_superadmin
 
     app.dependency_overrides[require_admin] = lambda: "admin"
     app.dependency_overrides[require_superadmin] = lambda: "admin"

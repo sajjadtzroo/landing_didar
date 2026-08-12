@@ -21,16 +21,17 @@ from fastapi import (
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.limiter import limiter
 from app.core.config import settings
 from app.core.db import get_db
+from app.core.limiter import limiter
 from app.core.security import (
     CUSTOMER_COOKIE,
     hash_otp_async,
     issue_customer_session,
     verify_otp_async,
 )
-from app.domains.catalog import ProductOut
+from app.core.storage import get_storage
+from app.domains.catalog import Product, ProductOut
 from app.domains.customers.dependencies import require_customer
 from app.domains.customers.models import (
     Customer,
@@ -50,8 +51,6 @@ from app.domains.customers.schemas import (
     OtpVerifyIn,
 )
 from app.domains.orders import Order, OrderTrackOut
-from app.models import Product
-from app.services.storage import get_storage
 from app.shared.sms import send_sms
 
 router = APIRouter()
@@ -185,7 +184,7 @@ async def upload_document(
     if len(c.verification_documents) >= _MAX_DOCS:
         raise HTTPException(400, detail="حداکثر تعداد مدارک بارگذاری شده است")
     data = await file.read()
-    from app.services.storage import sniff_ok
+    from app.core.storage import sniff_ok
 
     if not sniff_ok(file.content_type, data):
         raise HTTPException(415, detail="محتوای فایل با نوع آن هم‌خوانی ندارد")

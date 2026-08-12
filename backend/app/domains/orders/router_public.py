@@ -18,10 +18,10 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_client_ip
-from app.api.limiter import limiter
 from app.core.config import settings
 from app.core.db import get_db
+from app.core.limiter import limiter
+from app.core.security import get_client_ip
 from app.domains.customers import (
     Customer,
     CustomerVerificationStatus,

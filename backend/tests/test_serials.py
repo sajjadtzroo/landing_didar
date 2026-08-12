@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from app.api.limiter import limiter
+from app.core.limiter import limiter
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

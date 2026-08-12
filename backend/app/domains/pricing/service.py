@@ -8,7 +8,7 @@ ponytail: dict cache; TGJU covers every index the panel shows, so no second sour
 """
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 from loguru import logger
@@ -46,7 +46,7 @@ async def _save_snapshot(items: list[dict], source: str = "tgju") -> None:
     try:
         async with SessionLocal() as s:
             stmt = pg_insert(GoldPriceSnapshot).values(
-                id=1, items=items, source=source, fetched_at=datetime.now(timezone.utc)
+                id=1, items=items, source=source, fetched_at=datetime.now(UTC)
             )
             stmt = stmt.on_conflict_do_update(
                 index_elements=["id"],
@@ -56,7 +56,7 @@ async def _save_snapshot(items: list[dict], source: str = "tgju") -> None:
                     "items": stmt.excluded["items"],
                     "source": stmt.excluded["source"],
                     "fetched_at": stmt.excluded["fetched_at"],
-                    "updated_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(UTC),
                 },
             )
             await s.execute(stmt)

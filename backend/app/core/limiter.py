@@ -1,7 +1,7 @@
 from slowapi import Limiter
 
-from app.api.deps import get_client_ip
 from app.core.config import settings
+from app.core.security import get_client_ip
 
 # Key on the real client IP (X-Forwarded-For aware) — not request.client.host,
 # which is the proxy's IP behind an ingress and would make one shared bucket.

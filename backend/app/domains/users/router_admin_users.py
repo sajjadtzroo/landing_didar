@@ -38,7 +38,7 @@ async def create_user(payload: UserCreate, db: AsyncSession = Depends(get_db)):
         await db.commit()
     except IntegrityError:
         await db.rollback()
-        raise HTTPException(409, detail="Username already exists")
+        raise HTTPException(409, detail="Username already exists") from None
     await db.refresh(user)
     return user
 
