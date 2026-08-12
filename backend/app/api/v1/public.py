@@ -21,7 +21,7 @@ from app.api.limiter import limiter
 from app.core.config import settings
 from app.core.db import get_db
 from app.models import Product
-from app.models.customer import Customer, CustomerVerificationStatus
+from app.domains.customers import Customer, CustomerVerificationStatus
 from app.models.order import Order
 from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialEvent
 from app.models.warranty import BuybackRequest, BuybackStatus, Warranty

@@ -31,7 +31,7 @@ async def _mk_agent(_sessionmaker, username="agent1", password="agent-pass-99"):
 
 
 async def _mk_retailer(_sessionmaker, phone="09121110000", store="طلای شرق"):
-    from app.models.customer import Customer, CustomerVerificationStatus
+    from app.domains.customers import Customer, CustomerVerificationStatus
 
     async with _sessionmaker() as s:
         c = Customer(

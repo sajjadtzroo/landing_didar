@@ -29,10 +29,7 @@ from app.api.limiter import limiter
 from app.core.db import Base, get_db
 from app.main import app
 from app import domains as _domains  # noqa: F401  — registers migrated domain models
-from app.models import (  # noqa: F401
-    customer,
-    order,
-)
+from app.models import order  # noqa: F401
 
 TEST_DB_URL = os.getenv(
     "TEST_DATABASE_URL",
@@ -153,7 +150,7 @@ async def super_client():
 @pytest_asyncio.fixture
 async def approved_client(_sessionmaker):
     """A logged-in customer who has been admin-approved (can place orders)."""
-    from app.models.customer import Customer, CustomerVerificationStatus
+    from app.domains.customers import Customer, CustomerVerificationStatus
 
     phone = "09129999999"
     transport = ASGITransport(app=app)

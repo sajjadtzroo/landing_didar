@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
 from app.core.db import get_db
-from app.models.customer import Customer, CustomerVerificationStatus
-from app.schemas.customer import CustomerAdminOut, VerificationUpdate
+from app.domains.customers.models import Customer, CustomerVerificationStatus
+from app.domains.customers.schemas import CustomerAdminOut, VerificationUpdate
 from app.services.sms import send_sms
 
 router = APIRouter(dependencies=[Depends(require_admin)])

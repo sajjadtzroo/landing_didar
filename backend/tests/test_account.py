@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from app.models.customer import Customer
+from app.domains.customers import Customer
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
@@ -273,7 +273,7 @@ async def test_delete_unknown_address_404(client):
 async def test_otp_test_phone_reveals_code_in_prod(client, monkeypatch):
     """An allowlisted test phone gets dev_code back (and skips the real SMS) even
     when cookie_secure=True (production); other phones don't."""
-    import app.api.v1.account as account
+    import app.domains.customers.router_account as account
     from app.core.config import settings
 
     sent: list[str] = []

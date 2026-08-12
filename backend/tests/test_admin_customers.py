@@ -1,6 +1,6 @@
 import pytest
 
-import app.api.v1.admin_customers as admin_mod
+import app.domains.customers.router_admin as admin_mod
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

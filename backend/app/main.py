@@ -15,9 +15,7 @@ from sqlalchemy import text
 
 from app.api.limiter import limiter
 from app.api.v1 import (
-    account,
     admin_buybacks,
-    admin_customers,
     admin_gallery,
     admin_orders,
     admin_serials,
@@ -43,6 +41,8 @@ from app.domains.content.router_admin_portfolios import (
     router as content_admin_portfolios,
 )
 from app.domains.content.router_public import router as content_public
+from app.domains.customers.router_account import router as customers_account
+from app.domains.customers.router_admin import router as customers_admin
 from app.domains.pricing import refresh_loop
 from app.domains.pricing.router_admin import router as pricing_admin
 from app.domains.pricing.router_public import router as pricing_public
@@ -313,7 +313,7 @@ app.include_router(catalog_public, prefix=API, tags=["public"])
 app.include_router(content_public, prefix=API, tags=["public"])
 app.include_router(pricing_public, prefix=API, tags=["public"])
 app.include_router(client_logs.router, prefix=API, tags=["client-logs"])
-app.include_router(account.router, prefix=f"{API}/account", tags=["account"])
+app.include_router(customers_account, prefix=f"{API}/account", tags=["account"])
 app.include_router(users_auth, prefix=f"{API}/admin", tags=["auth"])
 app.include_router(admin_orders.router, prefix=f"{API}/admin", tags=["admin:orders"])
 app.include_router(catalog_admin, prefix=f"{API}/admin", tags=["admin:catalog"])
@@ -330,7 +330,7 @@ app.include_router(admin_stats.router, prefix=f"{API}/admin", tags=["admin:stats
 app.include_router(pricing_admin, prefix=f"{API}/admin", tags=["admin:prices"])
 app.include_router(admin_serials.router, prefix=f"{API}/admin", tags=["admin:serials"])
 app.include_router(
-    admin_customers.router, prefix=f"{API}/admin", tags=["admin:customers"]
+    customers_admin, prefix=f"{API}/admin", tags=["admin:customers"]
 )
 app.include_router(users_admin_users, prefix=f"{API}/admin", tags=["admin:users"])
 app.include_router(users_admin_audit, prefix=f"{API}/admin", tags=["admin:audit"])

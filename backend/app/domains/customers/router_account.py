@@ -21,7 +21,6 @@ from fastapi import (
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_customer
 from app.api.limiter import limiter
 from app.core.config import settings
 from app.core.db import get_db
@@ -31,16 +30,16 @@ from app.core.security import (
     issue_customer_session,
     verify_otp_async,
 )
-from app.models.customer import (
+from app.domains.catalog import ProductOut
+from app.domains.customers.dependencies import require_customer
+from app.domains.customers.models import (
     Customer,
     CustomerAddress,
     CustomerVerificationStatus,
     Favorite,
     OtpCode,
 )
-from app.models.order import Order
-from app.models import Product
-from app.schemas.customer import (
+from app.domains.customers.schemas import (
     AddressIn,
     AddressOut,
     AddressUpdate,
@@ -50,8 +49,9 @@ from app.schemas.customer import (
     OtpRequestOut,
     OtpVerifyIn,
 )
+from app.models import Product
+from app.models.order import Order
 from app.schemas.order import OrderTrackOut
-from app.domains.catalog import ProductOut
 from app.services.sms import send_sms
 from app.services.storage import get_storage
 

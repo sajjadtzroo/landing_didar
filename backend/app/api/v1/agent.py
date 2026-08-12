@@ -12,7 +12,7 @@ from app.api.deps import require_agent
 from app.core.db import get_db
 from app.models import AdminRole, User
 from app.models.agent import AgentRetailer, AgentVisit, MobileGalleryItem
-from app.models.customer import Customer
+from app.models import Customer
 from app.models.order import Order, OrderStatus
 from app.models.product_serial import ProductSerial, ProductSerialStatus
 from app.schemas.agent import (
