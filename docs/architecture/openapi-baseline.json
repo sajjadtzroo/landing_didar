@@ -7910,7 +7910,39 @@
   },
   "/api/v1/products": {
    "get": {
+    "description": "Active catalog, ordered. Without `page` the full list is returned\n(existing storefront contract). With `page`, a slice of `page_size` plus an\n`X-Total-Count` header — the response stays a plain array either way.",
     "operationId": "list_products_api_v1_products_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "page",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "minimum": 1,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Page"
+      }
+     },
+     {
+      "in": "query",
+      "name": "page_size",
+      "required": false,
+      "schema": {
+       "default": 60,
+       "maximum": 100,
+       "minimum": 1,
+       "title": "Page Size",
+       "type": "integer"
+      }
+     }
+    ],
     "responses": {
      "200": {
       "content": {
@@ -7925,6 +7957,16 @@
        }
       },
       "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
      }
     },
     "summary": "List Products",
