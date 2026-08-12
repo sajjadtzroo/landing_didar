@@ -1,0 +1,56 @@
+name: deploy
+
+# VPS deployment via a self-hosted runner ON the server (label: didar-vps).
+# Inert until the repo variable DEPLOY_ENABLED is set to 'true' — without a
+# registered runner the jobs are skipped, never queued.
+#
+# Flow: push to main -> backend test gate (reused workflow) -> build + up on
+# the VPS itself (no image registry involved — matters on Iranian networks).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: vps-deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    if: vars.DEPLOY_ENABLED == 'true'
+    uses: ./.github/workflows/backend.yml
+
+  deploy:
+    if: vars.DEPLOY_ENABLED == 'true'
+    needs: test
+    runs-on: [self-hosted, didar-vps]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images on the server
+        run: >
+          docker compose -p didar
+          -f docker-compose.yml -f docker-compose.prod.yml
+          --env-file /opt/didar/.env build
+
+      - name: Roll the stack
+        run: >
+          docker compose -p didar
+          -f docker-compose.yml -f docker-compose.prod.yml
+          --env-file /opt/didar/.env up -d --remove-orphans
+
+      - name: Smoke test (through Caddy — app ports are not published)
+        run: |
+          DOMAIN=$(grep '^DOMAIN=' /opt/didar/.env | cut -d= -f2)
+          for i in $(seq 1 12); do
+            sleep 5
+            if curl -fsS "https://api.$DOMAIN/health" > /dev/null 2>&1; then break; fi
+          done
+          curl -fsS "https://api.$DOMAIN/health"
+          curl -fsS "https://api.$DOMAIN/ready"
+          curl -fsS -o /dev/null "https://$DOMAIN/"
+          echo "smoke OK"
+
+      - name: Prune dangling images
+        run: docker image prune -f

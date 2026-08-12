@@ -1,0 +1,12 @@
+# Reverse proxy + automatic Let's Encrypt for the VPS deployment.
+# DOMAIN comes from the caddy service environment (set in /opt/didar/.env).
+
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy frontend:3000
+}
+
+api.{$DOMAIN} {
+	encode gzip
+	reverse_proxy backend:8000
+}

@@ -5,6 +5,7 @@ on:
     paths: ["backend/**", ".github/workflows/backend.yml"]
   pull_request:
     paths: ["backend/**", ".github/workflows/backend.yml"]
+  workflow_call:  # reused as the test gate by deploy.yml
 
 jobs:
   checks:

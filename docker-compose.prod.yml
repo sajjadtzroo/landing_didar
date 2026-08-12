@@ -1,0 +1,63 @@
+# Production override for a VPS:
+#   docker compose -p didar -f docker-compose.yml -f docker-compose.prod.yml \
+#     --env-file /opt/didar/.env up -d
+#
+# Only Caddy publishes ports (80/443, auto-TLS). `!override` UNpublishes the
+# dev port mappings from the base file — plain `ports: []` would merge, not
+# clear. Requires compose >= 2.24.
+
+services:
+  db:
+    restart: unless-stopped
+    ports: !override []
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in /opt/didar/.env}
+
+  redis:
+    restart: unless-stopped
+    ports: !override []
+
+  backend:
+    restart: unless-stopped
+    ports: !override []
+    environment:
+      DATABASE_URL: postgresql+asyncpg://didar:${POSTGRES_PASSWORD}@db:5432/didar
+      APP_ENV: prod
+      COOKIE_SECURE: "true"
+      COOKIE_SAMESITE: none
+      FRONTEND_ORIGIN: https://${DOMAIN:?set in /opt/didar/.env}
+      ADMIN_ORDER_BASE_URL: https://${DOMAIN}/admin/orders
+      ADMIN_PASSWORD: ""
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?set in /opt/didar/.env}
+      SECRET_KEY: ${SECRET_KEY:?set in /opt/didar/.env}
+      SMS_PROVIDER: ${SMS_PROVIDER:-log}
+      SMS_API_KEY: ${SMS_API_KEY:-}
+      SMS_SENDER: ${SMS_SENDER:-}
+      SMS_ADMIN_PHONE: ${SMS_ADMIN_PHONE:-}
+
+  frontend:
+    restart: unless-stopped
+    ports: !override []
+    environment:
+      NUXT_PUBLIC_API_BASE: https://api.${DOMAIN}/api/v1
+      NUXT_API_BASE_INTERNAL: http://backend:8000/api/v1
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  caddy_data:
+  caddy_config:
