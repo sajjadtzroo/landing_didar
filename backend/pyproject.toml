@@ -26,3 +26,14 @@ ignore = ["B008"]  # FastAPI Depends() in defaults is idiomatic
 # Persian seed copy and long connection-string defaults read fine over 88 cols.
 "app/seed.py" = ["E501"]
 "app/core/config.py" = ["E501"]
+
+# Architecture contract (G2/G8): run `lint-imports` locally and in CI.
+# Contracts grow as domains migrate; the DAG contract is completed in the
+# final cleanup commit.
+[tool.importlinter]
+root_package = "app"
+
+[[tool.importlinter.contracts]]
+name = "Framework layering: domains -> shared -> core, never the reverse"
+type = "layers"
+layers = ["app.domains", "app.shared", "app.core"]
