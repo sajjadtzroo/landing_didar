@@ -147,15 +147,11 @@ useHead({
         </div>
       </section>
 
-      <!-- پرفروش‌ترین‌ها — ranked by real units sold (order_items); hidden until
-           there are sales. order-3: last on mobile, after showcase on desktop. -->
-      <section v-if="bestSellers.length" class="order-3 mb-16 sm:order-none">
-        <SectionDivider
-          :eyebrow="CONTENT.shop.bestSellersEyebrow"
-          :title="CONTENT.shop.bestSellersTitle"
-        />
-        <ProductCarousel :products="bestSellers" shop />
-      </section>
+      <!-- پرفروش‌ترین‌ها — ranked chart on a navy panel (deliberately NOT another
+           carousel); hidden until sales exist. order-3: last on mobile. -->
+      <div v-if="bestSellers.length" class="order-3 sm:order-none">
+        <ShopBestSellers :products="bestSellers" />
+      </div>
     </div>
   </main>
 </template>
