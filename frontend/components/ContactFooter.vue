@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Clock, Instagram, MapPin, MessageCircle, Phone, Send } from 'lucide-vue-next'
+import { Clock, Instagram, Mail, MapPin, MessageCircle, Phone, Send } from 'lucide-vue-next'
 import { CONTENT } from '~/constants/content'
 import { defaultContent, type LandingFooter } from '~/utils/landingContent'
 import { toFa } from '~/utils/format'
@@ -47,6 +47,13 @@ function onCall() {
         >
           <Phone :size="18" class="shrink-0 text-gold-soft" />
           <span class="tnum" dir="ltr">{{ footer.phoneDisplay }}</span>
+        </a>
+        <a
+          :href="`mailto:${footer.email}`"
+          class="mt-3 flex items-center gap-2 text-cream/85 transition-colors hover:text-gold-soft"
+        >
+          <Mail :size="18" class="shrink-0 text-gold-soft" />
+          <span dir="ltr">{{ footer.email }}</span>
         </a>
       </div>
 

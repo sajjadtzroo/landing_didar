@@ -1,8 +1,8 @@
 // All UI copy lives here — no hardcoded strings in templates. Persian (fa), RTL.
 export const CONTENT = {
   brand: 'دیدار گلد',
-  phone: '+982191002020',
-  phoneDisplay: '۰۲۱–۹۱۰۰۲۰۲۰',
+  phone: '+982152002050',
+  phoneDisplay: '۰۲۱–۵۲۰۰۲۰۵۰',
   email: 'info@didargold.com',
   whatsapp: 'https://wa.me/989120000000',
   telegram: 'https://t.me/didargold',
@@ -254,7 +254,7 @@ export const CONTENT = {
     tagline: 'تأمین‌کننده عمده طلا و جواهرات ۱۸ عیار',
     hoursTitle: 'نشانی و ساعات کاری',
     socialTitle: 'ما را دنبال کنید',
-    address: 'تهران، مجتمع دیدار',
+    address: 'تهران، بازار بزرگ، سرای چیت‌ساز، واحد ۱۶',
     hours: 'شنبه تا چهارشنبه، ۱۰ تا ۱۸',
     rights: 'تمامی حقوق برای دیدار گلد محفوظ است.',
     call: 'تماس تلفنی',
