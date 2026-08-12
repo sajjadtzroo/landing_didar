@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { toTypedSchema } from '@vee-validate/zod'
 import { useField, useForm } from 'vee-validate'
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { CONTENT } from '~/constants/content'
 import { PROVINCES } from '~/constants/provinces'
 import { readAttribution } from '~/plugins/attribution.client'
@@ -10,10 +10,9 @@ import { orderSchema } from '~/utils/orderSchema'
 
 const emit = defineEmits<{ success: [{ reference: string }] }>()
 
+// Guest checkout is allowed; a session only prefills the phone (the backend
+// binds the order to the session phone anyway).
 const { customer, ensure } = useCustomerAuth()
-// ponytail: local flag so we don't flash the wrong CTA while ensure() is in-flight
-const authReady = ref(false)
-const canOrder = computed(() => customer.value?.verification_status === 'approved')
 
 const cart = useCartStore()
 const {
@@ -51,7 +50,7 @@ onMounted(async () => {
   idempotencyKey = crypto.randomUUID()
   trackEvent('order', 'form_open', undefined, Math.round(cart.total))
   await ensure()
-  authReady.value = true
+  if (customer.value?.phone && !phone.value) phone.value = customer.value.phone
 })
 
 function onFirstFocus() {
@@ -223,57 +222,13 @@ function onInvalidField(field: string) {
       <a :href="`tel:${CONTENT.phone}`" class="shrink-0 underline">{{ CONTENT.footer.call }}</a>
     </p>
 
-    <!-- Auth-gated submit area: show nothing until ensure() resolves to avoid flicker -->
-    <template v-if="authReady">
-      <!-- Not logged in → login CTA -->
-      <NuxtLink
-        v-if="!customer"
-        to="/account/login"
-        class="mt-6 flex h-[58px] w-full items-center justify-center bg-navy text-base
-          font-medium text-white transition duration-300 hover:bg-gold"
-      >
-        برای ثبت سفارش وارد شوید
-      </NuxtLink>
-
-      <!-- Logged in but not approved → disabled button + verification notice -->
-      <template v-else-if="!canOrder">
-        <button
-          type="button"
-          disabled
-          class="mt-6 flex h-[58px] w-full items-center justify-center bg-navy text-base
-            font-medium text-white opacity-60"
-        >
-          {{ CONTENT.form.submit }}
-        </button>
-        <p class="mt-3 text-sm text-ink-muted text-center">
-          برای ثبت سفارش ابتدا
-          <NuxtLink to="/account/verification" class="text-navy underline underline-offset-2">
-            احراز هویت خود را کامل کنید
-          </NuxtLink>
-        </p>
-      </template>
-
-      <!-- Approved → normal submit -->
-      <button
-        v-else
-        type="submit"
-        class="mt-6 flex h-[58px] w-full items-center justify-center bg-navy text-base
-          font-medium text-white transition duration-300 hover:bg-gold disabled:opacity-60"
-        :disabled="submitting || !cart.items.length"
-      >
-        {{ submitting ? CONTENT.form.submitting : CONTENT.form.submit }}
-      </button>
-    </template>
-
-    <!-- While auth is resolving: disabled placeholder to avoid layout jump -->
     <button
-      v-else
-      type="button"
-      disabled
+      type="submit"
       class="mt-6 flex h-[58px] w-full items-center justify-center bg-navy text-base
-        font-medium text-white opacity-60"
+        font-medium text-white transition duration-300 hover:bg-gold disabled:opacity-60"
+      :disabled="submitting || !cart.items.length"
     >
-      {{ CONTENT.form.submit }}
+      {{ submitting ? CONTENT.form.submitting : CONTENT.form.submit }}
     </button>
 
     <p v-if="meta.dirty && !meta.valid" class="sr-only" aria-live="polite">فرم دارای خطاست.</p>

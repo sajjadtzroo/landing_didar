@@ -48,7 +48,7 @@ def test_requires_at_least_one_item():
         OrderCreate(**_payload(items=[]))
 
 
-# ---- Order-creation gating (requires an approved, logged-in customer) ----
+# ---- Guest checkout + phone-linked accounts ----
 _asyncio = pytest.mark.asyncio(loop_scope="session")
 
 
@@ -59,24 +59,31 @@ async def _login(client, phone):
 
 
 @_asyncio
-async def test_order_requires_login(client, order_payload):
+async def test_guest_can_order(client, order_payload):
     r = await client.post("/api/v1/orders", json=order_payload())
-    assert r.status_code == 401
-
-
-@_asyncio
-async def test_order_blocked_when_not_approved(client, order_payload):
-    await _login(client, "09128888888")
-    r = await client.post("/api/v1/orders", json=order_payload())
-    assert r.status_code == 403
-
-
-@_asyncio
-async def test_order_allowed_when_approved(approved_client, order_payload):
-    r = await approved_client.post("/api/v1/orders", json=order_payload())
     assert r.status_code == 201, r.text
-    # phone is bound from the session, not the payload
     assert r.json()["reference"].startswith("DG-")
+
+
+@_asyncio
+async def test_guest_order_claimed_after_otp_login(client, order_payload):
+    # Guest orders with a phone; OTP login with that phone shows the order.
+    phone = "09127777777"
+    r = await client.post("/api/v1/orders", json=order_payload(phone=phone))
+    ref = r.json()["reference"]
+    await _login(client, phone)
+    orders = (await client.get("/api/v1/account/me/orders")).json()
+    assert ref in [o["reference"] for o in orders]
+
+
+@_asyncio
+async def test_logged_in_order_binds_session_phone(client, order_payload):
+    # A session phone overrides whatever the client sends in the payload.
+    await _login(client, "09128888888")
+    r = await client.post("/api/v1/orders", json=order_payload(phone="09120000001"))
+    assert r.status_code == 201, r.text
+    orders = (await client.get("/api/v1/account/me/orders")).json()
+    assert r.json()["reference"] in [o["reference"] for o in orders]
 
 
 if __name__ == "__main__":

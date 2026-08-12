@@ -2,7 +2,11 @@
 
 PUBLIC API — the only surface other code may import from."""
 
-from app.domains.customers.dependencies import CustomerId, require_customer
+from app.domains.customers.dependencies import (
+    CustomerId,
+    optional_customer,
+    require_customer,
+)
 from app.domains.customers.models import (
     Customer,
     CustomerAddress,
@@ -18,5 +22,6 @@ __all__ = [
     "CustomerVerificationStatus",
     "Favorite",
     "OtpCode",
+    "optional_customer",
     "require_customer",
 ]

@@ -8,6 +8,12 @@ from fastapi import Depends, HTTPException, Request, status
 from app.core.security import CUSTOMER_COOKIE, read_customer_session
 
 
+def optional_customer(request: Request) -> uuid.UUID | None:
+    """Session id if a valid customer cookie is present, else None (guest)."""
+    cid = read_customer_session(request.cookies.get(CUSTOMER_COOKIE))
+    return uuid.UUID(cid) if cid else None
+
+
 def require_customer(request: Request) -> uuid.UUID:
     cid = read_customer_session(request.cookies.get(CUSTOMER_COOKIE))
     if not cid:

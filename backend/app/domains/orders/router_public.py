@@ -24,11 +24,7 @@ from app.core.db import get_db
 from app.core.limiter import limiter
 from app.core.security import get_client_ip
 from app.domains.catalog import Product, ProductOut
-from app.domains.customers import (
-    Customer,
-    CustomerVerificationStatus,
-    require_customer,
-)
+from app.domains.customers import Customer, optional_customer
 from app.domains.orders import service as order_service
 from app.domains.orders.models import Order, OrderItem, OrderStatus
 from app.domains.orders.notifications import get_adapter
@@ -114,17 +110,17 @@ async def create_order(
     payload: OrderCreate,
     background: BackgroundTasks,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
-    customer_id: uuid.UUID = Depends(require_customer),
+    customer_id: uuid.UUID | None = Depends(optional_customer),
     db: AsyncSession = Depends(get_db),
 ):
-    # Only an admin-approved customer may order; bind the phone from the
-    # verified session so a client-supplied phone can never be trusted.
-    customer = await db.get(Customer, customer_id)
-    if customer is None:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    if customer.verification_status != CustomerVerificationStatus.approved:
-        raise HTTPException(status_code=403, detail="حساب شما هنوز تأیید نشده است")
-    payload.phone = customer.phone
+    # Guest checkout: no login required. A logged-in session still binds the
+    # phone from the verified customer (client value can't override it); guests
+    # supply their own phone, and a later OTP login with that phone claims the
+    # order — /me/orders links orders to customers by phone.
+    if customer_id is not None:
+        customer = await db.get(Customer, customer_id)
+        if customer is not None:
+            payload.phone = customer.phone
 
     # Honeypot: bots fill hidden fields; pretend success without persisting.
     if payload.website:
