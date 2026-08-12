@@ -7975,6 +7975,32 @@
     ]
    }
   },
+  "/api/v1/products/best-sellers": {
+   "get": {
+    "description": "Top products by units actually sold (order_items, non-cancelled orders).\nLives in the orders domain because sales data does; registered BEFORE the\ncatalog router so /products/{slug} doesn't swallow the path.",
+    "operationId": "best_sellers_api_v1_products_best_sellers_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ProductOut"
+         },
+         "title": "Response Best Sellers Api V1 Products Best Sellers Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Best Sellers",
+    "tags": [
+     "public"
+    ]
+   }
+  },
   "/api/v1/products/{slug}": {
    "get": {
     "operationId": "get_product_api_v1_products__slug__get",

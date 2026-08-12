@@ -307,8 +307,10 @@ async def metrics():
 
 
 API = "/api/v1"
-app.include_router(catalog_public, prefix=API, tags=["public"])
+# orders_public first: it serves /products/best-sellers, which catalog's
+# /products/{slug} would otherwise swallow.
 app.include_router(orders_public, prefix=API, tags=["public"])
+app.include_router(catalog_public, prefix=API, tags=["public"])
 app.include_router(serials_public, prefix=API, tags=["public"])
 app.include_router(content_public, prefix=API, tags=["public"])
 app.include_router(pricing_public, prefix=API, tags=["public"])

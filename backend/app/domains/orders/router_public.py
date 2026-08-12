@@ -15,24 +15,57 @@ from fastapi import (
     Response,
 )
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.cache import cache_get, cache_set
 from app.core.config import settings
 from app.core.db import get_db
 from app.core.limiter import limiter
 from app.core.security import get_client_ip
+from app.domains.catalog import Product, ProductOut
 from app.domains.customers import (
     Customer,
     CustomerVerificationStatus,
     require_customer,
 )
 from app.domains.orders import service as order_service
-from app.domains.orders.models import Order
+from app.domains.orders.models import Order, OrderItem, OrderStatus
 from app.domains.orders.notifications import get_adapter
 from app.domains.orders.schemas import OrderCreate, OrderCreatedOut, OrderTrackOut
 
 router = APIRouter()
+
+_BEST_SELLERS_TTL = 300.0  # sales rankings move slowly; save the join
+
+
+@router.get("/products/best-sellers", response_model=list[ProductOut])
+async def best_sellers(response: Response, db: AsyncSession = Depends(get_db)):
+    """Top products by units actually sold (order_items, non-cancelled orders).
+    Lives in the orders domain because sales data does; registered BEFORE the
+    catalog router so /products/{slug} doesn't swallow the path."""
+    response.headers["Cache-Control"] = "public, max-age=300"
+    cached = await cache_get("cache:best-sellers")
+    if cached is not None:
+        return cached
+    rows = (
+        await db.execute(
+            select(Product)
+            .join(OrderItem, OrderItem.product_id == Product.id)
+            .join(Order, OrderItem.order_id == Order.id)
+            .where(
+                Product.is_active,
+                Product.product_status != "not_for_sale",
+                Order.status != OrderStatus.cancelled,
+            )
+            .group_by(Product.id)
+            .order_by(func.sum(OrderItem.quantity).desc())
+            .limit(8)
+        )
+    ).scalars().all()
+    items = [ProductOut.model_validate(p) for p in rows]
+    await cache_set("cache:best-sellers", items, _BEST_SELLERS_TTL)
+    return items
 
 
 @router.get("/orders/track", response_model=OrderTrackOut)

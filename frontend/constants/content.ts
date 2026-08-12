@@ -68,6 +68,8 @@ export const CONTENT = {
     scrollHint: 'مشاهده محصولات',
     addToCart: 'افزودن به سبد',
     viewAllProducts: 'مشاهده همه محصولات',
+    bestSellersEyebrow: 'محبوب مشتریان',
+    bestSellersTitle: 'پرفروش\u200cترین\u200cها',
     // نرخ روز strip (public TGJU rates)
     goldPriceLabel: 'نرخ لحظه‌ای طلای ۱۸ عیار',
     goldPriceUnit: 'تومان / گرم',
