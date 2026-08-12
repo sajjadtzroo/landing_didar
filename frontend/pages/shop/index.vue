@@ -51,7 +51,6 @@ function goToCategory(key: string) {
 // and skipped for prefers-reduced-motion.
 const HERO_SLIDES = [
   '/shop-hero-1.jpg',
-  '/shop-hero-2.jpg',
   '/shop-hero-3.jpg',
   '/shop-hero-4.jpg',
   '/shop-hero-5.jpg',
