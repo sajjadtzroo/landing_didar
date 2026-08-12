@@ -3,7 +3,7 @@ import uuid
 import pytest
 import pytest_asyncio
 
-from app.models.landing import Landing
+from app.domains.content import Landing
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

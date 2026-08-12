@@ -28,12 +28,10 @@ from app.api.limiter import limiter
 # Import every model so Base.metadata knows all tables before create_all.
 from app.core.db import Base, get_db
 from app.main import app
+from app import domains as _domains  # noqa: F401  — registers migrated domain models
 from app.models import (  # noqa: F401
     customer,
-    faq,
-    landing,
     order,
-    portfolio,
     product,
 )
 

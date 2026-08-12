@@ -13,3 +13,13 @@
    a shared helper would remove ~10 small duplications.
 5. **`public.py` and `admin_catalog.py` each span multiple domains** — split during
    migration (the only non-`git mv` operations; noted in their commit messages).
+6. **Pre-existing Alembic drift on the local dev DB** (`alembic check` fails
+   identically before AND after the migration — verified by diffing autogenerate
+   ops at commit a18ee5d vs the migrated tree): missing indexes
+   (ix_audit_log_*, ix_buyback_requests_status), unique-flag mismatches on
+   landings/products slug indexes, dropped unique constraints. The dev DB was
+   likely created by an older create_all rather than the full migration chain.
+   Not caused by — and not fixed in — this migration.
+7. **`app/core/content_defaults.py` cannot move to the content domain**: the
+   committed migration `alembic/versions/0007_landing_content.py` imports it, and
+   migrations are immutable. It stays in core/ permanently.

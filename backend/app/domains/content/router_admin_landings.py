@@ -3,11 +3,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
-from app.api.v1.public import bust_landing_cache
 from app.core.content_defaults import default_content
 from app.core.db import get_db
-from app.models.landing import Landing
-from app.schemas.landing import LandingAdminOut, LandingCreate, LandingUpdate
+from app.domains.content.models import Landing
+from app.domains.content.schemas import LandingAdminOut, LandingCreate, LandingUpdate
+from app.domains.content.service import bust_landing_cache
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 

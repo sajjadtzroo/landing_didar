@@ -3,14 +3,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
-from app.api.v1.public import bust_portfolio_cache, bust_portfolios_cache
 from app.core.db import get_db
-from app.models.portfolio import Portfolio
-from app.schemas.portfolio import (
+from app.domains.content.models import Portfolio
+from app.domains.content.schemas import (
     PortfolioAdminOut,
     PortfolioCreate,
     PortfolioUpdate,
 )
+from app.domains.content.service import bust_portfolio_cache, bust_portfolios_cache
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 

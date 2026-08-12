@@ -18,22 +18,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_client_ip, require_customer
 from app.api.limiter import limiter
-from app.core.cache import cache_delete, cache_get, cache_set
+from app.core.cache import cache_get, cache_set
 from app.core.config import settings
-from app.core.content_defaults import default_content
 from app.core.db import get_db
 from app.models.customer import Customer, CustomerVerificationStatus
-from app.models.faq import FAQ
-from app.models.landing import Landing
 from app.models.order import Order
-from app.models.portfolio import Portfolio
 from app.models.product import Product
 from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialEvent
 from app.models.warranty import BuybackRequest, BuybackStatus, Warranty
-from app.schemas.faq import FAQOut
-from app.schemas.landing import LandingDetailOut, LandingGroupOut
 from app.schemas.order import OrderCreate, OrderCreatedOut, OrderTrackOut
-from app.schemas.portfolio import PortfolioPublicOut
 from app.schemas.product import ProductOut
 from app.schemas.serial import SerialEventOut, SerialVerifyOut, WarrantyState
 from app.schemas.warranty import BuybackCreate, BuybackCreatedOut, WarrantyActivate
@@ -50,74 +43,6 @@ router = APIRouter()
 # shared Redis when REDIS_URL is set (multi-worker/multi-node coherent busts).
 _CACHE_TTL = 60.0
 _CACHE_CONTROL = "public, max-age=60"
-
-
-async def bust_landing_cache(slug: str) -> None:
-    """Drop a landing's cached payload so an admin edit shows immediately instead
-    of after the TTL. Called by admin_landings on mutate."""
-    await cache_delete(f"cache:landing:{slug}")
-
-
-async def bust_portfolios_cache() -> None:
-    """Drop the cached /portfolios payload so an admin edit shows immediately.
-    Called by admin_portfolios on mutate."""
-    await cache_delete("cache:portfolios")
-
-
-async def bust_portfolio_cache(slug: str) -> None:
-    """Drop a single portfolio's cached detail payload. Called by admin_portfolios
-    on mutate (alongside bust_portfolios_cache for the list)."""
-    await cache_delete(f"cache:portfolio:{slug}")
-
-
-def _as_uuid(value: object) -> uuid.UUID | None:
-    try:
-        return uuid.UUID(str(value))
-    except ValueError:
-        return None
-
-
-async def _resolve_groups(
-    db: AsyncSession, raw_groups: list[dict]
-) -> list[LandingGroupOut]:
-    """Resolve each group's `product_ids` against the live catalog in one query.
-    A product is dropped if it's missing or inactive (ids live in JSON, so there's
-    no FK/CASCADE — we filter here). Shared by landings and portfolios."""
-    wanted = {
-        u
-        for g in raw_groups
-        for pid in (g.get("product_ids") or [])
-        if (u := _as_uuid(pid)) is not None
-    }
-    by_id: dict[uuid.UUID, Product] = {}
-    if wanted:
-        rows = (
-            await db.execute(
-                select(Product).where(
-                    Product.id.in_(wanted),
-                    Product.is_active,
-                    Product.product_status != "not_for_sale",
-                )
-            )
-        ).scalars().all()
-        by_id = {p.id: p for p in rows}
-
-    groups: list[LandingGroupOut] = []
-    for g in raw_groups:
-        items = [
-            by_id[_as_uuid(pid)]
-            for pid in (g.get("product_ids") or [])
-            if _as_uuid(pid) in by_id
-        ]
-        groups.append(
-            LandingGroupOut(
-                title=g.get("title") or "",
-                eyebrow=g.get("eyebrow"),
-                description=g.get("description"),
-                products=list(items),
-            )
-        )
-    return groups
 
 
 @router.get("/products", response_model=list[ProductOut])
@@ -149,103 +74,6 @@ async def get_product(slug: str, db: AsyncSession = Depends(get_db)):
     if product is None:
         raise HTTPException(404, detail="Product not found")
     return product
-
-
-@router.get("/landings/{slug}", response_model=LandingDetailOut)
-async def get_landing(
-    slug: str, response: Response, db: AsyncSession = Depends(get_db)
-):
-    response.headers["Cache-Control"] = _CACHE_CONTROL
-    cached = await cache_get(f"cache:landing:{slug}")
-    if cached is not None:
-        return cached
-    landing = (
-        await db.execute(select(Landing).where(Landing.slug == slug))
-    ).scalar_one_or_none()
-    if landing is None:
-        raise HTTPException(404, detail="Landing not found")
-    content = landing.content or default_content()
-    groups = await _resolve_groups(db, content.get("groups") or [])
-
-    out = LandingDetailOut(
-        slug=landing.slug,
-        title=landing.title,
-        hero_video_url=landing.hero_video_url,
-        hero_poster_url=landing.hero_poster_url,
-        content=content,
-        groups=groups,
-    )
-    await cache_set(f"cache:landing:{slug}", out, _CACHE_TTL)
-    return out
-
-
-@router.get("/portfolios", response_model=list[PortfolioPublicOut])
-async def list_portfolios(response: Response, db: AsyncSession = Depends(get_db)):
-    """Active portfolios (curated /shop sections), ordered, with each group's
-    products resolved from the live catalog. Cached like the other public reads."""
-    response.headers["Cache-Control"] = _CACHE_CONTROL
-    cached = await cache_get("cache:portfolios")
-    if cached is not None:
-        return cached
-    portfolios = (
-        await db.execute(
-            select(Portfolio)
-            .where(Portfolio.is_active)
-            .order_by(Portfolio.sort_order)
-        )
-    ).scalars().all()
-    out = [
-        PortfolioPublicOut(
-            id=p.id,
-            name=p.name,
-            slug=p.slug,
-            cover_image_url=p.cover_image_url,
-            groups=await _resolve_groups(db, (p.content or {}).get("groups") or []),
-        )
-        for p in portfolios
-    ]
-    await cache_set("cache:portfolios", out, _CACHE_TTL)
-    return out
-
-
-@router.get("/portfolios/{slug}", response_model=PortfolioPublicOut)
-async def get_portfolio(
-    slug: str, response: Response, db: AsyncSession = Depends(get_db)
-):
-    """A single curated collection by slug, for its /shop/<slug> page. Inactive
-    portfolios 404 (matching the list). Cached per slug like get_landing."""
-    response.headers["Cache-Control"] = _CACHE_CONTROL
-    cached = await cache_get(f"cache:portfolio:{slug}")
-    if cached is not None:
-        return cached
-    portfolio = (
-        await db.execute(
-            select(Portfolio).where(Portfolio.slug == slug, Portfolio.is_active)
-        )
-    ).scalar_one_or_none()
-    if portfolio is None:
-        raise HTTPException(404, detail="Portfolio not found")
-    out = PortfolioPublicOut(
-        id=portfolio.id,
-        name=portfolio.name,
-        slug=portfolio.slug,
-        cover_image_url=portfolio.cover_image_url,
-        groups=await _resolve_groups(db, (portfolio.content or {}).get("groups") or []),
-    )
-    await cache_set(f"cache:portfolio:{slug}", out, _CACHE_TTL)
-    return out
-
-
-@router.get("/faqs", response_model=list[FAQOut])
-async def list_faqs(response: Response, db: AsyncSession = Depends(get_db)):
-    response.headers["Cache-Control"] = _CACHE_CONTROL
-    cached = await cache_get("cache:faqs")
-    if cached is not None:
-        return cached
-    res = await db.execute(select(FAQ).where(FAQ.is_active).order_by(FAQ.sort_order))
-    items = [FAQOut.model_validate(f) for f in res.scalars().all()]
-    await cache_set("cache:faqs", items, _CACHE_TTL)
-    return items
 
 
 @router.get("/prices")

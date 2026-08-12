@@ -1,10 +1,11 @@
+# DEPRECATED aggregator: models are moving to app/domains/<domain>/;
+# this re-export shim keeps old import paths working until the final
+# cleanup step of the migration. remove in step 10.
+from app.domains.content.models import FAQ, Landing, Portfolio
 from app.models.customer import Customer, CustomerAddress, Favorite, OtpCode
-from app.models.faq import FAQ
 from app.models.gold_price import GoldPriceSnapshot
 from app.models.import_job import ImportJob
-from app.models.landing import Landing
 from app.models.order import Order, OrderItem, OrderStatus, OrderStatusLog
-from app.models.portfolio import Portfolio
 from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialScan
 from app.models.product import Product
 from app.models.agent import AgentRetailer, AgentVisit, MobileGalleryItem

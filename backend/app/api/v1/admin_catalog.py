@@ -15,10 +15,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
 from app.core.db import get_db
-from app.models.faq import FAQ
 from app.models.import_job import ImportJob
 from app.models.product import Product
-from app.schemas.faq import FAQCreate, FAQOut, FAQUpdate
 from app.schemas.product import AdminProductOut, ProductCreate, ProductUpdate
 from app.schemas.import_job import ImportJobOut
 from app.services import product_import
@@ -169,42 +167,3 @@ async def upload_product_image(
     await db.commit()
     await db.refresh(product)
     return product
-
-
-# ---- FAQs ----
-@router.get("/faqs", response_model=list[FAQOut])
-async def list_faqs(db: AsyncSession = Depends(get_db)):
-    res = await db.execute(select(FAQ).order_by(FAQ.sort_order))
-    return res.scalars().all()
-
-
-@router.post("/faqs", response_model=FAQOut, status_code=201)
-async def create_faq(payload: FAQCreate, db: AsyncSession = Depends(get_db)):
-    faq = FAQ(**payload.model_dump())
-    db.add(faq)
-    await db.commit()
-    await db.refresh(faq)
-    return faq
-
-
-@router.patch("/faqs/{faq_id}", response_model=FAQOut)
-async def update_faq(
-    faq_id: str, payload: FAQUpdate, db: AsyncSession = Depends(get_db)
-):
-    faq = await db.get(FAQ, faq_id)
-    if not faq:
-        raise HTTPException(404, detail="FAQ not found")
-    for k, v in payload.model_dump(exclude_unset=True).items():
-        setattr(faq, k, v)
-    await db.commit()
-    await db.refresh(faq)
-    return faq
-
-
-@router.delete("/faqs/{faq_id}", status_code=204)
-async def delete_faq(faq_id: str, db: AsyncSession = Depends(get_db)):
-    faq = await db.get(FAQ, faq_id)
-    if not faq:
-        raise HTTPException(404, detail="FAQ not found")
-    await db.delete(faq)
-    await db.commit()

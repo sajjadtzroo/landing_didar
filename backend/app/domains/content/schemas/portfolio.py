@@ -3,7 +3,7 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.schemas.landing import LandingGroupOut
+from app.domains.content.schemas.landing import LandingGroupOut
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 

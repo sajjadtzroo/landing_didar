@@ -17,9 +17,7 @@ from app.api.v1 import (
     account,
     admin_catalog,
     admin_customers,
-    admin_landings,
     admin_orders,
-    admin_portfolios,
     admin_prices,
     admin_serials,
     admin_stats,
@@ -32,6 +30,12 @@ from app.api.v1 import (
     client_logs,
     public,
 )
+from app.domains.content.router_admin_faqs import router as content_admin_faqs
+from app.domains.content.router_admin_landings import router as content_admin_landings
+from app.domains.content.router_admin_portfolios import (
+    router as content_admin_portfolios,
+)
+from app.domains.content.router_public import router as content_public
 from app.core.config import settings
 from sqlalchemy import text
 
@@ -304,16 +308,20 @@ async def metrics():
 
 API = "/api/v1"
 app.include_router(public.router, prefix=API, tags=["public"])
+app.include_router(content_public, prefix=API, tags=["public"])
 app.include_router(client_logs.router, prefix=API, tags=["client-logs"])
 app.include_router(account.router, prefix=f"{API}/account", tags=["account"])
 app.include_router(auth.router, prefix=f"{API}/admin", tags=["auth"])
 app.include_router(admin_orders.router, prefix=f"{API}/admin", tags=["admin:orders"])
 app.include_router(admin_catalog.router, prefix=f"{API}/admin", tags=["admin:catalog"])
 app.include_router(
-    admin_landings.router, prefix=f"{API}/admin", tags=["admin:landings"]
+    content_admin_faqs, prefix=f"{API}/admin", tags=["admin:catalog"]
 )
 app.include_router(
-    admin_portfolios.router, prefix=f"{API}/admin", tags=["admin:portfolios"]
+    content_admin_landings, prefix=f"{API}/admin", tags=["admin:landings"]
+)
+app.include_router(
+    content_admin_portfolios, prefix=f"{API}/admin", tags=["admin:portfolios"]
 )
 app.include_router(admin_stats.router, prefix=f"{API}/admin", tags=["admin:stats"])
 app.include_router(admin_prices.router, prefix=f"{API}/admin", tags=["admin:prices"])
