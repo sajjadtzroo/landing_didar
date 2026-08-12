@@ -11,7 +11,7 @@ verified end-to-end via docker-compose (see README / plan §8), not mocked here.
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.order import OrderCreate
+from app.domains.orders import OrderCreate
 
 
 def _payload(**over):

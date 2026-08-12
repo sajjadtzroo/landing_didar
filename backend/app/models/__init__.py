@@ -7,7 +7,7 @@ from app.domains.pricing.models import GoldPriceSnapshot
 from app.domains.users.models import AdminRole, AuditLog, User
 from app.models.agent import AgentRetailer, AgentVisit, MobileGalleryItem
 from app.domains.customers.models import Customer, CustomerAddress, Favorite, OtpCode
-from app.models.order import Order, OrderItem, OrderStatus, OrderStatusLog
+from app.domains.orders.models import Order, OrderItem, OrderStatus, OrderStatusLog
 from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialScan
 from app.models.warranty import BuybackRequest, BuybackStatus, Warranty
 

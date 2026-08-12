@@ -4,7 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.constants.provinces import IRAN_PROVINCES
-from app.schemas.order import PHONE_RE
+from app.domains.orders import PHONE_RE
 
 VALID_PROVINCES = set(IRAN_PROVINCES)
 

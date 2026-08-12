@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
 from app.core.db import get_db
-from app.models.order import Order
+from app.models import Order
 from app.models import Product
 from app.models.product_serial import ProductSerial, ProductSerialStatus, SerialScan
 from app.schemas.serial import SerialGenerate, SerialListOut, SerialOut, SerialUpdate

@@ -5,8 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.services.notifications import LogSmsAdapter, SmsAdapter, get_adapter
-from app.services.notifications.base import format_order_message
+from app.domains.orders.notifications import LogSmsAdapter, SmsAdapter, get_adapter
+from app.domains.orders.notifications.base import format_order_message
 
 
 def _fake_order():
@@ -52,7 +52,7 @@ async def test_log_adapter_send_does_not_raise():
 
 
 # ---- SmsAdapter real HTTP path (mocked httpx, no network) ----
-from app.services.notifications import sms as notif_sms  # noqa: E402
+from app.domains.orders.notifications import sms as notif_sms  # noqa: E402
 
 
 class _FakeResp:

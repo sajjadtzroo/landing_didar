@@ -5,7 +5,7 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.constants.provinces import IRAN_PROVINCES
-from app.models.order import ContactMethod, OrderStatus
+from app.domains.orders.models import ContactMethod, OrderStatus
 
 # Mirror of the client Zod rules — server is the source of truth.
 PHONE_RE = r"^09\d{9}$"

@@ -50,9 +50,9 @@ from app.domains.customers.schemas import (
     OtpVerifyIn,
 )
 from app.models import Product
-from app.models.order import Order
-from app.schemas.order import OrderTrackOut
-from app.services.sms import send_sms
+from app.domains.orders import Order
+from app.domains.orders import OrderTrackOut
+from app.shared.sms import send_sms
 from app.services.storage import get_storage
 
 router = APIRouter()

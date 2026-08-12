@@ -5,8 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.order import OrderStatus
-from app.schemas.order import OrderItemIn
+from app.domains.orders import OrderStatus
+from app.domains.orders import OrderItemIn
 
 
 class AgentRetailerOut(BaseModel):

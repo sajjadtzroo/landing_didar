@@ -5,7 +5,7 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.warranty import BuybackStatus
-from app.schemas.order import PHONE_RE
+from app.domains.orders import PHONE_RE
 
 
 class WarrantyActivate(BaseModel):

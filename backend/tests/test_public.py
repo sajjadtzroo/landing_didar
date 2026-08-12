@@ -5,9 +5,9 @@ import pytest
 
 import app.core.db as _db_mod
 from app.api.limiter import limiter
-from app.api.v1 import public as _public
-from app.domains.content import service as _content_service
 from app.domains.content import Landing
+from app.domains.content import service as _content_service
+from app.domains.orders import router_public as _orders_public
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
@@ -15,7 +15,7 @@ ORDERS = "/api/v1/orders"
 
 # Grab the real _notify at import time — conftest's autouse fixture stubs the
 # module attribute during every test, so this is the only handle to the original.
-_REAL_NOTIFY = _public._notify
+_REAL_NOTIFY = _orders_public._notify
 
 
 async def _make_product(admin_client, **over):
@@ -311,7 +311,7 @@ class _Adapter:
 
 async def _run_notify(monkeypatch, order, adapter):
     monkeypatch.setattr(_db_mod, "SessionLocal", lambda: _FakeSession(order))
-    monkeypatch.setattr(_public, "get_adapter", lambda: adapter)
+    monkeypatch.setattr(_orders_public, "get_adapter", lambda: adapter)
     await _REAL_NOTIFY("order-id", "http://x/admin/orders")
 
 

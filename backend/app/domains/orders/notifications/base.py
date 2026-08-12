@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from app.models.order import Order
+from app.domains.orders.models import Order
 
 
 def format_order_message(order: Order, admin_url: str) -> str:

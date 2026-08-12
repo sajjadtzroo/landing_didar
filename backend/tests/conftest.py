@@ -21,15 +21,14 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import app.api.v1.public as public
+import app.domains.orders.router_public as orders_public
+from app import domains as _domains  # noqa: F401  — registers migrated domain models
 from app.api.deps import require_admin
 from app.api.limiter import limiter
 
 # Import every model so Base.metadata knows all tables before create_all.
 from app.core.db import Base, get_db
 from app.main import app
-from app import domains as _domains  # noqa: F401  — registers migrated domain models
-from app.models import order  # noqa: F401
 
 TEST_DB_URL = os.getenv(
     "TEST_DATABASE_URL",
@@ -102,7 +101,7 @@ async def _wire(_engine, _sessionmaker, monkeypatch):
     async def _noop(*a, **k):
         return None
 
-    monkeypatch.setattr(public, "_notify", _noop)
+    monkeypatch.setattr(orders_public, "_notify", _noop)
     # The public read endpoints cache via app.core.cache (in-process dict when no
     # REDIS_URL); clear it so one test's reads don't serve stale data to the next.
     import app.core.cache as _cache_mod

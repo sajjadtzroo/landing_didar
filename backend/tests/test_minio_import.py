@@ -1,7 +1,6 @@
 """Unit test for the MinIO photo import. The MinIO client is faked (in-memory
 tree) — no network, no minio server. DB is the test session; media_root is tmp."""
 
-from pathlib import Path
 
 import pytest
 from sqlalchemy import select

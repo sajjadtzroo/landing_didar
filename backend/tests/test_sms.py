@@ -5,7 +5,7 @@ mocked — no real network — and the log fallback is asserted to skip HTTP ent
 import pytest
 
 from app.core.config import settings
-from app.services import sms as sms_mod
+from app.shared import sms as sms_mod
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

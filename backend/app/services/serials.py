@@ -10,7 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.order import Order
+from app.models import Order
 from app.models import Product
 from app.models.product_serial import ProductSerial, SerialEvent, SerialScan
 

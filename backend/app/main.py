@@ -17,7 +17,6 @@ from app.api.limiter import limiter
 from app.api.v1 import (
     admin_buybacks,
     admin_gallery,
-    admin_orders,
     admin_serials,
     admin_stats,
     agent,
@@ -43,6 +42,8 @@ from app.domains.content.router_admin_portfolios import (
 from app.domains.content.router_public import router as content_public
 from app.domains.customers.router_account import router as customers_account
 from app.domains.customers.router_admin import router as customers_admin
+from app.domains.orders.router_admin import router as orders_admin
+from app.domains.orders.router_public import router as orders_public
 from app.domains.pricing import refresh_loop
 from app.domains.pricing.router_admin import router as pricing_admin
 from app.domains.pricing.router_public import router as pricing_public
@@ -310,12 +311,13 @@ async def metrics():
 API = "/api/v1"
 app.include_router(public.router, prefix=API, tags=["public"])
 app.include_router(catalog_public, prefix=API, tags=["public"])
+app.include_router(orders_public, prefix=API, tags=["public"])
 app.include_router(content_public, prefix=API, tags=["public"])
 app.include_router(pricing_public, prefix=API, tags=["public"])
 app.include_router(client_logs.router, prefix=API, tags=["client-logs"])
 app.include_router(customers_account, prefix=f"{API}/account", tags=["account"])
 app.include_router(users_auth, prefix=f"{API}/admin", tags=["auth"])
-app.include_router(admin_orders.router, prefix=f"{API}/admin", tags=["admin:orders"])
+app.include_router(orders_admin, prefix=f"{API}/admin", tags=["admin:orders"])
 app.include_router(catalog_admin, prefix=f"{API}/admin", tags=["admin:catalog"])
 app.include_router(
     content_admin_faqs, prefix=f"{API}/admin", tags=["admin:catalog"]

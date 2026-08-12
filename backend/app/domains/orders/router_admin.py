@@ -9,13 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
 from app.core.db import get_db
-from app.models.order import Order, OrderStatus
-from app.schemas.order import (
+from app.domains.orders import service as order_service
+from app.domains.orders.models import Order, OrderStatus
+from app.domains.orders.schemas import (
     OrderDetailOut,
     OrderListOut,
     OrderUpdate,
 )
-from app.services import orders as order_service
 from app.services import serials as serial_service
 
 router = APIRouter(dependencies=[Depends(require_admin)])

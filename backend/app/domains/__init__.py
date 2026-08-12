@@ -11,5 +11,6 @@ app factory both rely on that.
 from app.domains.catalog import models as _catalog_models  # noqa: F401
 from app.domains.content import models as _content_models  # noqa: F401
 from app.domains.customers import models as _customers_models  # noqa: F401
+from app.domains.orders import models as _orders_models  # noqa: F401
 from app.domains.pricing import models as _pricing_models  # noqa: F401
 from app.domains.users import models as _users_models  # noqa: F401

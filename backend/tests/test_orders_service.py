@@ -6,9 +6,8 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from app.models.order import Order, OrderStatus
-from app.schemas.order import OrderCreate
-from app.services import orders as svc
+from app.domains.orders import Order, OrderCreate, OrderStatus
+from app.domains.orders import service as svc
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

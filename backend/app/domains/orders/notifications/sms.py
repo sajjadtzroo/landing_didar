@@ -2,8 +2,8 @@ import httpx
 from loguru import logger
 
 from app.core.config import settings
-from app.models.order import Order
-from app.services.notifications.base import format_order_message
+from app.domains.orders.models import Order
+from app.domains.orders.notifications.base import format_order_message
 
 
 class SmsAdapter:

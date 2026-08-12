@@ -13,7 +13,7 @@ from app.core.db import get_db
 from app.models import AdminRole, User
 from app.models.agent import AgentRetailer, AgentVisit, MobileGalleryItem
 from app.models import Customer
-from app.models.order import Order, OrderStatus
+from app.models import Order, OrderStatus
 from app.models.product_serial import ProductSerial, ProductSerialStatus
 from app.schemas.agent import (
     AgentOrderCreate,
@@ -26,8 +26,8 @@ from app.schemas.agent import (
     VisitCreate,
     VisitOut,
 )
-from app.schemas.order import DeliveryProof, OrderCreate
-from app.services import orders as order_service
+from app.domains.orders import DeliveryProof, OrderCreate
+from app.domains.orders import service as order_service
 from app.services import serials as serial_service
 
 router = APIRouter()
