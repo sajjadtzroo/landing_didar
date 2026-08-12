@@ -24,8 +24,11 @@ async function sendCode() {
     const r = await requestOtp(phone.value.trim())
     devCode.value = r.dev_code
     step.value = 'code'
-  } catch {
-    error.value = CONTENT.account.errGeneric
+  } catch (e: unknown) {
+    const s = e as { statusCode?: number; response?: { status?: number } }
+    error.value = (s.statusCode === 429 || s.response?.status === 429)
+      ? CONTENT.account.errTooMany
+      : CONTENT.account.errGeneric
   } finally {
     loading.value = false
   }
