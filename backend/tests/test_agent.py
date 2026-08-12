@@ -47,7 +47,7 @@ async def _mk_retailer(_sessionmaker, phone="09121110000", store="طلای شر�
 
 
 async def _assign(_sessionmaker, agent_id, customer_id):
-    from app.models.agent import AgentRetailer
+    from app.domains.agents import AgentRetailer
 
     async with _sessionmaker() as s:
         s.add(AgentRetailer(agent_id=agent_id, customer_id=customer_id))

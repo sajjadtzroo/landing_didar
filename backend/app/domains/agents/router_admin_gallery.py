@@ -9,12 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
 from app.core.db import get_db
-from app.models import AdminRole, User
-from app.models.agent import MobileGalleryItem
-from app.models import Product
-from app.models import ProductSerial, ProductSerialStatus
-from app.schemas.agent import GalleryAssignIn, GalleryItemOut, GalleryOut
+from app.domains.agents.models import MobileGalleryItem
+from app.domains.agents.schemas import GalleryAssignIn, GalleryItemOut, GalleryOut
+from app.domains.catalog import Product
+from app.domains.serials import ProductSerial, ProductSerialStatus
 from app.domains.serials import service as serial_service
+from app.domains.users import AdminRole, User
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 

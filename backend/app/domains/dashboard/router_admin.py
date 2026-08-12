@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
 from app.core.db import get_db
-from app.models import Order, OrderItem, OrderStatus
+from app.domains.orders import Order, OrderItem, OrderStatus
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 

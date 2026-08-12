@@ -5,7 +5,7 @@ from app.domains.catalog.models import ImportJob, Product
 from app.domains.content.models import FAQ, Landing, Portfolio
 from app.domains.pricing.models import GoldPriceSnapshot
 from app.domains.users.models import AdminRole, AuditLog, User
-from app.models.agent import AgentRetailer, AgentVisit, MobileGalleryItem
+from app.domains.agents.models import AgentRetailer, AgentVisit, MobileGalleryItem
 from app.domains.customers.models import Customer, CustomerAddress, Favorite, OtpCode
 from app.domains.orders.models import Order, OrderItem, OrderStatus, OrderStatusLog
 from app.domains.serials.serial_models import ProductSerial, ProductSerialStatus, SerialScan

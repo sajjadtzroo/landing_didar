@@ -10,12 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_agent
 from app.core.db import get_db
-from app.models import AdminRole, User
-from app.models.agent import AgentRetailer, AgentVisit, MobileGalleryItem
-from app.models import Customer
-from app.models import Order, OrderStatus
-from app.models import ProductSerial, ProductSerialStatus
-from app.schemas.agent import (
+from app.domains.agents.models import AgentRetailer, AgentVisit, MobileGalleryItem
+from app.domains.agents.schemas import (
     AgentOrderCreate,
     AgentOrderDetailOut,
     AgentOrderOut,
@@ -26,9 +22,12 @@ from app.schemas.agent import (
     VisitCreate,
     VisitOut,
 )
-from app.domains.orders import DeliveryProof, OrderCreate
+from app.domains.customers import Customer
+from app.domains.orders import DeliveryProof, Order, OrderCreate, OrderStatus
 from app.domains.orders import service as order_service
+from app.domains.serials import ProductSerial, ProductSerialStatus
 from app.domains.serials import service as serial_service
+from app.domains.users import AdminRole, User
 
 router = APIRouter()
 

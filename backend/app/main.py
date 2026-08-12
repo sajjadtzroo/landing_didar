@@ -14,12 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
 from app.api.limiter import limiter
-from app.api.v1 import (
-    admin_gallery,
-    admin_stats,
-    agent,
-    client_logs,
-)
+from app.api.v1 import client_logs
 from app.core.config import settings
 from app.core.db import engine
 from app.core.logging import get_logger, setup_logging
@@ -29,6 +24,8 @@ from app.core.metrics import (
     RATELIMIT_TRIPS,
     metrics_endpoint,
 )
+from app.domains.agents.router_admin_gallery import router as agents_admin_gallery
+from app.domains.agents.router_agent import router as agents_agent
 from app.domains.catalog.router_admin import router as catalog_admin
 from app.domains.catalog.router_public import router as catalog_public
 from app.domains.content.router_admin_faqs import router as content_admin_faqs
@@ -39,6 +36,7 @@ from app.domains.content.router_admin_portfolios import (
 from app.domains.content.router_public import router as content_public
 from app.domains.customers.router_account import router as customers_account
 from app.domains.customers.router_admin import router as customers_admin
+from app.domains.dashboard.router_admin import router as dashboard_admin
 from app.domains.orders.router_admin import router as orders_admin
 from app.domains.orders.router_public import router as orders_public
 from app.domains.pricing import refresh_loop
@@ -328,7 +326,7 @@ app.include_router(
 app.include_router(
     content_admin_portfolios, prefix=f"{API}/admin", tags=["admin:portfolios"]
 )
-app.include_router(admin_stats.router, prefix=f"{API}/admin", tags=["admin:stats"])
+app.include_router(dashboard_admin, prefix=f"{API}/admin", tags=["admin:stats"])
 app.include_router(pricing_admin, prefix=f"{API}/admin", tags=["admin:prices"])
 app.include_router(serials_admin, prefix=f"{API}/admin", tags=["admin:serials"])
 app.include_router(
@@ -336,6 +334,6 @@ app.include_router(
 )
 app.include_router(users_admin_users, prefix=f"{API}/admin", tags=["admin:users"])
 app.include_router(users_admin_audit, prefix=f"{API}/admin", tags=["admin:audit"])
-app.include_router(agent.router, prefix=f"{API}/agent", tags=["agent"])
+app.include_router(agents_agent, prefix=f"{API}/agent", tags=["agent"])
 app.include_router(serials_admin_buybacks, prefix=f"{API}/admin", tags=["admin:buybacks"])
-app.include_router(admin_gallery.router, prefix=f"{API}/admin", tags=["admin:gallery"])
+app.include_router(agents_admin_gallery, prefix=f"{API}/admin", tags=["admin:gallery"])

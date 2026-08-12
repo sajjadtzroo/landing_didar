@@ -71,7 +71,7 @@ async def update_user(
 @router.get("/users/{user_id}/retailers", response_model=list[uuid.UUID])
 async def get_user_retailers(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """Customer ids assigned to this agent (WO 7.5 assignment)."""
-    from app.models.agent import AgentRetailer
+    from app.domains.agents import AgentRetailer
 
     rows = await db.execute(
         select(AgentRetailer.customer_id).where(AgentRetailer.agent_id == user_id)
@@ -86,7 +86,7 @@ async def set_user_retailers(
     """Replace the agent's retailer assignment with the given customer ids."""
     from sqlalchemy import delete
 
-    from app.models.agent import AgentRetailer
+    from app.domains.agents import AgentRetailer
 
     user = await db.get(User, user_id)
     if user is None:
