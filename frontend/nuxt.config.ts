@@ -138,6 +138,7 @@ export default defineNuxtConfig({
       // Matomo Goal / custom-dimension IDs (created in the Matomo UI).
       matomoGoalOrder: process.env.NUXT_PUBLIC_MATOMO_GOAL_ORDER || '1',
       matomoGoalPhone: process.env.NUXT_PUBLIC_MATOMO_GOAL_PHONE || '2',
+      matomoGoalChat: process.env.NUXT_PUBLIC_MATOMO_GOAL_CHAT || '3',
       matomoDimProvince: process.env.NUXT_PUBLIC_MATOMO_DIM_PROVINCE || '1',
       matomoDimSource: process.env.NUXT_PUBLIC_MATOMO_DIM_SOURCE || '2',
     },

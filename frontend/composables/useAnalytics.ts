@@ -27,6 +27,11 @@ export function useAnalytics() {
   const setCustomDimension = (id: number, value: string) =>
     paq().push(['setCustomDimension', id, value])
 
+  // --- Identity (visitor profile across devices/sessions) ---
+  const setUserId = (id: string) => paq().push(['setUserId', id])
+
+  const resetUserId = () => paq().push(['resetUserId'])
+
   // --- Ecommerce ---
   const addEcommerceItem = (
     sku: string,
@@ -48,6 +53,8 @@ export function useAnalytics() {
     trackEvent,
     trackGoal,
     setCustomDimension,
+    setUserId,
+    resetUserId,
     addEcommerceItem,
     clearEcommerceCart,
     trackEcommerceCartUpdate,

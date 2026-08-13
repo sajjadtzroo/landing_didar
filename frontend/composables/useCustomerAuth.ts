@@ -22,6 +22,8 @@ export function useCustomerAuth() {
     })
     customer.value = c
     loaded.value = true
+    // Matomo userId: joins this customer's sessions across devices/visits.
+    useAnalytics().setUserId(c.phone)
     // Merge the guest wishlist into the account (upload local + pull server).
     await useFavorites().syncOnLogin()
     return c
@@ -32,6 +34,7 @@ export function useCustomerAuth() {
     if (loaded.value && !force) return customer.value
     try {
       customer.value = await apiFetch<Customer>('/account/me')
+      if (customer.value) useAnalytics().setUserId(customer.value.phone)
     } catch {
       customer.value = null
     }
@@ -43,6 +46,7 @@ export function useCustomerAuth() {
     await apiFetch('/account/logout', { method: 'POST' }).catch(() => {})
     customer.value = null
     loaded.value = true
+    useAnalytics().resetUserId()
   }
 
   return { customer, requestOtp, verifyOtp, ensure, logout }

@@ -68,6 +68,7 @@ export function useSupportChat() {
   async function open() {
     panelOpen.value = true
     unread.value = 0
+    useAnalytics().trackEvent('chat', 'open')
     if (!conv.value) {
       conv.value = await apiFetch<ChatConversation>(`${CHAT}/conversations`, {
         method: 'POST',
@@ -96,6 +97,12 @@ export function useSupportChat() {
 
   async function send(content: string) {
     if (!conv.value || !content.trim()) return
+    // First message of the session = a support conversation actually started.
+    if (!messages.value.some((m) => m.sender_role === 'customer')) {
+      const { trackEvent, trackGoal } = useAnalytics()
+      trackEvent('chat', 'first-message')
+      trackGoal(Number(useRuntimeConfig().public.matomoGoalChat))
+    }
     const client_msg_id = crypto.randomUUID()
     upsert({
       id: client_msg_id, // placeholder until ack
