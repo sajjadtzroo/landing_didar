@@ -17,6 +17,7 @@ gitignored root `.env` (`MATOMO_TOKEN`) — never in the repo.
 |---|---|
 | Goal 1 «ثبت سفارش» (manual, revenue) | created — was missing; conversions were silently dropped before |
 | Goal 2 «تماس تلفنی» (manual) | created |
+| Goal 3 «شروع گفتگوی پشتیبانی» (manual) | created; widget fires it on first customer message |
 | Custom dimension 1 «استان» (visit) | created — was missing |
 | Custom dimension 2 «منبع ورود» (visit) | created |
 | Site main URL / aliases | didargold.ir main; www + didar-gold.liara.run aliases |
@@ -40,12 +41,26 @@ installed. Free built-ins cover most of the need at this traffic level:
 Buy Funnels only when a strict step-defined funnel (shop → product → cart →
 order form → success, with per-step drop-off) becomes a real weekly question.
 
+## Section audit (2026-08-13, month-to-date)
+
+Visitors/devices/geo, Behaviour→Pages (with page-performance timings),
+events (products/order categories), ecommerce orders + abandoned carts, and
+referrer types all have live data. `nb_users` was 0 → fixed by userId
+tracking (below). Site Search is correctly configured (`?q=` is a default
+keyword param, SPA tracks full path) — just no searches yet. Content
+tracking is unused: needs `data-track-content` markup + a tracker line; add
+when banner CTR becomes a question.
+
+## Done in the same pass (frontend, e82f7c6)
+
+- `setUserId(phone)` after OTP verify and on `/me` restore; `resetUserId`
+  on logout → visitor profiles / cross-device journeys.
+- Chat behavior: `chat/open` event on widget open, `chat/first-message`
+  event + goal 3 on the first customer message of a session.
+
 ## Roadmap (not done yet)
 
-1. **userId at login** — `_paq.push(['setUserId', phone])` after OTP verify
-   (and `resetUserId` on logout): joins a visitor's sessions across devices;
-   enables per-customer journeys. Small frontend change.
-2. **Server-side events** — chat started / OTP sent via the Tracking HTTP API
+1. **Server-side events** — chat started / OTP sent via the Tracking HTTP API
    from the backend, for events the browser can't see reliably.
 3. **Official McpServer plugin** (free, Matomo ≥5) — install from the
    marketplace, then `claude mcp add --transport http analytics <mcp-url>
