@@ -3,17 +3,40 @@ client_msg_id), read marks, status changes — each followed by its fan-out
 publish so every delivery path behaves identically.
 """
 
+import asyncio
 import uuid
 from datetime import UTC, datetime
 
 from fastapi.encoders import jsonable_encoder
+from loguru import logger
 from sqlalchemy import select, tuple_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.domains.chat.models import ChatMessage, Conversation, ConversationStatus
 from app.domains.chat.realtime import publish
 from app.domains.chat.schemas import ConversationOut, MessageOut
+from app.shared.sms import send_sms
+
+
+async def _notify_admin_new_conversation() -> None:
+    """SMS the shop admin that a customer is waiting. Best-effort: chat keeps
+    working when the gateway is down, staff just rely on the inbox badge."""
+    if not settings.sms_admin_phone:
+        return
+    try:
+        await send_sms(
+            settings.sms_admin_phone,
+            "دیدار: گفتگوی پشتیبانی جدید — مشتری منتظر پاسخ است.",
+        )
+    except Exception as e:  # noqa: BLE001 — alert failure must not break chat
+        logger.warning("chat admin sms failed: {}", e)
+
+
+def _spawn_admin_alert() -> None:
+    # Fire-and-forget so the customer's request doesn't wait on the SMS API.
+    asyncio.get_running_loop().create_task(_notify_admin_new_conversation())
 
 
 def conv_channel(conv_id: uuid.UUID) -> str:
@@ -41,6 +64,7 @@ async def get_or_create_open_conversation(
     await db.commit()
     await db.refresh(conv)
     await publish_conversation(conv)
+    _spawn_admin_alert()
     return conv
 
 
@@ -92,6 +116,7 @@ async def send_message(
     await publish("chat:admin", event)
     if reopened:
         await publish_conversation(conv)
+        _spawn_admin_alert()  # a reopened thread is a new inquiry for staff
     return msg
 
 
