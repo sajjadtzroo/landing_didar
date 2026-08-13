@@ -28,6 +28,10 @@ from app.domains.agents.router_admin_gallery import router as agents_admin_galle
 from app.domains.agents.router_agent import router as agents_agent
 from app.domains.catalog.router_admin import router as catalog_admin
 from app.domains.catalog.router_public import router as catalog_public
+from app.domains.chat.realtime import stop_reader as chat_stop_reader
+from app.domains.chat.router import router as chat_account
+from app.domains.chat.router_admin import router as chat_admin
+from app.domains.chat.router_ws import router as chat_ws
 from app.domains.content.router_admin_faqs import router as content_admin_faqs
 from app.domains.content.router_admin_landings import router as content_admin_landings
 from app.domains.content.router_admin_portfolios import (
@@ -73,6 +77,7 @@ async def lifespan(app: FastAPI):
         gold_task.cancel()
         with suppress(asyncio.CancelledError):
             await gold_task
+        await chat_stop_reader()  # stop the chat pub/sub relay before the pool
         await engine.dispose()  # close the pool cleanly on SIGTERM
 
 
@@ -316,7 +321,10 @@ app.include_router(content_public, prefix=API, tags=["public"])
 app.include_router(pricing_public, prefix=API, tags=["public"])
 app.include_router(client_logs.router, prefix=API, tags=["client-logs"])
 app.include_router(customers_account, prefix=f"{API}/account", tags=["account"])
+app.include_router(chat_account, prefix=f"{API}/account/chat", tags=["account:chat"])
+app.include_router(chat_ws, prefix=API)  # WS /api/v1/chat/ws
 app.include_router(users_auth, prefix=f"{API}/admin", tags=["auth"])
+app.include_router(chat_admin, prefix=f"{API}/admin", tags=["admin:chat"])
 app.include_router(orders_admin, prefix=f"{API}/admin", tags=["admin:orders"])
 app.include_router(catalog_admin, prefix=f"{API}/admin", tags=["admin:catalog"])
 app.include_router(

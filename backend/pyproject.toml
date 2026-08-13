@@ -63,6 +63,7 @@ containers = ["app.domains"]
 layers = [
   "agents",
   "dashboard",
+  "chat",
   "serials",
   "orders",
   "customers",
@@ -78,10 +79,36 @@ ignore_imports = [
 ]
 
 [[tool.importlinter.contracts]]
+name = "chat: internals only via the domain public API"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+  "app.domains.agents",
+  "app.domains.dashboard",
+  "app.domains.serials",
+  "app.domains.orders",
+  "app.domains.customers",
+  "app.domains.content",
+  "app.domains.catalog",
+  "app.domains.pricing",
+  "app.domains.users",
+]
+forbidden_modules = [
+  "app.domains.chat.models",
+  "app.domains.chat.schemas",
+  "app.domains.chat.service",
+  "app.domains.chat.realtime",
+  "app.domains.chat.router",
+  "app.domains.chat.router_admin",
+  "app.domains.chat.router_ws",
+]
+
+[[tool.importlinter.contracts]]
 name = "agents: internals only via the domain public API"
 type = "forbidden"
 allow_indirect_imports = true
 source_modules = [
+  "app.domains.chat",
   "app.domains.dashboard",
   "app.domains.serials",
   "app.domains.orders",
@@ -103,6 +130,7 @@ name = "dashboard: internals only via the domain public API"
 type = "forbidden"
 allow_indirect_imports = true
 source_modules = [
+  "app.domains.chat",
   "app.domains.agents",
   "app.domains.serials",
   "app.domains.orders",
@@ -121,6 +149,7 @@ name = "serials: internals only via the domain public API"
 type = "forbidden"
 allow_indirect_imports = true
 source_modules = [
+  "app.domains.chat",
   "app.domains.agents",
   "app.domains.dashboard",
   "app.domains.orders",
@@ -145,6 +174,7 @@ name = "orders: internals only via the domain public API"
 type = "forbidden"
 allow_indirect_imports = true
 source_modules = [
+  "app.domains.chat",
   "app.domains.agents",
   "app.domains.dashboard",
   "app.domains.serials",
@@ -166,6 +196,7 @@ name = "customers: internals only via the domain public API"
 type = "forbidden"
 allow_indirect_imports = true
 source_modules = [
+  "app.domains.chat",
   "app.domains.agents",
   "app.domains.dashboard",
   "app.domains.serials",
@@ -188,6 +219,7 @@ name = "content: internals only via the domain public API"
 type = "forbidden"
 allow_indirect_imports = true
 source_modules = [
+  "app.domains.chat",
   "app.domains.agents",
   "app.domains.dashboard",
   "app.domains.serials",
@@ -212,6 +244,7 @@ name = "catalog: internals only via the domain public API"
 type = "forbidden"
 allow_indirect_imports = true
 source_modules = [
+  "app.domains.chat",
   "app.domains.agents",
   "app.domains.dashboard",
   "app.domains.serials",
@@ -235,6 +268,7 @@ name = "pricing: internals only via the domain public API"
 type = "forbidden"
 allow_indirect_imports = true
 source_modules = [
+  "app.domains.chat",
   "app.domains.agents",
   "app.domains.dashboard",
   "app.domains.serials",
@@ -255,6 +289,7 @@ name = "users: internals only via the domain public API"
 type = "forbidden"
 allow_indirect_imports = true
 source_modules = [
+  "app.domains.chat",
   "app.domains.agents",
   "app.domains.dashboard",
   "app.domains.serials",

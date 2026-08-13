@@ -10,6 +10,7 @@ app factory both rely on that.
 
 from app.domains.agents import models as _agents_models  # noqa: F401
 from app.domains.catalog import models as _catalog_models  # noqa: F401
+from app.domains.chat import models as _chat_models  # noqa: F401
 from app.domains.content import models as _content_models  # noqa: F401
 from app.domains.customers import models as _customers_models  # noqa: F401
 from app.domains.orders import models as _orders_models  # noqa: F401
