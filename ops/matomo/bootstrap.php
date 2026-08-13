@@ -30,15 +30,12 @@ if (empty($_SERVER['HTTP_AUTHORIZATION'])) {
 if (isset($_GET['__hdrprobe'])) {
     header('Content-Type: application/json');
     $ah = function_exists('apache_request_headers') ? apache_request_headers() : [];
+    $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
     echo json_encode([
-        'server_authorization' => isset($_SERVER['HTTP_AUTHORIZATION']),
-        'server_x_authorization' => isset($_SERVER['HTTP_X_AUTHORIZATION']),
-        'apache_authorization' => isset($ah['Authorization']),
+        'auth_prefix' => substr($auth, 0, 7),          // expect "Bearer "
+        'auth_len' => strlen($auth),
+        'starts_with_bearer' => strpos($auth, 'Bearer ') === 0,
         'apache_header_names' => array_keys($ah),
-        'server_http_keys' => array_values(array_filter(
-            array_keys($_SERVER),
-            static fn ($k) => strpos($k, 'HTTP_') === 0
-        )),
     ]);
     exit;
 }
