@@ -18,6 +18,7 @@ const SECTIONS: [string, string][] = [
   ['/admin/portfolios', 'پورتفولیوها'],
   ['/admin/landings', 'صفحات فرود'],
   ['/admin/faqs', 'سؤالات متداول'],
+  ['/admin/chat', 'گفتگوهای پشتیبانی'],
   ['/admin/customers', 'احراز هویت مشتریان'],
   ['/admin/buybacks', 'درخواست‌های بازخرید'],
   ['/admin/users', 'کاربران'],

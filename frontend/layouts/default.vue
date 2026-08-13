@@ -90,5 +90,10 @@ useHead({
 
     <!-- Global toast host (aria-live), for add-to-cart / favorite confirmations -->
     <AppToast />
+
+    <!-- Live support chat (client-only: WebSocket + auth state) -->
+    <ClientOnly>
+      <ChatWidget />
+    </ClientOnly>
   </div>
 </template>

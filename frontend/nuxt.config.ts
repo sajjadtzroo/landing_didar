@@ -125,6 +125,9 @@ export default defineNuxtConfig({
     mauticOrigin: process.env.NUXT_MAUTIC_ORIGIN || 'https://marketing-auto.liara.run',
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api/v1',
+      // Chat WebSocket origin. The nitro proxy can't upgrade WS, so the browser
+      // connects straight to the API host (auth = signed ticket, not cookie).
+      wsBase: process.env.NUXT_PUBLIC_WS_BASE || '',
       // Canonical origin — canonical/og:url/sitemap all build off this. Set the
       // real domain via NUXT_PUBLIC_SITE_URL in prod.
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://didargold.com',

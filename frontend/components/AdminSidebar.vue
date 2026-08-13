@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   LayoutTemplate,
   LogOut,
+  MessageCircle,
   Package,
   ScrollText,
   ShieldCheck,
@@ -50,6 +51,7 @@ const groups = computed(() => [
   {
     label: 'مشتریان',
     items: [
+      { to: '/admin/chat', label: 'گفتگوهای پشتیبانی', icon: MessageCircle },
       { to: '/admin/customers', label: 'احراز هویت مشتریان', icon: ShieldCheck },
       { to: '/admin/buybacks', label: 'درخواست‌های بازخرید', icon: Banknote },
     ],

@@ -337,3 +337,33 @@ export interface BuybackListResponse {
   page: number
   page_size: number
 }
+
+// --- Support chat ---
+export interface ChatConversation {
+  id: string
+  status: 'open' | 'resolved' | 'closed'
+  subject: string | null
+  created_at: string
+  last_message_at: string
+  customer_last_read_at: string | null
+  admin_last_read_at: string | null
+}
+
+export interface ChatMessage {
+  id: string
+  conversation_id: string
+  sender_role: 'customer' | 'admin'
+  content: string
+  client_msg_id: string | null
+  created_at: string
+  /** client-only: optimistic copy not yet acked by the server */
+  pending?: boolean
+}
+
+export interface ChatAdminConversation extends ChatConversation {
+  customer_id: string
+  customer_phone: string
+  customer_name: string | null
+  unread: number
+  last_message: string | null
+}
