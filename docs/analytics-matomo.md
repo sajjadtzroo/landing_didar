@@ -62,12 +62,27 @@ when banner CTR becomes a question.
 
 1. **Server-side events** — chat started / OTP sent via the Tracking HTTP API
    from the backend, for events the browser can't see reliably.
-3. **Official McpServer plugin** (free, Matomo ≥5) — install from the
-   marketplace, then `claude mcp add --transport http analytics <mcp-url>
-   --header 'Authorization: Bearer <token>'` for natural-language analytics
-   in Claude Code sessions.
-4. **View-only token** — mint a read-only user + token for day-to-day
-   queries; keep the admin token out of `.env` once config work settles.
-5. **Cron archiving** on the Matomo host — required if segments should be
+3. **Cron archiving** on the Matomo host — required if segments should be
    pre-processed (`autoArchive=1`); real-time segments are fine at current
    traffic.
+
+## MCP server (DONE — connected to Claude Code)
+
+- McpServer plugin installed + activated; enabled with privilege cap = `view`
+  (`config:set McpServer.enable_mcp=1`, `maximum_mcp_access_level=view`).
+- Dedicated **view-only user `mcp-reader`** + app-specific token is the MCP
+  credential (never the admin token). Token in Claude Code user config, not
+  the repo.
+- Endpoint: `index.php?module=API&method=McpServer.mcp&format=mcp`, Bearer auth.
+- **Gotcha fixed** — Apache mod_php withholds the `Authorization` header from
+  `$_SERVER`; `apache_request_headers()` exposes it as lowercase
+  `authorization` behind Liara's HTTP/2 edge. `ops/matomo/bootstrap.php`
+  (deployed to the host's persistent disk as `/var/www/html/bootstrap.php`)
+  republishes it to `HTTP_AUTHORIZATION` where Matomo core reads it. Redeploy
+  this file after any Matomo image rebuild that wipes the disk.
+- Tools exposed: site/report/goal/segment/dimension get+list, report
+  metadata + processed report data, site search. Raw-API tools stay off
+  (`raw_api_access_scope=none`).
+- Re-register in a new machine/session:
+  `claude mcp add --scope user --transport http matomo '<endpoint>'
+  --header 'Authorization: Bearer <mcp-reader-token>'`
