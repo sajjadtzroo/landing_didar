@@ -45,6 +45,12 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
             "last_message_at",
             sa.DateTime(timezone=True),
             server_default=sa.func.now(),
@@ -77,6 +83,12 @@ def upgrade() -> None:
         sa.Column("client_msg_id", UUID(as_uuid=True)),
         sa.Column(
             "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
             sa.DateTime(timezone=True),
             server_default=sa.func.now(),
             nullable=False,
