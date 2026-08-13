@@ -95,7 +95,7 @@ export const CONTENT = {
   account: {
     // Login (OTP)
     loginTitle: 'ورود / ثبت‌نام',
-    loginSubtitle: 'برای ورود به حساب کاربری، شماره موبایل خود را وارد کنید.',
+    loginSubtitle: 'ورود و ثبت‌نام به پنل کاربری؛ شماره تلفن خود را وارد کنید.',
     phone: 'شماره موبایل',
     sendCode: 'ارسال کد',
     sending: 'در حال ارسال…',
