@@ -59,12 +59,15 @@ function timeOf(iso: string): string {
 </script>
 
 <template>
-  <!-- RTL site: cart FAB owns the end corner, chat takes the start corner -->
-  <div class="fixed bottom-5 start-4 z-40 flex flex-col items-start gap-3">
+  <!-- RTL site: cart FAB owns the end corner, chat takes the start corner.
+       Raised above the mobile BottomNav (sm:hidden) + iOS safe area. -->
+  <div
+    class="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] start-4 z-40 flex flex-col items-start gap-3 sm:bottom-5"
+  >
     <Transition name="chat-pop">
       <section
         v-if="chat.panelOpen.value"
-        class="flex h-[28rem] w-[min(22rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-luxury"
+        class="flex h-[28rem] max-h-[70dvh] w-[min(22rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-luxury"
         :aria-label="C.title"
       >
         <!-- Header -->
