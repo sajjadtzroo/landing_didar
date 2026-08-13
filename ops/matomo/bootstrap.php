@@ -20,3 +20,14 @@ if (empty($_SERVER['HTTP_AUTHORIZATION']) && function_exists('apache_request_hea
         }
     }
 }
+
+if (isset($_GET['__hdrprobe'])) {
+    header('Content-Type: application/json');
+    $a = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    echo json_encode([
+        'post_shim_bearer' => strpos($a, 'Bearer ') === 0,
+        'post_shim_len' => strlen($a),
+        'arh_exists' => function_exists('apache_request_headers'),
+    ]);
+    exit;
+}
