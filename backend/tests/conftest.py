@@ -38,6 +38,7 @@ TEST_DB_URL = os.getenv(
 _TABLES = (
     "order_status_log, order_items, orders, "
     "landings, portfolios, products, faqs, "
+    "chat_messages, conversations, "
     "favorites, customer_addresses, otp_codes, customers, "
     "mobile_gallery_items, warranties, buyback_requests, agent_visits, agent_retailers, users, audit_log, import_jobs"
 )

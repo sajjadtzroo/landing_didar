@@ -54,8 +54,9 @@ async def send_message(
     """Insert (or return the earlier insert for a retried client_msg_id),
     bump the thread, reopen if the customer writes into a settled one,
     and fan out."""
+    conv_id = conv.id  # rollback expires conv; don't touch ORM attrs after it
     msg = ChatMessage(
-        conversation_id=conv.id,
+        conversation_id=conv_id,
         sender_role=sender_role,
         content=content,
         client_msg_id=client_msg_id,
@@ -68,7 +69,7 @@ async def send_message(
         return (
             await db.execute(
                 select(ChatMessage).where(
-                    ChatMessage.conversation_id == conv.id,
+                    ChatMessage.conversation_id == conv_id,
                     ChatMessage.client_msg_id == client_msg_id,
                 )
             )

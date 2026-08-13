@@ -24,7 +24,8 @@ from loguru import logger
 from pydantic import ValidationError
 from sqlalchemy import select
 
-from app.core.db import SessionLocal
+# Module (not name) import: tests repoint core_db.SessionLocal at the test DB.
+from app.core import db as core_db
 from app.domains.chat import service
 from app.domains.chat.models import Conversation
 from app.domains.chat.realtime import ensure_reader, manager, publish, read_ws_ticket
@@ -42,7 +43,7 @@ async def _authorized_conv(
         cid = uuid.UUID(conv_id)
     except (ValueError, TypeError):
         return None
-    async with SessionLocal() as db:
+    async with core_db.SessionLocal() as db:
         conv = (
             await db.execute(select(Conversation).where(Conversation.id == cid))
         ).scalar_one_or_none()
@@ -110,7 +111,7 @@ async def chat_ws(ws: WebSocket) -> None:
                 except ValidationError:
                     await ws.send_json({"t": "error", "detail": "bad message"})
                     continue
-                async with SessionLocal() as db:
+                async with core_db.SessionLocal() as db:
                     db.add(conv)  # re-attach the detached row to this session
                     msg = await service.send_message(
                         db, conv, role, payload.content, payload.client_msg_id
@@ -137,7 +138,7 @@ async def chat_ws(ws: WebSocket) -> None:
             elif t == "read":
                 conv = await _authorized_conv(frame.get("conv_id"), role, user_id)
                 if conv is not None:
-                    async with SessionLocal() as db:
+                    async with core_db.SessionLocal() as db:
                         db.add(conv)
                         await service.mark_read(db, conv, role)
 
