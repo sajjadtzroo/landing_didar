@@ -41,3 +41,12 @@ jobs:
         run: pytest -q
         env:
           TEST_DATABASE_URL: postgresql+asyncpg://didar:didar@localhost:5434/didar_test
+      # The suite builds its schema with create_all, so migrations themselves are
+      # otherwise untested — this catches fresh-install breakers (e.g. the 0019
+      # enum-in-same-transaction bug) before they reach a real deploy.
+      - name: Migrations on a fresh DB
+        run: |
+          PGPASSWORD=didar psql -h localhost -p 5434 -U didar -c 'CREATE DATABASE didar_migrate;'
+          alembic upgrade head
+        env:
+          DATABASE_URL: postgresql+asyncpg://didar:didar@localhost:5434/didar_migrate
