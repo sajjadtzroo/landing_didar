@@ -28,10 +28,10 @@ from app.domains.agents.routers.admin_gallery import router as agents_admin_gall
 from app.domains.agents.routers.agent import router as agents_agent
 from app.domains.catalog.routers.admin import router as catalog_admin
 from app.domains.catalog.routers.public import router as catalog_public
-from app.domains.chat.realtime import stop_reader as chat_stop_reader
-from app.domains.chat.router import router as chat_account
-from app.domains.chat.router_admin import router as chat_admin
-from app.domains.chat.router_ws import router as chat_ws
+from app.domains.chat.routers.account import router as chat_account
+from app.domains.chat.routers.admin import router as chat_admin
+from app.domains.chat.routers.ws import router as chat_ws
+from app.domains.chat.services.realtime import stop_reader as chat_stop_reader
 from app.domains.content.routers.admin_faqs import router as content_admin_faqs
 from app.domains.content.routers.admin_landings import router as content_admin_landings
 from app.domains.content.routers.admin_portfolios import (

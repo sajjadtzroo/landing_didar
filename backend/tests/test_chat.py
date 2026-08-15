@@ -7,12 +7,12 @@ import uuid
 
 import pytest
 
-from app.domains.chat.realtime import (
+from app.domains.chat.routers.ws import _authorized_conv
+from app.domains.chat.services.realtime import (
     ConnectionManager,
     issue_ws_ticket,
     read_ws_ticket,
 )
-from app.domains.chat.router_ws import _authorized_conv
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

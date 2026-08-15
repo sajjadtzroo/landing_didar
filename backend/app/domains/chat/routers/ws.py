@@ -22,14 +22,20 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
 from loguru import logger
 from pydantic import ValidationError
-from sqlalchemy import select
 
 # Module (not name) import: tests repoint core_db.SessionLocal at the test DB.
 from app.core import db as core_db
-from app.domains.chat import service
+from app.domains.chat.actions import ConversationAction, MessageAction
 from app.domains.chat.models import Conversation
-from app.domains.chat.realtime import ensure_reader, manager, publish, read_ws_ticket
+from app.domains.chat.queries import ConversationQuery
 from app.domains.chat.schemas import MessageIn, MessageOut
+from app.domains.chat.services import (
+    conv_channel,
+    ensure_reader,
+    manager,
+    publish,
+    read_ws_ticket,
+)
 
 router = APIRouter()
 
@@ -44,9 +50,7 @@ async def _authorized_conv(
     except (ValueError, TypeError):
         return None
     async with core_db.SessionLocal() as db:
-        conv = (
-            await db.execute(select(Conversation).where(Conversation.id == cid))
-        ).scalar_one_or_none()
+        conv = await ConversationQuery(db).by_id(cid)
     if conv is None:
         return None
     if role == "customer" and str(conv.customer_id) != user_id:
@@ -113,8 +117,8 @@ async def chat_ws(ws: WebSocket) -> None:
                     continue
                 async with core_db.SessionLocal() as db:
                     db.add(conv)  # re-attach the detached row to this session
-                    msg = await service.send_message(
-                        db, conv, role, payload.content, payload.client_msg_id
+                    msg = await MessageAction(db).send(
+                        conv, role, payload.content, payload.client_msg_id
                     )
                     await ws.send_json(
                         {
@@ -131,7 +135,7 @@ async def chat_ws(ws: WebSocket) -> None:
                 if conv is not None:
                     # Relay-only; no storage. Receivers expire it client-side.
                     await publish(
-                        service.conv_channel(conv.id),
+                        conv_channel(conv.id),
                         {"type": "typing", "conv_id": str(conv.id), "role": role},
                     )
 
@@ -140,7 +144,7 @@ async def chat_ws(ws: WebSocket) -> None:
                 if conv is not None:
                     async with core_db.SessionLocal() as db:
                         db.add(conv)
-                        await service.mark_read(db, conv, role)
+                        await ConversationAction(db).mark_read(conv, role)
 
             else:
                 await ws.send_json({"t": "error", "detail": "unknown type"})

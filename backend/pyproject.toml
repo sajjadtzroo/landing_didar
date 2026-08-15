@@ -90,11 +90,10 @@ source_modules = [
 forbidden_modules = [
   "app.domains.chat.models",
   "app.domains.chat.schemas",
-  "app.domains.chat.service",
-  "app.domains.chat.realtime",
-  "app.domains.chat.router",
-  "app.domains.chat.router_admin",
-  "app.domains.chat.router_ws",
+  "app.domains.chat.queries",
+  "app.domains.chat.actions",
+  "app.domains.chat.routers",
+  "app.domains.chat.services",
 ]
 
 [[tool.importlinter.contracts]]

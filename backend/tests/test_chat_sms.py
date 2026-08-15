@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-import app.domains.chat.service as chat_service
+import app.domains.chat.services.notifications as chat_notifications
 from app.core.config import settings
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
@@ -30,7 +30,7 @@ async def test_new_and_reopened_conversation_sms_admin(
     async def fake_sms(to, message):
         sent.append((to, message))
 
-    monkeypatch.setattr(chat_service, "send_sms", fake_sms)
+    monkeypatch.setattr(chat_notifications, "send_sms", fake_sms)
     monkeypatch.setattr(settings, "sms_admin_phone", "09028068820")
 
     await _login(client)
@@ -61,7 +61,7 @@ async def test_no_admin_phone_no_sms(client, monkeypatch):
     async def fake_sms(to, message):
         sent.append(to)
 
-    monkeypatch.setattr(chat_service, "send_sms", fake_sms)
+    monkeypatch.setattr(chat_notifications, "send_sms", fake_sms)
     monkeypatch.setattr(settings, "sms_admin_phone", "")
 
     await _login(client)

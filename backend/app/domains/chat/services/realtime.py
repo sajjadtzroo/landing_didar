@@ -31,6 +31,10 @@ _MAX_SOCKETS_PER_USER = 5  # one customer with N tabs must not eat the fd budget
 Role = Literal["customer", "admin"]
 
 
+def conv_channel(conv_id: uuid.UUID) -> str:
+    return f"chat:conv:{conv_id}"
+
+
 def _ticket_serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(settings.secret_key, salt="chat-ws-ticket")
 
