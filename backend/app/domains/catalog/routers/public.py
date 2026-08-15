@@ -3,12 +3,9 @@ migration; registered with tags=["public"]."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import TypeAdapter
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.cache import cache_get, cache_set
-from app.core.db import get_db
-from app.domains.catalog.models import Product
+from app.domains.catalog.queries import ProductQuery
 from app.domains.catalog.schemas import ProductOut
 
 router = APIRouter()
@@ -22,12 +19,10 @@ _CACHE_CONTROL = "public, max-age=60"
 # hits return it as-is.
 _products_json = TypeAdapter(list[ProductOut])
 
-_ACTIVE = (Product.is_active, Product.product_status != "not_for_sale")
-
 
 @router.get("/products", response_model=list[ProductOut])
 async def list_products(
-    db: AsyncSession = Depends(get_db),
+    products: ProductQuery = Depends(),
     page: int | None = Query(default=None, ge=1),
     page_size: int = Query(default=60, ge=1, le=100),
 ):
@@ -44,20 +39,7 @@ async def list_products(
             headers={"Cache-Control": _CACHE_CONTROL, "X-Total-Count": str(total)},
         )
 
-    q = (
-        select(Product)
-        .where(*_ACTIVE)
-        # secondary key makes page boundaries deterministic on sort_order ties
-        .order_by(Product.sort_order, Product.id)
-    )
-    if page:
-        total = await db.scalar(
-            select(func.count()).select_from(Product).where(*_ACTIVE)
-        )
-        q = q.offset((page - 1) * page_size).limit(page_size)
-    rows = (await db.execute(q)).scalars().all()
-    if not page:
-        total = len(rows)
+    rows, total = await products.active_page(page=page, page_size=page_size)
 
     body = _products_json.dump_json(
         [ProductOut.model_validate(p) for p in rows]
@@ -71,15 +53,8 @@ async def list_products(
 
 
 @router.get("/products/{slug}", response_model=ProductOut)
-async def get_product(slug: str, db: AsyncSession = Depends(get_db)):
-    res = await db.execute(
-        select(Product).where(
-            Product.slug == slug,
-            Product.is_active,
-            Product.product_status != "not_for_sale",
-        )
-    )
-    product = res.scalar_one_or_none()
+async def get_product(slug: str, products: ProductQuery = Depends()):
+    product = await products.active_by_slug(slug)
     if product is None:
         raise HTTPException(404, detail="Product not found")
     return product

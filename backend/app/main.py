@@ -26,8 +26,8 @@ from app.core.metrics import (
 )
 from app.domains.agents.router_admin_gallery import router as agents_admin_gallery
 from app.domains.agents.router_agent import router as agents_agent
-from app.domains.catalog.router_admin import router as catalog_admin
-from app.domains.catalog.router_public import router as catalog_public
+from app.domains.catalog.routers.admin import router as catalog_admin
+from app.domains.catalog.routers.public import router as catalog_public
 from app.domains.chat.realtime import stop_reader as chat_stop_reader
 from app.domains.chat.router import router as chat_account
 from app.domains.chat.router_admin import router as chat_admin

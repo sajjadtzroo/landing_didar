@@ -18,7 +18,7 @@ import os
 import pytest
 from sqlalchemy import select
 
-import app.domains.catalog.minio_import as mod
+import app.domains.catalog.services.minio_import as mod
 from app.core.config import settings
 from app.domains.catalog import Product
 
