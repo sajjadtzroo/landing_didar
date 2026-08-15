@@ -17,9 +17,9 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_CLASS: Record<string, string> = {
   unverified: 'bg-surface-soft text-ink-muted',
-  pending: 'bg-amber-100 text-amber-800',
-  approved: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-700',
+  pending: 'bg-warning-soft text-warning',
+  approved: 'bg-success-soft text-success',
+  rejected: 'bg-danger-soft text-danger',
 }
 
 const filters = reactive({
@@ -90,7 +90,7 @@ function faDate(iso: string) {
 
     <!-- Status filter -->
     <div class="mb-4">
-      <select v-model="filters.status" class="form-control w-full sm:w-56">
+      <select v-model="filters.status" class="form-control w-full sm:w-56" aria-label="فیلتر وضعیت احراز">
         <option value="pending">در انتظار بررسی</option>
         <option value="approved">تأیید شده</option>
         <option value="rejected">رد شده</option>
@@ -160,7 +160,7 @@ function faDate(iso: string) {
                 <div class="flex flex-wrap items-center gap-2">
                   <button
                     v-if="c.verification_status !== 'approved'"
-                    class="flex h-9 items-center gap-1 bg-green-700 px-3 text-xs text-white hover:bg-green-800 disabled:opacity-50"
+                    class="flex h-11 items-center gap-1 bg-success px-3 text-xs text-white hover:brightness-90 disabled:opacity-50"
                     :disabled="busy === c.id"
                     @click="verify(c, 'approved')"
                   >
@@ -168,7 +168,7 @@ function faDate(iso: string) {
                   </button>
                   <button
                     v-if="c.verification_status !== 'rejected'"
-                    class="flex h-9 items-center gap-1 border border-red-600 px-3 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    class="flex h-11 items-center gap-1 border border-danger px-3 text-xs text-danger hover:bg-danger-soft disabled:opacity-50"
                     :disabled="busy === c.id"
                     @click="startReject(c.id)"
                   >
@@ -178,18 +178,19 @@ function faDate(iso: string) {
               </td>
             </tr>
             <!-- Reject reason input (inline row) -->
-            <tr v-if="rejectingId === c.id" class="border-t border-line bg-red-50">
+            <tr v-if="rejectingId === c.id" class="border-t border-line bg-danger-soft">
               <td colspan="7" class="p-3">
                 <div class="flex flex-wrap items-center gap-2">
                   <input
                     v-model="rejectReason"
                     type="text"
                     placeholder="دلیل رد (اختیاری)"
+                    aria-label="دلیل رد"
                     class="form-control flex-1"
                     @keyup.enter="verify(c, 'rejected', rejectReason)"
                   />
                   <button
-                    class="h-10 bg-red-600 px-4 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+                    class="h-10 bg-danger px-4 text-sm text-white hover:brightness-90 disabled:opacity-50"
                     :disabled="busy === c.id"
                     @click="verify(c, 'rejected', rejectReason)"
                   >
@@ -257,7 +258,7 @@ function faDate(iso: string) {
         <div class="mt-3 flex flex-wrap gap-2">
           <button
             v-if="c.verification_status !== 'approved'"
-            class="flex h-9 items-center gap-1 bg-green-700 px-3 text-xs text-white hover:bg-green-800 disabled:opacity-50"
+            class="flex h-11 items-center gap-1 bg-success px-3 text-xs text-white hover:brightness-90 disabled:opacity-50"
             :disabled="busy === c.id"
             @click="verify(c, 'approved')"
           >
@@ -265,7 +266,7 @@ function faDate(iso: string) {
           </button>
           <button
             v-if="c.verification_status !== 'rejected'"
-            class="flex h-9 items-center gap-1 border border-red-600 px-3 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+            class="flex h-11 items-center gap-1 border border-danger px-3 text-xs text-danger hover:bg-danger-soft disabled:opacity-50"
             :disabled="busy === c.id"
             @click="startReject(c.id)"
           >
@@ -279,10 +280,11 @@ function faDate(iso: string) {
             v-model="rejectReason"
             type="text"
             placeholder="دلیل رد (اختیاری)"
+            aria-label="دلیل رد"
             class="form-control flex-1"
           />
           <button
-            class="h-10 bg-red-600 px-4 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+            class="h-10 bg-danger px-4 text-sm text-white hover:brightness-90 disabled:opacity-50"
             :disabled="busy === c.id"
             @click="verify(c, 'rejected', rejectReason)"
           >

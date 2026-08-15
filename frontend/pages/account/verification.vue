@@ -110,7 +110,7 @@ useHead({ title: 'احراز هویت | دیدار' })
         <input :id="id" v-model="fullName" type="text" class="form-control" autocomplete="name" />
       </FormField>
       <FormField label="نام فروشگاه" v-slot="{ id }">
-        <input :id="id" v-model="storeName" type="text" class="form-control" />
+        <input :id="id" v-model="storeName" type="text" autocomplete="organization" class="form-control" />
       </FormField>
       <div class="flex items-center gap-3">
         <button
@@ -158,8 +158,9 @@ useHead({ title: 'احراز هویت | دیدار' })
 
     <!-- Upload input (hidden when approved) -->
     <div v-if="customer?.verification_status !== 'approved'" class="max-w-md">
-      <label class="mb-2 block text-sm text-ink-muted">بارگذاری مدرک (تصویر یا PDF)</label>
+      <label for="verification-doc" class="mb-2 block text-sm text-ink-muted">بارگذاری مدرک (تصویر یا PDF)</label>
       <input
+        id="verification-doc"
         type="file"
         accept="image/*,application/pdf"
         class="form-control"

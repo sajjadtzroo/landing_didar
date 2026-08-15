@@ -145,7 +145,7 @@ function faDate(iso: string) {
           </select>
         </FormField>
         <FormField label="قیمت پیشنهادی (تومان)" v-slot="{ id }">
-          <input :id="id" v-model="edit.price" type="number" min="0" dir="ltr" class="form-control" />
+          <input :id="id" v-model="edit.price" type="number" inputmode="numeric" min="0" dir="ltr" class="form-control" />
         </FormField>
         <FormField label="یادداشت داخلی" v-slot="{ id }">
           <input :id="id" v-model="edit.note" maxlength="300" class="form-control" />

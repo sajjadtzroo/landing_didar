@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 /**
- * Didar Gold tokens (from DESIGN_SYSTEM copy.md).
+ * Didar Gold tokens (documented in docs/design-system.md).
  * - Brand constants: static hex → support /opacity modifiers.
  * - Theme-aware tokens: CSS variables resolved per [data-theme] (see main.css).
  * - Sharp by design: all radii = 0, only `full` = 9999px.
@@ -30,6 +30,7 @@ export default <Partial<Config>>{
         'navy-deep': '#020B17',
         cream: '#F7F3EE',
         'cream-bright': '#FFFCF7',
+        'cream-deep': '#EFE6D6', // deepest cream band (shop/product section closer)
         'danger-bright': '#FFB4AB',
 
         // Theme-aware semantic tokens (var-backed; no /opacity — pre-resolved)

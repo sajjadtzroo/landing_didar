@@ -112,14 +112,16 @@ function faDate(iso: string) {
           v-model="filters.q"
           type="search"
           placeholder="شماره سفارش، نام، موبایل یا فروشگاه"
+          aria-label="جستجوی سفارش"
+          enterkeyhint="search"
           class="form-control pe-9"
         />
       </div>
-      <select v-model="filters.status" class="form-control">
+      <select v-model="filters.status" class="form-control" aria-label="فیلتر وضعیت">
         <option value="">همه وضعیت‌ها</option>
         <option v-for="s in STATUS_FLOW" :key="s" :value="s">{{ STATUS_LABEL[s] }}</option>
       </select>
-      <select v-model="filters.province" class="form-control">
+      <select v-model="filters.province" class="form-control" aria-label="فیلتر استان">
         <option value="">همه استان‌ها</option>
         <option v-for="p in PROVINCES" :key="p.value" :value="p.value">{{ p.label }}</option>
       </select>

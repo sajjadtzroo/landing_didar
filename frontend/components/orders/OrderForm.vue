@@ -177,6 +177,7 @@ function onInvalidField(field: string) {
           v-model="store_name"
           type="text"
           class="form-control"
+          autocomplete="organization"
           :aria-describedby="describedBy"
           @blur="blurStore($event); onInvalidField('store_name')"
         />
@@ -187,6 +188,7 @@ function onInvalidField(field: string) {
           :id="id"
           v-model="province"
           class="form-control"
+          autocomplete="address-level1"
           :aria-describedby="describedBy"
           @blur="blurProvince($event); onInvalidField('province')"
         >
@@ -196,7 +198,7 @@ function onInvalidField(field: string) {
       </FormField>
 
       <FormField :label="CONTENT.form.city" v-slot="{ id }">
-        <input :id="id" v-model="city" type="text" class="form-control" />
+        <input :id="id" v-model="city" type="text" autocomplete="address-level2" class="form-control" />
       </FormField>
 
       <FormField :label="CONTENT.form.contactMethod" required v-slot="{ id }">

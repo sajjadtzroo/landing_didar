@@ -81,7 +81,11 @@ function startEdit(u: PanelUser) {
   if (u.role === 'agent') loadAssignment(u.id)
 }
 
+const saving = ref(false)
+
 async function save() {
+  if (saving.value) return
+  saving.value = true
   error.value = ''
   try {
     if (editing.value) {
@@ -118,6 +122,8 @@ async function save() {
     await refresh()
   } catch (e: any) {
     error.value = e?.data?.detail || 'ذخیره ناموفق بود.'
+  } finally {
+    saving.value = false
   }
 }
 
@@ -216,13 +222,13 @@ function faDate(iso: string) {
           <input :id="id" v-model="form.username" dir="ltr" class="form-control" :disabled="editing" :class="editing ? 'opacity-60' : ''" />
         </FormField>
         <FormField :label="editing ? 'گذرواژه جدید (خالی = بدون تغییر)' : 'گذرواژه (حداقل ۸ کاراکتر)'" v-slot="{ id }">
-          <input :id="id" v-model="form.password" type="password" dir="ltr" class="form-control" />
+          <input :id="id" v-model="form.password" type="password" dir="ltr" autocomplete="new-password" class="form-control" />
         </FormField>
         <FormField label="نام و نام خانوادگی (اختیاری)" v-slot="{ id }">
           <input :id="id" v-model="form.full_name" class="form-control" />
         </FormField>
         <FormField label="موبایل (اختیاری)" v-slot="{ id }">
-          <input :id="id" v-model="form.phone" dir="ltr" class="form-control" />
+          <input :id="id" v-model="form.phone" type="tel" inputmode="numeric" dir="ltr" autocomplete="off" class="form-control" />
         </FormField>
         <FormField label="نقش" v-slot="{ id }">
           <select :id="id" v-model="form.role" class="form-control" :disabled="editing && form.username === auth.username">
@@ -255,15 +261,15 @@ function faDate(iso: string) {
             </p>
           </div>
         </div>
-        <p v-if="error" class="text-sm text-danger">{{ error }}</p>
+        <p v-if="error" role="alert" class="text-sm text-danger">{{ error }}</p>
       </div>
       <template #footer>
         <button
           class="flex h-[58px] w-full items-center justify-center bg-navy text-base font-medium text-white hover:bg-gold disabled:opacity-60"
-          :disabled="!form.username || (!editing && form.password.length < 8)"
+          :disabled="saving || !form.username || (!editing && form.password.length < 8)"
           @click="save"
         >
-          ذخیره
+          {{ saving ? 'در حال ذخیره…' : 'ذخیره' }}
         </button>
       </template>
     </BaseSheet>

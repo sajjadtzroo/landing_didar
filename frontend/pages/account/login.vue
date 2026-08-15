@@ -61,16 +61,19 @@ useHead({ title: `${CONTENT.account.loginTitle} | ${CONTENT.brand}` })
       <!-- Step 1: phone -->
       <form v-if="step === 'phone'" class="mt-6 space-y-5" novalidate @submit.prevent="sendCode">
         <p class="text-base leading-8 text-ink-muted">{{ CONTENT.account.loginSubtitle }}</p>
-        <FormField :label="CONTENT.account.phone" v-slot="{ id }">
+        <FormField :label="CONTENT.account.phone" :error="error" required v-slot="{ id, describedBy }">
           <input
             :id="id"
             v-model="phone"
             type="tel"
             inputmode="numeric"
             dir="ltr"
+            maxlength="11"
+            enterkeyhint="go"
             class="form-control text-start"
             autocomplete="tel"
             placeholder="09xxxxxxxxx"
+            :aria-describedby="describedBy"
           />
         </FormField>
         <button
@@ -89,7 +92,7 @@ useHead({ title: `${CONTENT.account.loginTitle} | ${CONTENT.brand}` })
         <p v-if="devCode" class="border border-line bg-surface-raised p-2 text-center text-sm text-gold-text" dir="ltr">
           {{ CONTENT.account.devCode(devCode) }}
         </p>
-        <FormField :label="CONTENT.account.code" v-slot="{ id }">
+        <FormField :label="CONTENT.account.code" :error="error" required v-slot="{ id, describedBy }">
           <input
             :id="id"
             v-model="code"
@@ -97,8 +100,10 @@ useHead({ title: `${CONTENT.account.loginTitle} | ${CONTENT.brand}` })
             inputmode="numeric"
             dir="ltr"
             maxlength="6"
+            enterkeyhint="done"
             class="form-control text-center text-lg tracking-[0.5em]"
             autocomplete="one-time-code"
+            :aria-describedby="describedBy"
           />
         </FormField>
         <button
@@ -109,14 +114,11 @@ useHead({ title: `${CONTENT.account.loginTitle} | ${CONTENT.brand}` })
         >
           {{ loading ? CONTENT.account.verifying : CONTENT.account.verify }}
         </button>
-        <button type="button" class="w-full text-sm text-ink-muted hover:text-ink" @click="step = 'phone'">
+        <button type="button" class="w-full text-sm text-ink-muted hover:text-ink" @click="step = 'phone'; error = ''; code = ''">
           {{ CONTENT.account.changePhone }}
         </button>
       </form>
 
-      <p v-if="error" role="alert" class="mt-5 border border-danger bg-danger-soft p-3 text-sm text-danger">
-        {{ error }}
-      </p>
     </div>
   </main>
 </template>

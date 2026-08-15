@@ -121,7 +121,7 @@ function timeOf(iso: string): string {
                 :class="[
                   m.sender_role === 'customer'
                     ? 'rounded-br-sm bg-navy text-white'
-                    : 'rounded-bl-sm border border-line bg-surface-2 text-ink',
+                    : 'rounded-bl-sm border border-line bg-surface-soft text-ink',
                   m.pending ? 'opacity-60' : '',
                 ]"
               >
@@ -136,7 +136,7 @@ function timeOf(iso: string): string {
 
           <p
             v-if="chat.conv.value && chat.conv.value.status !== 'open'"
-            class="border-t border-line bg-surface-2 px-3 py-2 text-center text-xs text-ink/60"
+            class="border-t border-line bg-surface-soft px-3 py-2 text-center text-xs text-ink/60"
           >
             {{ C.resolved }}
           </p>
@@ -150,8 +150,11 @@ function timeOf(iso: string): string {
               v-model="draft"
               type="text"
               :placeholder="C.placeholder"
+              :aria-label="C.placeholder"
+              enterkeyhint="send"
+              autocomplete="off"
               maxlength="4000"
-              class="min-w-0 flex-1 rounded-full border border-line bg-surface-2 px-4 py-2 text-sm text-ink outline-none focus:border-navy"
+              class="min-w-0 flex-1 rounded-full border border-line bg-surface-soft px-4 py-2 text-sm text-ink outline-none focus:border-navy"
               @input="chat.sendTyping()"
             />
             <button
@@ -177,7 +180,7 @@ function timeOf(iso: string): string {
       <MessageCircle class="h-6 w-6" />
       <span
         v-if="chat.unread.value"
-        class="absolute -top-1 -end-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold"
+        class="absolute -top-1 -end-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[11px] font-bold"
       >
         {{ chat.unread.value }}
       </span>

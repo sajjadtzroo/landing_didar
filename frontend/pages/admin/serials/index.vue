@@ -115,13 +115,13 @@ function faDate(iso: string) {
     <div class="mb-3 grid gap-3 sm:grid-cols-3">
       <div class="relative">
         <Search :size="16" class="absolute inset-y-0 end-3 my-auto text-ink-muted" />
-        <input v-model="filters.q" type="search" placeholder="جستجوی کد سریال" class="form-control pe-9" />
+        <input v-model="filters.q" type="search" placeholder="جستجوی کد سریال" aria-label="جستجوی کد سریال" enterkeyhint="search" class="form-control pe-9" />
       </div>
-      <select v-model="filters.product_id" class="form-control">
+      <select v-model="filters.product_id" class="form-control" aria-label="فیلتر محصول">
         <option value="">همه محصولات</option>
         <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</option>
       </select>
-      <select v-model="filters.status" class="form-control">
+      <select v-model="filters.status" class="form-control" aria-label="فیلتر وضعیت">
         <option value="">همه وضعیت‌ها</option>
         <option value="in_stock">موجود</option>
         <option value="sold">فروخته‌شده</option>
@@ -160,6 +160,7 @@ function faDate(iso: string) {
                 class="border-0 bg-transparent px-2 py-1 text-xs"
                 :class="STATUS_CLASS[s.status]"
                 :value="s.status"
+                :aria-label="`وضعیت سریال ${s.code}`"
                 @change="setStatus(s, ($event.target as HTMLSelectElement).value)"
               >
                 <option value="in_stock">{{ STATUS_LABEL.in_stock }}</option>
@@ -227,7 +228,7 @@ function faDate(iso: string) {
           </select>
         </FormField>
         <FormField label="تعداد" v-slot="{ id }">
-          <input :id="id" v-model.number="gen.quantity" type="number" min="1" max="5000" class="form-control" />
+          <input :id="id" v-model.number="gen.quantity" type="number" inputmode="numeric" min="1" max="5000" class="form-control" />
         </FormField>
         <p class="text-xs text-ink-muted">برای هر قطعه یک کد یکتا ساخته می‌شود. مشخصات محصول در لحظهٔ تولید ثبت (اسنپ‌شات) می‌شود.</p>
       </div>

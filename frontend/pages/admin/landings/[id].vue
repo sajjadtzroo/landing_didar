@@ -208,7 +208,7 @@ async function removeLanding() {
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
             <p class="mb-1.5 text-sm">ویدیوی هیرو</p>
-            <input v-model="meta.hero_video_url" dir="ltr" class="form-control" placeholder="/media/hero.mp4" />
+            <input v-model="meta.hero_video_url" dir="ltr" class="form-control" placeholder="/media/hero.mp4" aria-label="آدرس ویدیوی هیرو" />
             <label class="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs text-gold-text hover:underline">
               <Upload :size="14" />
               {{ uploading === 'hero_video_url' ? 'در حال بارگذاری…' : 'بارگذاری ویدیو' }}
@@ -217,7 +217,7 @@ async function removeLanding() {
           </div>
           <div>
             <p class="mb-1.5 text-sm">تصویر پوستر</p>
-            <input v-model="meta.hero_poster_url" dir="ltr" class="form-control" placeholder="/media/hero-poster.jpg" />
+            <input v-model="meta.hero_poster_url" dir="ltr" class="form-control" placeholder="/media/hero-poster.jpg" aria-label="آدرس تصویر پوستر" />
             <label class="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs text-gold-text hover:underline">
               <Upload :size="14" />
               {{ uploading === 'hero_poster_url' ? 'در حال بارگذاری…' : 'بارگذاری تصویر' }}
@@ -298,9 +298,9 @@ async function removeLanding() {
             <button class="text-ink-muted hover:text-danger" aria-label="حذف گروه" @click="removeAt(content.groups, gi)"><Trash2 :size="15" /></button>
           </div>
           <div class="grid gap-3 sm:grid-cols-3">
-            <input v-model="g.title" class="form-control" placeholder="عنوان گروه" />
-            <input v-model="g.eyebrow" class="form-control" placeholder="روتیتر" />
-            <input v-model="g.description" class="form-control" placeholder="توضیح کوتاه" />
+            <input v-model="g.title" class="form-control" placeholder="عنوان گروه" aria-label="عنوان گروه" />
+            <input v-model="g.eyebrow" class="form-control" placeholder="روتیتر" aria-label="روتیتر" />
+            <input v-model="g.description" class="form-control" placeholder="توضیح کوتاه" aria-label="توضیح کوتاه" />
           </div>
 
           <!-- Selected products (ordered) -->
@@ -347,8 +347,8 @@ async function removeLanding() {
             <button class="text-ink-muted hover:text-ink disabled:opacity-30" :disabled="i === content.faq.length - 1" aria-label="پایین" @click="move(content.faq, i, 1)"><ArrowDown :size="14" /></button>
             <button class="text-ink-muted hover:text-danger" aria-label="حذف" @click="removeAt(content.faq, i)"><X :size="15" /></button>
           </div>
-          <input v-model="f.question" class="form-control" placeholder="سؤال" />
-          <textarea v-model="f.answer" rows="2" class="form-control" placeholder="پاسخ" />
+          <input v-model="f.question" class="form-control" placeholder="سؤال" aria-label="سؤال" />
+          <textarea v-model="f.answer" rows="2" class="form-control" placeholder="پاسخ" aria-label="پاسخ" />
         </div>
         <button class="flex items-center gap-2 text-sm text-gold-text hover:underline" @click="addFaq">
           <Plus :size="15" /> افزودن سؤال
@@ -364,16 +364,16 @@ async function removeLanding() {
           </span>
         </label>
         <div class="grid gap-3 sm:grid-cols-2">
-          <input v-model="content.footer.tagline" class="form-control" placeholder="شعار" />
-          <input v-model="content.footer.address" class="form-control" placeholder="نشانی" />
-          <input v-model="content.footer.hours" class="form-control" placeholder="ساعات کاری" />
-          <input v-model="content.footer.phone" dir="ltr" class="form-control" placeholder="+98..." />
-          <input v-model="content.footer.phoneDisplay" dir="ltr" class="form-control" placeholder="۰۲۱…" />
-          <input v-model="content.footer.email" dir="ltr" class="form-control" placeholder="email" />
-          <input v-model="content.footer.whatsapp" dir="ltr" class="form-control" placeholder="WhatsApp URL" />
-          <input v-model="content.footer.telegram" dir="ltr" class="form-control" placeholder="Telegram URL" />
-          <input v-model="content.footer.instagram" dir="ltr" class="form-control" placeholder="Instagram URL" />
-          <input v-model="content.footer.rights" class="form-control" placeholder="متن حقوق" />
+          <input v-model="content.footer.tagline" class="form-control" placeholder="شعار" aria-label="شعار" />
+          <input v-model="content.footer.address" class="form-control" placeholder="نشانی" aria-label="نشانی" />
+          <input v-model="content.footer.hours" class="form-control" placeholder="ساعات کاری" aria-label="ساعات کاری" />
+          <input v-model="content.footer.phone" dir="ltr" class="form-control" placeholder="+98..." aria-label="شماره تماس (بین‌المللی)" />
+          <input v-model="content.footer.phoneDisplay" dir="ltr" class="form-control" placeholder="۰۲۱…" aria-label="نمایش شماره تماس" />
+          <input v-model="content.footer.email" dir="ltr" class="form-control" placeholder="email" aria-label="ایمیل" />
+          <input v-model="content.footer.whatsapp" dir="ltr" class="form-control" placeholder="WhatsApp URL" aria-label="آدرس واتساپ" />
+          <input v-model="content.footer.telegram" dir="ltr" class="form-control" placeholder="Telegram URL" aria-label="آدرس تلگرام" />
+          <input v-model="content.footer.instagram" dir="ltr" class="form-control" placeholder="Instagram URL" aria-label="آدرس اینستاگرام" />
+          <input v-model="content.footer.rights" class="form-control" placeholder="متن حقوق" aria-label="متن حقوق" />
         </div>
       </section>
     </div>

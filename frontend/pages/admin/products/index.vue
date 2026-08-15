@@ -27,6 +27,7 @@ const blank = () => ({
 const form = reactive(blank())
 const editing = ref(false)
 const panelOpen = ref(false)
+const saving = ref(false)
 
 function startCreate() {
   Object.assign(form, blank())
@@ -53,6 +54,8 @@ function startEdit(p: Product) {
 }
 
 async function save() {
+  if (saving.value) return
+  saving.value = true
   const body = {
     name: form.name,
     slug: form.slug || null,
@@ -69,13 +72,17 @@ async function save() {
       ? undefined
       : (products.value?.length ?? 0),
   }
-  if (editing.value) {
-    await apiFetch(`/admin/products/${form.id}`, { method: 'PATCH', body })
-  } else {
-    await apiFetch('/admin/products', { method: 'POST', body })
+  try {
+    if (editing.value) {
+      await apiFetch(`/admin/products/${form.id}`, { method: 'PATCH', body })
+    } else {
+      await apiFetch('/admin/products', { method: 'POST', body })
+    }
+    panelOpen.value = false
+    await refresh()
+  } finally {
+    saving.value = false
   }
-  panelOpen.value = false
-  await refresh()
 }
 
 async function toggleActive(p: Product) {
@@ -263,9 +270,9 @@ async function move(index: number, dir: -1 | 1) {
           <input :id="id" v-model="form.slug" dir="ltr" class="form-control" placeholder="atrin-necklace" />
         </FormField>
         <FormField label="کد (SKU)" v-slot="{ id }"><input :id="id" v-model="form.sku" class="form-control" /></FormField>
-        <FormField label="وزن (گرم)" v-slot="{ id }"><input :id="id" v-model="form.weight_grams" type="number" step="0.01" class="form-control" /></FormField>
-        <FormField label="عیار" v-slot="{ id }"><input :id="id" v-model="form.karat" type="number" class="form-control" /></FormField>
-        <FormField label="اجرت (٪)" v-slot="{ id }"><input :id="id" v-model="form.ojrat_percent" type="number" step="0.5" min="0" max="100" class="form-control" /></FormField>
+        <FormField label="وزن (گرم)" v-slot="{ id }"><input :id="id" v-model="form.weight_grams" type="number" inputmode="decimal" step="0.01" class="form-control" /></FormField>
+        <FormField label="عیار" v-slot="{ id }"><input :id="id" v-model="form.karat" type="number" inputmode="numeric" class="form-control" /></FormField>
+        <FormField label="اجرت (٪)" v-slot="{ id }"><input :id="id" v-model="form.ojrat_percent" type="number" inputmode="decimal" step="0.5" min="0" max="100" class="form-control" /></FormField>
         <FormField label="دسته‌بندی" v-slot="{ id }">
           <select :id="id" v-model="form.category" class="form-control">
             <option value="daily">روزمره</option>
@@ -287,8 +294,12 @@ async function move(index: number, dir: -1 | 1) {
         <label class="flex items-center gap-2 text-sm"><input v-model="form.is_active" type="checkbox" /> فعال</label>
       </div>
       <template #footer>
-        <button class="flex h-[58px] w-full items-center justify-center bg-navy text-base font-medium text-white hover:bg-gold" @click="save">
-          ذخیره
+        <button
+          class="flex h-[58px] w-full items-center justify-center bg-navy text-base font-medium text-white hover:bg-gold disabled:opacity-60"
+          :disabled="saving"
+          @click="save"
+        >
+          {{ saving ? 'در حال ذخیره…' : 'ذخیره' }}
         </button>
       </template>
     </BaseSheet>

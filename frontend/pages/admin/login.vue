@@ -34,30 +34,43 @@ async function submit() {
       <BrandLogo :height="34" class="mx-auto mb-6 block" />
       <p class="mb-8 text-center text-lg font-medium text-cream">پنل مدیریت دیدار گلد</p>
       <div class="space-y-4">
-        <input
-          v-model="username"
-          type="text"
-          placeholder="نام کاربری"
-          class="h-14 w-full border border-gold/40 bg-navy px-4 text-sm text-cream
-            placeholder:text-cream/50 focus:border-gold"
-          autocomplete="username"
-        />
-        <input
-          v-model="password"
-          type="password"
-          placeholder="رمز عبور"
-          class="h-14 w-full border border-gold/40 bg-navy px-4 text-sm text-cream
-            placeholder:text-cream/50 focus:border-gold"
-          autocomplete="current-password"
-        />
+        <div>
+          <label for="admin-username" class="mb-2 block text-sm text-cream/80">نام کاربری</label>
+          <input
+            id="admin-username"
+            v-model="username"
+            type="text"
+            dir="ltr"
+            required
+            enterkeyhint="next"
+            class="h-14 w-full border border-gold/40 bg-navy px-4 text-sm text-cream
+              placeholder:text-cream/50 focus:border-gold"
+            autocomplete="username"
+          />
+        </div>
+        <div>
+          <label for="admin-password" class="mb-2 block text-sm text-cream/80">رمز عبور</label>
+          <input
+            id="admin-password"
+            v-model="password"
+            type="password"
+            dir="ltr"
+            required
+            enterkeyhint="go"
+            class="h-14 w-full border border-gold/40 bg-navy px-4 text-sm text-cream
+              placeholder:text-cream/50 focus:border-gold"
+            autocomplete="current-password"
+            :aria-describedby="error ? 'admin-login-error' : undefined"
+          />
+        </div>
       </div>
-      <p v-if="error" role="alert" class="mt-3 text-sm text-danger-bright">{{ error }}</p>
+      <p v-if="error" id="admin-login-error" role="alert" class="mt-3 text-sm text-danger-bright">{{ error }}</p>
       <button
         type="submit"
         class="mt-6 flex h-[58px] w-full items-center justify-center bg-gold text-base
           font-medium text-white transition duration-300 hover:bg-cream hover:text-navy
           disabled:opacity-60"
-        :disabled="busy"
+        :disabled="busy || !username || !password"
       >
         {{ busy ? 'در حال ورود…' : 'ورود' }}
       </button>

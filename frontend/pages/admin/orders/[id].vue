@@ -158,13 +158,14 @@ function faDateTime(iso: string) {
         <select
           :value="order.status"
           class="form-control"
+          aria-label="وضعیت سفارش"
           @change="setStatus(($event.target as HTMLSelectElement).value as OrderStatus)"
         >
           <option v-for="s in STATUS_FLOW" :key="s" :value="s">{{ STATUS_LABEL[s] }}</option>
         </select>
 
-        <h3 class="mb-2 mt-5 text-sm text-ink-muted">یادداشت داخلی</h3>
-        <textarea v-model="note" rows="3" maxlength="300" class="form-control h-auto py-3" />
+        <label for="order-note" class="mb-2 mt-5 block text-sm text-ink-muted">یادداشت داخلی</label>
+        <textarea id="order-note" v-model="note" rows="3" maxlength="300" class="form-control h-auto py-3" />
         <button
           class="mt-2 h-11 bg-navy px-5 text-sm text-white hover:bg-gold disabled:opacity-60"
           :disabled="saving"

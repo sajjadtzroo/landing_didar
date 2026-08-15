@@ -126,7 +126,7 @@ the tracker was blocked (`plugins/attribution.client.ts`).
 
 ## Design system
 
-Tokens from `DESIGN_SYSTEM copy.md` (luxury gold `#B08A57` / navy `#041E42` /
+Tokens from `docs/design-system.md` (luxury gold `#B08A57` / navy `#041E42` /
 cream, sharp corners, Doran font, ✦ gold-hairline divider) are mapped in
 `frontend/tailwind.config.ts` + `frontend/assets/css/main.css`. Text gold uses the
 accessible `gold-text` token; raw `gold` is decorative only.

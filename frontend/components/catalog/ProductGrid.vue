@@ -59,8 +59,8 @@ if (import.meta.client) {
     :id="anchorId"
     ref="section"
     :class="flush
-      ? 'bg-[#EFE6D6] pb-16 pt-6'
-      : 'bg-gradient-to-b from-cream-bright via-cream to-[#EFE6D6] py-16'"
+      ? 'bg-cream-deep pb-16 pt-6'
+      : 'bg-gradient-to-b from-cream-bright via-cream to-cream-deep py-16'"
   >
     <div class="mx-auto max-w-content px-5 sm:px-10">
       <SectionDivider

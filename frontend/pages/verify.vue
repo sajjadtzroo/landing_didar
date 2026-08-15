@@ -133,6 +133,8 @@ async function requestBuyback() {
           dir="ltr"
           inputmode="text"
           autocapitalize="characters"
+          autocomplete="off"
+          enterkeyhint="search"
           placeholder="DGV-XXXXXXXX"
           aria-label="کد اصالت"
           class="form-control text-center tracking-widest"
@@ -205,20 +207,23 @@ async function requestBuyback() {
             >
               <ShieldCheck :size="16" /> فعال‌سازی گارانتی
             </button>
-            <div v-else class="space-y-3">
+            <form v-else class="space-y-3" novalidate @submit.prevent="activateWarranty">
               <p class="text-xs text-ink-muted">برای فعال‌سازی گارانتی ۱۲ ماهه، مشخصات خود را وارد کنید.</p>
-              <input v-model="who.full_name" placeholder="نام و نام خانوادگی" class="form-control h-11" />
-              <input v-model="who.phone" dir="ltr" inputmode="tel" placeholder="۰۹۱۲…" class="form-control h-11" />
-              <p v-if="actionError" class="text-xs text-danger">{{ actionError }}</p>
+              <FormField label="نام و نام خانوادگی" required v-slot="{ id }">
+                <input :id="id" v-model="who.full_name" type="text" autocomplete="name" enterkeyhint="next" class="form-control h-11" />
+              </FormField>
+              <FormField label="شماره موبایل" required v-slot="{ id }">
+                <input :id="id" v-model="who.phone" type="tel" dir="ltr" inputmode="numeric" autocomplete="tel" maxlength="11" enterkeyhint="done" placeholder="09xxxxxxxxx" class="form-control h-11 text-start" />
+              </FormField>
+              <p v-if="actionError" role="alert" class="text-xs text-danger">{{ actionError }}</p>
               <button
-                type="button"
+                type="submit"
                 class="flex h-11 w-full items-center justify-center bg-navy text-sm font-medium text-white hover:bg-gold disabled:opacity-60"
                 :disabled="acting || who.full_name.trim().length < 3 || !who.phone"
-                @click="activateWarranty"
               >
                 {{ acting ? 'در حال ثبت…' : 'فعال‌سازی' }}
               </button>
-            </div>
+            </form>
           </template>
         </div>
 
@@ -237,21 +242,26 @@ async function requestBuyback() {
             >
               <Banknote :size="16" /> درخواست بازخرید
             </button>
-            <div v-else class="mt-2 space-y-3">
+            <form v-else class="mt-2 space-y-3" novalidate @submit.prevent="requestBuyback">
               <p class="text-xs text-ink-muted">کارشناسان دیدار پس از بررسی با شما تماس می‌گیرند.</p>
-              <input v-model="who.full_name" placeholder="نام و نام خانوادگی" class="form-control h-11" />
-              <input v-model="who.phone" dir="ltr" inputmode="tel" placeholder="۰۹۱۲…" class="form-control h-11" />
-              <input v-model="buybackNote" maxlength="300" placeholder="توضیحات (اختیاری)" class="form-control h-11" />
-              <p v-if="actionError" class="text-xs text-danger">{{ actionError }}</p>
+              <FormField label="نام و نام خانوادگی" required v-slot="{ id }">
+                <input :id="id" v-model="who.full_name" type="text" autocomplete="name" enterkeyhint="next" class="form-control h-11" />
+              </FormField>
+              <FormField label="شماره موبایل" required v-slot="{ id }">
+                <input :id="id" v-model="who.phone" type="tel" dir="ltr" inputmode="numeric" autocomplete="tel" maxlength="11" enterkeyhint="next" placeholder="09xxxxxxxxx" class="form-control h-11 text-start" />
+              </FormField>
+              <FormField label="توضیحات (اختیاری)" v-slot="{ id }">
+                <input :id="id" v-model="buybackNote" type="text" maxlength="300" enterkeyhint="done" class="form-control h-11" />
+              </FormField>
+              <p v-if="actionError" role="alert" class="text-xs text-danger">{{ actionError }}</p>
               <button
-                type="button"
+                type="submit"
                 class="flex h-11 w-full items-center justify-center bg-navy text-sm font-medium text-white hover:bg-gold disabled:opacity-60"
                 :disabled="acting || who.full_name.trim().length < 3 || !who.phone"
-                @click="requestBuyback"
               >
                 {{ acting ? 'در حال ثبت…' : 'ثبت درخواست' }}
               </button>
-            </div>
+            </form>
           </template>
         </div>
       </div>

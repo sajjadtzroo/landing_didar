@@ -116,7 +116,7 @@ function faDate(iso: string) {
             <option value="sellable">قابل فروش</option>
             <option value="sample">نمونه</option>
           </select>
-          <input v-model="assign.note" placeholder="یادداشت (اختیاری)" class="form-control h-11" />
+          <input v-model="assign.note" placeholder="یادداشت (اختیاری)" aria-label="یادداشت" class="form-control h-11" />
           <button
             class="h-11 bg-navy px-5 text-sm text-white hover:bg-gold disabled:opacity-60"
             :disabled="assigning || !assign.code || !agentId"

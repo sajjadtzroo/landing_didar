@@ -158,7 +158,7 @@ async function removePortfolio() {
         <!-- Cover image -->
         <div>
           <p class="mb-1.5 text-sm">تصویر کاور (اختیاری)</p>
-          <input v-model="meta.cover_image_url" dir="ltr" class="form-control" placeholder="/media/cover.jpg" />
+          <input v-model="meta.cover_image_url" dir="ltr" class="form-control" placeholder="/media/cover.jpg" aria-label="آدرس تصویر کاور" />
           <label class="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs text-gold-text hover:underline">
             <Upload :size="14" />
             {{ uploading ? 'در حال بارگذاری…' : 'بارگذاری تصویر' }}
@@ -180,9 +180,9 @@ async function removePortfolio() {
             <button class="text-ink-muted hover:text-danger" aria-label="حذف گروه" @click="removeAt(content.groups, gi)"><Trash2 :size="15" /></button>
           </div>
           <div class="grid gap-3 sm:grid-cols-3">
-            <input v-model="g.title" class="form-control" placeholder="عنوان گروه" />
-            <input v-model="g.eyebrow" class="form-control" placeholder="روتیتر" />
-            <input v-model="g.description" class="form-control" placeholder="توضیح کوتاه" />
+            <input v-model="g.title" class="form-control" placeholder="عنوان گروه" aria-label="عنوان گروه" />
+            <input v-model="g.eyebrow" class="form-control" placeholder="روتیتر" aria-label="روتیتر" />
+            <input v-model="g.description" class="form-control" placeholder="توضیح کوتاه" aria-label="توضیح کوتاه" />
           </div>
 
           <!-- Selected products (ordered) -->

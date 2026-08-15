@@ -170,8 +170,8 @@ onBeforeUnmount(() => socket.close())
         <button
           v-for="c in convs"
           :key="c.id"
-          class="block w-full border-b border-line px-4 py-3 text-start hover:bg-surface-2"
-          :class="current?.id === c.id ? 'bg-surface-2' : ''"
+          class="block w-full border-b border-line px-4 py-3 text-start hover:bg-surface-soft"
+          :class="current?.id === c.id ? 'bg-surface-soft' : ''"
           @click="openConv(c)"
         >
           <div class="flex items-center gap-2">
@@ -180,7 +180,7 @@ onBeforeUnmount(() => socket.close())
             </p>
             <span
               v-if="c.unread"
-              class="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white"
+              class="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[11px] font-bold text-white"
             >
               {{ toFa(String(c.unread)) }}
             </span>
@@ -195,7 +195,7 @@ onBeforeUnmount(() => socket.close())
               :class="
                 c.status === 'open'
                   ? 'bg-success-soft text-success'
-                  : 'bg-surface-2 text-ink/50'
+                  : 'bg-surface-soft text-ink/50'
               "
             >
               {{ STATUS_LABEL[c.status] }}
@@ -229,14 +229,14 @@ onBeforeUnmount(() => socket.close())
           </div>
           <button
             v-if="current.status === 'open'"
-            class="flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs text-ink hover:bg-surface-2"
+            class="flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs text-ink hover:bg-surface-soft"
             @click="setStatus('resolved')"
           >
             <CheckCheck class="h-4 w-4" /> حل شد
           </button>
           <button
             v-else
-            class="flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs text-ink hover:bg-surface-2"
+            class="flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs text-ink hover:bg-surface-soft"
             @click="setStatus('open')"
           >
             <RotateCcw class="h-4 w-4" /> بازکردن
@@ -255,7 +255,7 @@ onBeforeUnmount(() => socket.close())
               :class="[
                 m.sender_role === 'admin'
                   ? 'rounded-br-sm bg-navy text-white'
-                  : 'rounded-bl-sm border border-line bg-surface-2 text-ink',
+                  : 'rounded-bl-sm border border-line bg-surface-soft text-ink',
                 m.pending ? 'opacity-60' : '',
               ]"
             >
@@ -276,8 +276,11 @@ onBeforeUnmount(() => socket.close())
             v-model="draft"
             type="text"
             placeholder="پاسخ خود را بنویسید…"
+            aria-label="پاسخ خود را بنویسید"
+            enterkeyhint="send"
+            autocomplete="off"
             maxlength="4000"
-            class="min-w-0 flex-1 rounded-full border border-line bg-surface-2 px-4 py-2 text-sm text-ink outline-none focus:border-navy"
+            class="min-w-0 flex-1 rounded-full border border-line bg-surface-soft px-4 py-2 text-sm text-ink outline-none focus:border-navy"
           />
           <button
             type="submit"

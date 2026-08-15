@@ -109,19 +109,19 @@ useHead({ title: `${CONTENT.account.profileTitle} | ${CONTENT.brand}` })
 
     <!-- Add address -->
     <form class="max-w-md space-y-4 border-t border-line pt-6" @submit.prevent="addAddress">
-      <FormField :label="CONTENT.account.addrTitle" v-slot="{ id }">
+      <FormField :label="CONTENT.account.addrTitle" required v-slot="{ id }">
         <input :id="id" v-model="form.title" type="text" class="form-control" />
       </FormField>
-      <FormField :label="CONTENT.account.addrProvince" v-slot="{ id }">
-        <select :id="id" v-model="form.province" class="form-control">
+      <FormField :label="CONTENT.account.addrProvince" required v-slot="{ id }">
+        <select :id="id" v-model="form.province" autocomplete="address-level1" class="form-control">
           <option value="" disabled>{{ CONTENT.form.provincePlaceholder }}</option>
           <option v-for="p in PROVINCES" :key="p.value" :value="p.value">{{ p.label }}</option>
         </select>
       </FormField>
       <FormField :label="CONTENT.account.addrCity" v-slot="{ id }">
-        <input :id="id" v-model="form.city" type="text" class="form-control" />
+        <input :id="id" v-model="form.city" type="text" autocomplete="address-level2" class="form-control" />
       </FormField>
-      <FormField :label="CONTENT.account.addrLine" v-slot="{ id }">
+      <FormField :label="CONTENT.account.addrLine" required v-slot="{ id }">
         <textarea :id="id" v-model="form.line" rows="2" maxlength="300" class="form-control h-auto py-3" />
       </FormField>
       <label class="flex items-center gap-2 text-sm text-ink">
