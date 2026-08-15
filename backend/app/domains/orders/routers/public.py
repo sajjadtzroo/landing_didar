@@ -1,7 +1,8 @@
 """Public order routes (checkout + account-less tracking).
 
-Moved verbatim from app/api/v1/public.py during the domain migration;
-registered with tags=["public"] so OpenAPI is unchanged."""
+Thin HTTP layer: request-level defenses (rate limit, honeypot, idempotency
+pre-check) + one Query/Action call each; registered with tags=["public"] so
+OpenAPI is unchanged."""
 
 import uuid
 
@@ -15,21 +16,17 @@ from fastapi import (
     Response,
 )
 from loguru import logger
-from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.cache import cache_get, cache_set
 from app.core.config import settings
-from app.core.db import get_db
 from app.core.limiter import limiter
 from app.core.security import get_client_ip
-from app.domains.catalog import Product, ProductOut
-from app.domains.customers import Customer, optional_customer
-from app.domains.orders import service as order_service
-from app.domains.orders.models import Order, OrderItem, OrderStatus
-from app.domains.orders.notifications import get_adapter
+from app.domains.catalog import ProductOut
+from app.domains.customers import optional_customer
+from app.domains.orders.actions import CreateOrderAction
+from app.domains.orders.queries import OrderQuery
 from app.domains.orders.schemas import OrderCreate, OrderCreatedOut, OrderTrackOut
+from app.domains.orders.services.notifications import get_adapter
 
 router = APIRouter()
 
@@ -37,7 +34,7 @@ _BEST_SELLERS_TTL = 300.0  # sales rankings move slowly; save the join
 
 
 @router.get("/products/best-sellers", response_model=list[ProductOut])
-async def best_sellers(response: Response, db: AsyncSession = Depends(get_db)):
+async def best_sellers(response: Response, orders: OrderQuery = Depends()):
     """Top products by units actually sold (order_items, non-cancelled orders).
     Lives in the orders domain because sales data does; registered BEFORE the
     catalog router so /products/{slug} doesn't swallow the path."""
@@ -45,22 +42,9 @@ async def best_sellers(response: Response, db: AsyncSession = Depends(get_db)):
     cached = await cache_get("cache:best-sellers")
     if cached is not None:
         return cached
-    rows = (
-        await db.execute(
-            select(Product)
-            .join(OrderItem, OrderItem.product_id == Product.id)
-            .join(Order, OrderItem.order_id == Order.id)
-            .where(
-                Product.is_active,
-                Product.product_status != "not_for_sale",
-                Order.status != OrderStatus.cancelled,
-            )
-            .group_by(Product.id)
-            .order_by(func.sum(OrderItem.quantity).desc())
-            .limit(8)
-        )
-    ).scalars().all()
-    items = [ProductOut.model_validate(p) for p in rows]
+    items = [
+        ProductOut.model_validate(p) for p in await orders.best_seller_products()
+    ]
     await cache_set("cache:best-sellers", items, _BEST_SELLERS_TTL)
     return items
 
@@ -70,16 +54,14 @@ async def track_order(
     reference: str,
     phone: str,
     response: Response,
-    db: AsyncSession = Depends(get_db),
+    orders: OrderQuery = Depends(),
 ):
     """Account-less order tracking. Both reference AND the ordering phone must
     match — an unknown reference and a wrong phone return the SAME 404 so a
     reference can't be enumerated without the phone. Never cached (status changes).
     """
     response.headers["Cache-Control"] = "no-store"
-    order = (
-        await db.execute(select(Order).where(Order.reference == reference.strip()))
-    ).scalar_one_or_none()
+    order = await orders.by_reference(reference)
     if order is None or order.phone != phone.strip():
         raise HTTPException(404, detail="Order not found")
     return order
@@ -112,49 +94,26 @@ async def create_order(
     background: BackgroundTasks,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     customer_id: uuid.UUID | None = Depends(optional_customer),
-    db: AsyncSession = Depends(get_db),
+    orders: OrderQuery = Depends(),
+    create: CreateOrderAction = Depends(),
 ):
-    # Guest checkout: no login required. A logged-in session still binds the
-    # phone from the verified customer (client value can't override it); guests
-    # supply their own phone, and a later OTP login with that phone claims the
-    # order — /me/orders links orders to customers by phone.
-    if customer_id is not None:
-        customer = await db.get(Customer, customer_id)
-        if customer is not None:
-            payload.phone = customer.phone
-
     # Honeypot: bots fill hidden fields; pretend success without persisting.
     if payload.website:
         return OrderCreatedOut(reference="DG-000000", total=0)
 
-    # Idempotency: a repeated key returns the original order (double-tap safe).
+    # Idempotency: a repeated key returns the original order (double-tap safe)
+    # without re-notifying sales.
     if idempotency_key:
-        existing = await order_service.get_order_by_key(db, idempotency_key)
+        existing = await orders.by_idempotency_key(idempotency_key)
         if existing:
             return OrderCreatedOut(reference=existing.reference, total=existing.total)
 
-    order = await order_service.create_order(
-        db, payload, idempotency_key, get_client_ip(request)
+    order = await create.checkout(
+        payload,
+        idempotency_key=idempotency_key,
+        ip=get_client_ip(request),
+        customer_id=customer_id,
     )
-    # Auto-register the guest as a customer (identity = phone) so they show up
-    # in the admin customers panel immediately; a later OTP login with the same
-    # phone lands on this account. Separate commit — never rolls back the order.
-    if customer_id is None:
-        exists = (
-            await db.execute(select(Customer).where(Customer.phone == payload.phone))
-        ).scalar_one_or_none()
-        if exists is None:
-            db.add(
-                Customer(
-                    phone=payload.phone,
-                    full_name=payload.full_name,
-                    store_name=payload.store_name,
-                )
-            )
-            try:
-                await db.commit()
-            except IntegrityError:
-                await db.rollback()  # concurrent order with same phone won the race
     # Notify AFTER commit, in the background — never rolls back the order.
     background.add_task(_notify, order.id, settings.admin_order_base_url)
     return OrderCreatedOut(reference=order.reference, total=order.total)

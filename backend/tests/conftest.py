@@ -21,7 +21,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import app.domains.orders.router_public as orders_public
+import app.domains.orders.routers.public as orders_public
 from app import domains as _domains  # noqa: F401  — registers migrated domain models
 from app.domains.users import require_admin
 from app.core.limiter import limiter

@@ -41,8 +41,8 @@ from app.domains.content.router_public import router as content_public
 from app.domains.customers.router_account import router as customers_account
 from app.domains.customers.router_admin import router as customers_admin
 from app.domains.dashboard.router_admin import router as dashboard_admin
-from app.domains.orders.router_admin import router as orders_admin
-from app.domains.orders.router_public import router as orders_public
+from app.domains.orders.routers.admin import router as orders_admin
+from app.domains.orders.routers.public import router as orders_public
 from app.domains.pricing import refresh_loop
 from app.domains.pricing.router_admin import router as pricing_admin
 from app.domains.pricing.router_public import router as pricing_public

@@ -7,7 +7,7 @@ import app.core.db as _db_mod
 from app.core.limiter import limiter
 from app.domains.content import Landing
 from app.domains.content import service as _content_service
-from app.domains.orders import router_public as _orders_public
+from app.domains.orders.routers import public as _orders_public
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

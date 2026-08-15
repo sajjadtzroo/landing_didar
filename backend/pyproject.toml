@@ -73,7 +73,7 @@ layers = [
   "users",
 ]
 ignore_imports = [
-  "app.domains.orders.router_admin -> app.domains.serials.service",
+  "app.domains.orders.actions.order_action -> app.domains.serials.service",
   "app.domains.customers.router_account -> app.domains.orders",
   "app.domains.users.router_admin_users -> app.domains.agents",
 ]
@@ -187,8 +187,10 @@ source_modules = [
 forbidden_modules = [
   "app.domains.orders.models",
   "app.domains.orders.schemas",
-  "app.domains.orders.router_admin",
-  "app.domains.orders.router_public",
+  "app.domains.orders.queries",
+  "app.domains.orders.actions",
+  "app.domains.orders.routers",
+  "app.domains.orders.services",
 ]
 
 [[tool.importlinter.contracts]]

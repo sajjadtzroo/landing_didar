@@ -4,8 +4,8 @@ channel by writing a new adapter and branching in `get_adapter()`.
 """
 
 from app.core.config import settings
-from app.domains.orders.notifications.base import NotificationAdapter
-from app.domains.orders.notifications.sms import LogSmsAdapter, SmsAdapter
+from app.domains.orders.services.notifications.base import NotificationAdapter
+from app.domains.orders.services.notifications.sms import LogSmsAdapter, SmsAdapter
 
 
 def get_adapter() -> NotificationAdapter:

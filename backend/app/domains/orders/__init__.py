@@ -2,6 +2,7 @@
 
 PUBLIC API — the only surface other code may import from."""
 
+from app.domains.orders.actions import CreateOrderAction, OrderAction
 from app.domains.orders.models import (
     ContactMethod,
     Order,
@@ -9,6 +10,7 @@ from app.domains.orders.models import (
     OrderStatus,
     OrderStatusLog,
 )
+from app.domains.orders.queries import OrderQuery
 from app.domains.orders.schemas import (
     PHONE_RE,
     DeliveryProof,
@@ -16,16 +18,19 @@ from app.domains.orders.schemas import (
     OrderItemIn,
     OrderTrackOut,
 )
-from app.domains.orders.service import hash_ip
+from app.shared.validation import hash_ip
 
 __all__ = [
     "PHONE_RE",
     "ContactMethod",
+    "CreateOrderAction",
     "DeliveryProof",
     "Order",
+    "OrderAction",
     "OrderCreate",
     "OrderItem",
     "OrderItemIn",
+    "OrderQuery",
     "OrderStatus",
     "OrderStatusLog",
     "OrderTrackOut",

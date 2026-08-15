@@ -2,7 +2,7 @@ from loguru import logger
 
 from app.core.config import settings
 from app.domains.orders.models import Order
-from app.domains.orders.notifications.base import format_order_message
+from app.domains.orders.services.notifications.base import format_order_message
 from app.shared.sms import send_sms
 
 

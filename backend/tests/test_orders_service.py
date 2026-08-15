@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.domains.orders import Order, OrderCreate, OrderStatus
 from app.domains.orders import service as svc
+from app.domains.orders.actions import create_order_action as _create_mod
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
@@ -87,7 +88,7 @@ async def test_idempotency_race_returns_the_winning_row(_sessionmaker):
 async def test_unexpected_integrity_error_is_reraised(_sessionmaker, monkeypatch):
     # Force a reference collision (a NON-idempotency constraint) with no key —
     # there's nothing to recover to, so the IntegrityError must propagate.
-    monkeypatch.setattr(svc, "_reference", lambda: "DG-DUPES")
+    monkeypatch.setattr(_create_mod, "_reference", lambda: "DG-DUPES")
     async with _sessionmaker() as db1:
         await svc.create_order(db1, _payload(), None, None)
     async with _sessionmaker() as db2:
