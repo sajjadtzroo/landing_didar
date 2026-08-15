@@ -4,9 +4,12 @@ import { CONTENT } from '~/constants/content'
 import type { Landing } from '~/types'
 import { resolveContent } from '~/utils/landingContent'
 
-// Global storefront chrome. One nav per context: the landing (/l/*) uses the
-// bottom tubelight pill; storefront pages (/products, …) use the top glass navbar.
-const { cartOpen, orderOpen, successRef, openCart, openOrder, onOrderSuccess } =
+// Global storefront chrome — ONE nav system everywhere. Landings used to swap
+// to a bottom "tubelight" pill + cart fab, which read as a different site the
+// moment you crossed /shop ↔ /l/*; they now share NavBar (desktop) +
+// BottomNav (mobile). Landing-specific bits that remain are content, not
+// chrome: promo strip/popup text and the per-landing footer visibility.
+const { cartOpen, orderOpen, successRef, openOrder, onOrderSuccess } =
   useUiState()
 const route = useRoute()
 const isLanding = computed(() => route.path.startsWith('/l'))
@@ -56,12 +59,11 @@ useHead({
       v-if="!isLanding || chrome?.sections.promo !== false"
       :text="chrome?.promoText"
     />
-    <NavBar v-if="!isLanding" @order="openOrder" />
-    <template v-if="isLanding">
-      <TubelightNav />
-      <CartFab @open="openCart" />
-      <PromoPopup v-if="chrome?.sections.promo !== false" :text="chrome?.promoText" />
-    </template>
+    <NavBar @order="openOrder" />
+    <PromoPopup
+      v-if="isLanding && chrome?.sections.promo !== false"
+      :text="chrome?.promoText"
+    />
 
     <slot />
 
@@ -71,13 +73,10 @@ useHead({
       :footer="chrome?.footer"
     />
 
-    <!-- Mobile bottom tab bar (storefront only); spacer keeps footer above it -->
-    <template v-if="!isLanding">
-      <div class="h-16 sm:hidden" aria-hidden="true" />
-      <BottomNav />
-    </template>
+    <!-- Mobile bottom tab bar; spacer keeps the footer above it -->
+    <div class="h-16 sm:hidden" aria-hidden="true" />
+    <BottomNav />
 
-    <!-- Cart lives inside the TubelightNav pill now (no separate floating bubble). -->
     <CartDrawer v-model="cartOpen" @continue="openOrder" />
 
     <!-- Order form sheet -->
