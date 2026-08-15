@@ -80,6 +80,33 @@ async def test_parses_and_converts_rial_to_toman(monkeypatch):
     assert by["ons"]["unit"] == "usd" and by["ons"]["price"] == 4343.43
 
 
+async def test_parse_skips_bad_prices_and_defaults_missing_fields():
+    items = mod._parse(
+        {
+            "geram18": {"p": "not-a-number", "dp": 1.0},  # unparseable → dropped
+            "sekee": "flat-string-not-a-dict",  # malformed entry → dropped
+            "geram24": {"p": "1,000,000"},  # no dp/dt/t → safe defaults
+        }
+    )
+    assert [i["symbol"] for i in items] == ["geram24"]
+    assert items[0]["price"] == 100_000  # rial/10, comma-stripped
+    assert items[0]["change_pct"] == 0.0
+    assert items[0]["direction"] == "none"
+    assert items[0]["updated_at"] is None
+
+
+async def test_public_route_serves_parsed_board(client, monkeypatch):
+    """Full stack: GET /api/v1/prices → service → mocked TGJU → parsed toman."""
+    monkeypatch.setattr(mod.httpx, "AsyncClient", lambda *a, **k: _Client(_SAMPLE))
+    r = await client.get("/api/v1/prices")
+    assert r.status_code == 200
+    assert r.headers["cache-control"] == "public, max-age=120"
+    body = r.json()
+    assert body["source"] == "tgju"
+    by = {i["symbol"]: i for i in body["items"]}
+    assert by["geram18"]["price"] == 18_904_800  # rial→toman conversion end-to-end
+
+
 async def test_second_call_within_ttl_is_cached(monkeypatch):
     monkeypatch.setattr(mod.httpx, "AsyncClient", lambda *a, **k: _Client(_SAMPLE))
     first = await mod.get_gold_prices(force=True)

@@ -2,5 +2,7 @@
 pytest==9.1.1
 # 0.24 requires pytest<9; 1.x is the pytest>=9-compatible line
 pytest-asyncio==1.3.0
+# coverage gate runs only in CI (.github/workflows/backend.yml); plain `pytest` stays fast
+pytest-cov==7.1.0
 ruff
 import-linter==2.13

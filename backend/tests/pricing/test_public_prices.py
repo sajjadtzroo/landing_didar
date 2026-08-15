@@ -1,7 +1,9 @@
-"""Public /prices endpoint (storefront نرخ روز strip). Service mocked — no TGJU."""
+"""Public /prices endpoint (storefront نرخ روز strip) and the admin board.
+Service mocked — no TGJU."""
 
 import pytest
 
+import app.domains.pricing.routers.admin as admin
 import app.domains.pricing.routers.public as public
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
@@ -43,3 +45,17 @@ async def test_public_prices_requires_no_auth(client, monkeypatch):
     monkeypatch.setattr(public, "get_gold_prices", _fake)
     # No admin/customer cookie on `client` — must still be 200 (public market data).
     assert (await client.get("/api/v1/prices")).status_code == 200
+
+
+async def test_admin_prices_requires_auth(client):
+    assert (await client.get("/api/v1/admin/prices")).status_code == 401
+
+
+async def test_admin_prices_returns_same_board(admin_client, monkeypatch):
+    async def _fake():
+        return _CANNED
+
+    monkeypatch.setattr(admin, "get_gold_prices", _fake)
+    r = await admin_client.get("/api/v1/admin/prices")
+    assert r.status_code == 200
+    assert r.json() == _CANNED  # admin board is the same payload, behind auth
