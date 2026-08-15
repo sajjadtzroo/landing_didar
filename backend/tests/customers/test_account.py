@@ -305,3 +305,16 @@ async def test_document_with_spoofed_type_rejected(client):
         files={"file": ("evil.png", b"MZ\x90\x00 not a png", "image/png")},
     )
     assert r.status_code == 415
+
+
+async def test_otp_request_per_phone_capped(client):
+    """5/hour per PHONE, DB-backed — an attacker rotating IPs must still be
+    unable to SMS-bomb one victim (the slowapi limit is per-IP only)."""
+    for _ in range(5):
+        r = await client.post(f"{ACC}/otp/request", json={"phone": "09125550000"})
+        assert r.status_code == 200
+    r = await client.post(f"{ACC}/otp/request", json={"phone": "09125550000"})
+    assert r.status_code == 429
+    # Other phones are unaffected.
+    r = await client.post(f"{ACC}/otp/request", json={"phone": "09125550001"})
+    assert r.status_code == 200

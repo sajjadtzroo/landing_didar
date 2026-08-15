@@ -2,6 +2,7 @@ import uuid
 
 from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.orm import noload
 
 from app.domains.customers.models import Customer
 from app.shared.cqrs import BaseQuery
@@ -23,7 +24,13 @@ class CustomerQuery(BaseQuery[Customer]):
         """Newest-first admin listing, optionally filtered by verification
         status. Pages manually (no MAX_PAGE_SIZE cap): the un-paginated admin
         UI relies on the generous 500 default until real pagination lands."""
-        q = self.stmt().order_by(Customer.created_at.desc())
+        # The admin row schema uses neither relationship — without noload the
+        # model-level lazy="selectin" hydrates addresses+favorites for all 500.
+        q = (
+            self.stmt()
+            .options(noload(Customer.addresses), noload(Customer.favorites))
+            .order_by(Customer.created_at.desc())
+        )
         if status:
             q = q.where(Customer.verification_status == status)
         return await self.all(q.offset((page - 1) * page_size).limit(page_size))

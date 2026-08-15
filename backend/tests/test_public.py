@@ -210,20 +210,29 @@ async def test_rate_limit_after_five(approved_client, order_payload):
     assert codes[-1] == 429
 
 
-# ---- In-process TTL cache (hit branch) ----
-async def test_products_served_from_cache_within_ttl(client, admin_client):
+# ---- TTL cache: hit branch + bust-on-mutation ----
+async def test_products_cache_hits_and_busts_on_mutation(client, admin_client):
     await _make_product(admin_client, name="A")
     assert [p["name"] for p in (await client.get("/api/v1/products")).json()] == ["A"]
-    # Add B AFTER the first read populated the cache; the cached payload wins.
-    await _make_product(admin_client, name="B")
+    # Second read within TTL rides the cache (hit branch, same payload).
     assert [p["name"] for p in (await client.get("/api/v1/products")).json()] == ["A"]
+    # A product mutation bumps the cache version — B is visible IMMEDIATELY,
+    # not after the TTL lapses (admins kept seeing 60s-stale storefronts).
+    await _make_product(admin_client, name="B")
+    names = [p["name"] for p in (await client.get("/api/v1/products")).json()]
+    assert sorted(names) == ["A", "B"]
 
 
-async def test_faqs_served_from_cache_within_ttl(client, admin_client):
-    await admin_client.post("/api/v1/admin/faqs", json={"question": "Q1", "answer": "A1"})
+async def test_faqs_cache_busts_on_mutation(client, admin_client):
+    await admin_client.post(
+        "/api/v1/admin/faqs", json={"question": "Q1", "answer": "A1"}
+    )
     assert len((await client.get("/api/v1/faqs")).json()) == 1
-    await admin_client.post("/api/v1/admin/faqs", json={"question": "Q2", "answer": "A2"})
-    assert len((await client.get("/api/v1/faqs")).json()) == 1  # cached, Q2 hidden
+    # FaqAction busts cache:faqs on create/update/delete — Q2 shows at once.
+    await admin_client.post(
+        "/api/v1/admin/faqs", json={"question": "Q2", "answer": "A2"}
+    )
+    assert len((await client.get("/api/v1/faqs")).json()) == 2
 
 
 # ---- Landing content → resolved product groups ----

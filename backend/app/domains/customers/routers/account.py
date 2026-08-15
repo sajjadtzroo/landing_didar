@@ -66,8 +66,12 @@ async def request_otp(
 
 
 @router.post("/otp/verify", response_model=CustomerOut)
+@limiter.limit("10/minute")
 async def verify_otp_code(
-    payload: OtpVerifyIn, response: Response, verify: VerifyOtpAction = Depends()
+    request: Request,
+    payload: OtpVerifyIn,
+    response: Response,
+    verify: VerifyOtpAction = Depends(),
 ):
     customer = await verify.execute(payload.phone, payload.code)
     _set_customer_cookie(response, issue_customer_session(str(customer.id)))

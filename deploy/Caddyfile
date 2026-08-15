@@ -9,7 +9,9 @@
 		?Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		?X-Content-Type-Options "nosniff"
 		?X-Frame-Options "SAMEORIGIN"
+		?X-XSS-Protection "1; mode=block"
 		?Referrer-Policy "strict-origin-when-cross-origin"
+		?Permissions-Policy "camera=(), microphone=(), geolocation=()"
 		-Server
 	}
 	log {
@@ -17,7 +19,16 @@
 			roll_size 20mb
 			roll_keep 5
 		}
-		format json
+		# JSON, but never log credential-bearing query params (the chat
+		# WebSocket auth ticket rides ?ticket=<60s bearer token>).
+		format filter {
+			wrap json
+			fields {
+				request>uri query {
+					replace ticket REDACTED
+				}
+			}
+		}
 	}
 }
 
@@ -28,6 +39,13 @@
 
 api.{$DOMAIN} {
 	import hardening
+	# JSON/media API — nothing here is a browsing context.
+	header ?Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+	# Ops-only surfaces: /metrics maps the whole API + abuse patterns and
+	# /ready leaks dependency state — scrape them over the docker network,
+	# never the internet. /health stays public for uptime probes.
+	@internal path /metrics /ready
+	respond @internal 404
 	# WebSockets (support chat /ws) are proxied transparently by Caddy.
 	reverse_proxy backend:8000
 }

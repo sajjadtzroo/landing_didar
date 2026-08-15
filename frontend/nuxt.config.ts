@@ -95,14 +95,35 @@ export default defineNuxtConfig({
     '/products/**': { swr: 60 },
     // Home is the storefront. Campaign landings still live at /l/<slug>.
     '/': { redirect: '/shop' },
-    // Baseline security headers. No strict CSP: Nuxt's inline hydration script
-    // would need a nonce and the Lighthouse CSP audit is informative (0 weight).
+    // Baseline security headers, host-independent (any proxy in front only
+    // adds fallbacks — see deploy/Caddyfile). CSP is compatibility-first, not
+    // nonce-strict: Nuxt's inline hydration + env-dependent analytics origins
+    // (Matomo URL is runtime config) force 'unsafe-inline' + https: in
+    // script-src. Real teeth are object-src 'none', base-uri, form-action and
+    // frame-ancestors. Tightening to nonces is a deliberate follow-up, not a
+    // proxy tweak. X-XSS-Protection is deprecated (browsers ignore it) but
+    // pentest checklists require its presence.
     '/**': {
       headers: {
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'SAMEORIGIN',
+        'X-XSS-Protection': '1; mode=block',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+        'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+        'Content-Security-Policy': [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-inline' https:",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob: https:",
+          "font-src 'self' data:",
+          "connect-src 'self' https: wss:",
+          "media-src 'self' https:",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+          "frame-ancestors 'self'",
+        ].join('; '),
       },
     },
   },

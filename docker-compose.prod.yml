@@ -41,6 +41,9 @@ services:
     restart: unless-stopped
     ports: !override []
 
+  redis-limiter:
+    restart: unless-stopped
+
   migrate:
     image: didar-backend:${IMAGE_TAG:-latest}
     environment: *backend-env-prod

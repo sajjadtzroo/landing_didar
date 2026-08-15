@@ -11,7 +11,16 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+    text,
+)
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -32,6 +41,15 @@ class SenderRole(enum.StrEnum):
 
 class Conversation(Base):
     __tablename__ = "conversations"
+    # Mirrors migration 0028 — declared here too so autogenerate never tries
+    # to drop it. Admin inbox: newest-activity-first within a status tab.
+    __table_args__ = (
+        Index(
+            "ix_conversations_status_last_msg",
+            "status",
+            text("last_message_at DESC"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4

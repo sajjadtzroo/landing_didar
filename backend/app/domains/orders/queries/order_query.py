@@ -2,10 +2,30 @@ from datetime import datetime
 from typing import ClassVar
 
 from sqlalchemy import Select, func, or_, select
+from sqlalchemy.orm import noload, selectinload
 
 from app.domains.catalog import Product
 from app.domains.orders.models import Order, OrderItem, OrderStatus
 from app.shared.cqrs import BaseQuery
+
+
+# Built lazily: constructing a Load option configures the mapper, and at
+# module-import time Order's "User" (agent) relationship may not be
+# registered yet depending on which domain imports first.
+def _list_load() -> tuple:
+    return (
+        noload(Order.items),
+        noload(Order.status_log),
+        noload(Order.serials),
+    )
+
+
+def _export_load() -> tuple:
+    return (
+        selectinload(Order.items),
+        noload(Order.status_log),
+        noload(Order.serials),
+    )
 
 
 class OrderQuery(BaseQuery[Order]):
@@ -29,8 +49,15 @@ class OrderQuery(BaseQuery[Order]):
         date_from: datetime | None = None,
         date_to: datetime | None = None,
         q: str | None = None,
+        load: tuple | None = None,
     ) -> Select[tuple[Order]]:
-        stmt = self.stmt()
+        # List rows never serialize items/status_log/serials (OrderOut has none
+        # of them) — noload stops lazy="selectin" from hydrating 3 child tables
+        # for every page. Paths that need a child pass their own `load` tuple
+        # (export keeps items); mixing noload+selectinload on one path raises
+        # "Loader strategies conflict", hence tuples, not chained overrides.
+        # The detail path uses by_id, which keeps the model defaults.
+        stmt = self.stmt().options(*(load if load is not None else _list_load()))
         if status:
             stmt = stmt.where(Order.status == status)
         if province:
@@ -65,8 +92,14 @@ class OrderQuery(BaseQuery[Order]):
         date_to: datetime | None = None,
         q: str | None = None,
     ) -> list[Order]:
+        # CSV needs the line items, nothing else.
         stmt = self.admin_filter(
-            status=status, province=province, date_from=date_from, date_to=date_to, q=q
+            status=status,
+            province=province,
+            date_from=date_from,
+            date_to=date_to,
+            q=q,
+            load=_export_load(),
         )
         return await self.all(stmt.order_by(Order.created_at.desc()))
 

@@ -16,6 +16,7 @@ past what one request-process comfortably chews.
 
 import csv
 import io
+import re
 import uuid
 from decimal import Decimal, InvalidOperation
 
@@ -85,11 +86,18 @@ def parse_csv(data: bytes) -> tuple[list[dict], list[dict]]:
     return rows, errors
 
 
+_SKU_RE = re.compile(r"[A-Za-z0-9._-]{1,40}")
+
+
 def _parse_row(cells: dict, lineno: int) -> dict:
     sku = cells.get("sku", "")
     name = cells.get("name", "")
     if not sku:
         raise ValueError("sku خالی است")
+    # sku becomes a filesystem path segment (media/products/{sku}/) and a MinIO
+    # prefix — a '../' here would traverse. Whitelist, don't sanitize.
+    if not _SKU_RE.fullmatch(sku):
+        raise ValueError("sku نامعتبر است (فقط حروف/عدد/._-)")
     if not name:
         raise ValueError("name خالی است")
 
@@ -202,6 +210,11 @@ async def run_products_import(
             job.created_count, job.updated_count, job.errors = created, updated, errors
             job.result = {"photos": photos} if photos else None
             await db.commit()
+        # Rows changed under the public cache's feet — invalidate now, not
+        # when the 60s TTL happens to lapse.
+        from app.domains.catalog.services.cache import bust_products_cache
+
+        await bust_products_cache()
     except Exception as e:  # noqa: BLE001 — a failed job must say so, not vanish
         logger.exception("product import job {} failed", job_id)
         async with _db.SessionLocal() as db:
@@ -233,6 +246,10 @@ async def run_image_sync(job_id: uuid.UUID) -> None:
             if "error" in (result or {}):
                 job.errors = [{"row": 0, "error": result["error"]}]
             await db.commit()
+        if job.status == "done":
+            from app.domains.catalog.services.cache import bust_products_cache
+
+            await bust_products_cache()
     except Exception as e:  # noqa: BLE001
         logger.exception("image sync job {} failed", job_id)
         async with _db.SessionLocal() as db:

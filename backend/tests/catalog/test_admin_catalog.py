@@ -71,10 +71,27 @@ async def test_upload_product_image(admin_client):
     pid = created.json()["id"]
     r = await admin_client.post(
         f"{PRODUCTS}/{pid}/image",
-        files={"file": ("photo.png", b"\x89PNG\r\n", "image/png")},
+        files={"file": ("photo.png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 16, "image/png")},
     )
     assert r.status_code == 200
     assert r.json()["image_url"].startswith("/media/")
+
+
+async def test_upload_product_image_rejects_spoofed_type(admin_client):
+    """Same guard set as /media: content-type allowlist + magic-byte sniff —
+    an unchecked file would be stored under the API origin (admin cookie)."""
+    created = await admin_client.post(PRODUCTS, json={"name": "P2", "sku": _sku()})
+    pid = created.json()["id"]
+    r = await admin_client.post(
+        f"{PRODUCTS}/{pid}/image",
+        files={"file": ("evil.png", b"<script>alert(1)</script>", "image/png")},
+    )
+    assert r.status_code == 415
+    r = await admin_client.post(
+        f"{PRODUCTS}/{pid}/image",
+        files={"file": ("page.html", b"<html></html>", "text/html")},
+    )
+    assert r.status_code == 415
 
 
 async def test_upload_image_404(admin_client):

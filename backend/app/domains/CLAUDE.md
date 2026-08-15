@@ -67,6 +67,19 @@ Files are snake_case; one main class per file; packages re-export via
   interface; the Action orchestrates it. Provider choice comes from config —
   never `if provider == ...` chains in routers.
 
+### Action vs service — the one-line rule
+
+> Talks to the DB and decides a business outcome → **Action**.
+> Talks to the outside world (SMS, MinIO, Redis pub/sub, HTTP scrape) or is a
+> pure technical helper (cache-bust, code formatting) → **service**.
+
+A domain having both is normal (orders: `actions/` write orders, `services/
+notifications/` send the SMS). A service never makes a business decision and
+never owns a request transaction; an Action never speaks a wire protocol
+directly. Background workers (import jobs, scrapers) are the one documented
+exception: they live in `services/` and open their own sessions, but delegate
+the actual SQL to Query/Action classes.
+
 ## Wiring & traps (load-bearing, learned the hard way)
 
 - `app/main.py` is the composition root; **router registration order matters**

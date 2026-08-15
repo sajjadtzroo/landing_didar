@@ -47,6 +47,9 @@ class Order(Base):
         Index("ix_orders_created_at", "created_at"),
         Index("ix_orders_status", "status"),
         Index("ix_orders_province", "province"),
+        # /account/orders links orders to customers by phone (no FK) — without
+        # this every logged-in "my orders" view is a sequential scan.
+        Index("ix_orders_phone", "phone"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

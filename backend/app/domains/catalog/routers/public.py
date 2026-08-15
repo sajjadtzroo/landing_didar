@@ -7,6 +7,7 @@ from pydantic import TypeAdapter
 from app.core.cache import cache_get, cache_set
 from app.domains.catalog.queries import ProductQuery
 from app.domains.catalog.schemas import ProductOut
+from app.domains.catalog.services.cache import products_cache_key
 
 router = APIRouter()
 
@@ -29,7 +30,7 @@ async def list_products(
     """Active catalog, ordered. Without `page` the full list is returned
     (existing storefront contract). With `page`, a slice of `page_size` plus an
     `X-Total-Count` header — the response stays a plain array either way."""
-    key = f"cache:products:p{page}:s{page_size}" if page else "cache:products"
+    key = await products_cache_key(page, page_size)
     cached = await cache_get(key)
     if cached is not None:
         total, body = cached
@@ -53,8 +54,12 @@ async def list_products(
 
 
 @router.get("/products/{slug}", response_model=ProductOut)
-async def get_product(slug: str, products: ProductQuery = Depends()):
+async def get_product(
+    slug: str, response: Response, products: ProductQuery = Depends()
+):
     product = await products.active_by_slug(slug)
     if product is None:
         raise HTTPException(404, detail="Product not found")
+    # Same 60s window as the list — lets the browser/proxy absorb repeat hits.
+    response.headers["Cache-Control"] = _CACHE_CONTROL
     return product

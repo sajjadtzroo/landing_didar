@@ -141,6 +141,10 @@ async def delete_product(
     await action.delete(product)
 
 
+_ALLOWED_PRODUCT_IMAGE = {"image/jpeg", "image/png", "image/webp"}
+_MAX_PRODUCT_IMAGE_BYTES = 10 * 1024 * 1024
+
+
 @router.post("/products/{product_id}/image", response_model=AdminProductOut)
 async def upload_product_image(
     product_id: str,
@@ -148,6 +152,15 @@ async def upload_product_image(
     products: ProductQuery = Depends(),
     action: ProductAction = Depends(),
 ):
+    # Same guard set as /media: an unchecked upload is stored under the API
+    # origin (where the admin cookie lives) and read whole into worker RAM.
+    if file.content_type not in _ALLOWED_PRODUCT_IMAGE:
+        raise HTTPException(415, detail="Unsupported media type")
     product = await products.by_id_or_404(product_id, detail="Product not found")
-    url = await get_storage().save(file.filename or "upload", await file.read())
+    data = await file.read()
+    if len(data) > _MAX_PRODUCT_IMAGE_BYTES:
+        raise HTTPException(413, detail="File too large (max 10MB)")
+    if not sniff_ok(file.content_type, data):
+        raise HTTPException(415, detail="File content does not match its type")
+    url = await get_storage().save(file.filename or "upload", data)
     return await action.set_image(product, url)

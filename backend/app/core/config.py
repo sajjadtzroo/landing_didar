@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     # single-node). Set to share cache/limits across workers/instances; the app
     # fails open if Redis is unreachable. e.g. redis://redis:6379/0
     redis_url: str = ""
+    # Rate-limit counters must NOT share an evicting cache instance: under
+    # cache pressure allkeys-lru silently resets the OTP/checkout limits
+    # (security controls). Point this at a noeviction Redis; falls back to
+    # redis_url, then to per-worker memory.
+    ratelimit_redis_url: str = ""
 
     # Logging (loguru sink level)
     log_level: str = "INFO"
@@ -65,7 +70,11 @@ class Settings(BaseSettings):
 
     # Test phones: OTP dev_code is returned (and the real SMS skipped) for these
     # even in production — for QA / app-review logins without a live gateway.
-    otp_test_phones: str = ""  # comma-separated, e.g. "09028068820"
+    # comma-separated, e.g. "09028068820". SECURITY: listed phones get their
+    # OTP echoed in the API response (QA/app-review logins) — in production
+    # only ever list dedicated numbers that can never belong to a real
+    # customer, or anyone who can call /otp/request owns that account.
+    otp_test_phones: str = ""
 
     @property
     def cors_origins(self) -> list[str]:

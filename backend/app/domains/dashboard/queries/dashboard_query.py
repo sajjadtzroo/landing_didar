@@ -40,20 +40,35 @@ class DashboardQuery(BaseQuery[Order]):
             .order_by(func.count().desc())
         )
 
-        total_orders = await self.db.scalar(
-            select(func.count()).select_from(Order)
-        ) or 0
-        confirmed = await self.db.scalar(
-            select(func.count())
-            .select_from(Order)
-            .where(Order.status.in_([OrderStatus.confirmed, OrderStatus.shipped]))
-        ) or 0
-        total_value = await self.db.scalar(
-            select(func.coalesce(func.sum(Order.total), 0))
-        ) or 0
-        unread = await self.db.scalar(
-            select(func.count()).select_from(Order).where(~Order.is_read)
-        ) or 0
+        # All scalar KPIs in ONE pass over orders (count(*) FILTER (...)) —
+        # this endpoint is polled by the admin SPA; 8 separate round-trips
+        # were the bulk of its latency.
+        scalars = (
+            await self.db.execute(
+                select(
+                    func.count(),
+                    func.count().filter(
+                        Order.status.in_(
+                            [OrderStatus.confirmed, OrderStatus.shipped]
+                        )
+                    ),
+                    func.coalesce(func.sum(Order.total), 0),
+                    func.count().filter(~Order.is_read),
+                    func.count().filter(Order.created_at >= day),
+                    func.count().filter(Order.created_at >= week),
+                    func.count().filter(Order.created_at >= month),
+                )
+            )
+        ).one()
+        (
+            total_orders,
+            confirmed,
+            total_value,
+            unread,
+            orders_today,
+            orders_week,
+            orders_month,
+        ) = scalars
 
         # --- Orders per day, last 14 days (zero-filled so the line is continuous) ---
         since = now - timedelta(days=13)
@@ -86,9 +101,9 @@ class DashboardQuery(BaseQuery[Order]):
         ]
 
         return {
-            "orders_today": await self.count_since(day),
-            "orders_week": await self.count_since(week),
-            "orders_month": await self.count_since(month),
+            "orders_today": int(orders_today),
+            "orders_week": int(orders_week),
+            "orders_month": int(orders_month),
             "total_orders": int(total_orders),
             "total_value": float(total_value),  # total grams sold
             "unread": int(unread),
