@@ -1,12 +1,33 @@
 # Reverse proxy + automatic Let's Encrypt for the VPS deployment.
 # DOMAIN comes from the caddy service environment (set in /opt/didar/.env).
 
+(hardening) {
+	encode zstd gzip
+	header {
+		# `?` = only set when the upstream didn't already send the header
+		# (Nuxt routeRules sets some of these itself).
+		?Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		?X-Content-Type-Options "nosniff"
+		?X-Frame-Options "SAMEORIGIN"
+		?Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	log {
+		output file /data/access.log {
+			roll_size 20mb
+			roll_keep 5
+		}
+		format json
+	}
+}
+
 {$DOMAIN} {
-	encode gzip
+	import hardening
 	reverse_proxy frontend:3000
 }
 
 api.{$DOMAIN} {
-	encode gzip
+	import hardening
+	# WebSockets (support chat /ws) are proxied transparently by Caddy.
 	reverse_proxy backend:8000
 }

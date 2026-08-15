@@ -25,14 +25,26 @@ jobs:
     if: vars.DEPLOY_ENABLED == 'true'
     needs: test
     runs-on: [self-hosted, didar-vps]
+    env:
+      # Every deploy is an addressable image; rollback =
+      #   IMAGE_TAG=<old-sha> docker compose ... up -d --no-build
+      IMAGE_TAG: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Prep host dirs (backups volume mount)
+        run: mkdir -p /opt/didar/backups
 
       - name: Build images on the server
         run: >
           docker compose -p didar
           -f docker-compose.yml -f docker-compose.prod.yml
           --env-file /opt/didar/.env build
+
+      - name: Tag as latest (rollback pointer stays per-SHA)
+        run: |
+          docker tag didar-backend:$IMAGE_TAG didar-backend:latest
+          docker tag didar-frontend:$IMAGE_TAG didar-frontend:latest
 
       - name: Roll the stack
         run: >
@@ -52,5 +64,12 @@ jobs:
           curl -fsS -o /dev/null "https://$DOMAIN/"
           echo "smoke OK"
 
-      - name: Prune dangling images
-        run: docker image prune -f
+      - name: Prune dangling images (tagged per-SHA images are kept for rollback)
+        run: |
+          docker image prune -f
+          # keep only the 5 newest per-SHA tags per image
+          for img in didar-backend didar-frontend; do
+            docker images "$img" --format '{{.Tag}} {{.CreatedAt}}' \
+              | grep -v '^latest\|^dev' | sort -rk2 | awk 'NR>5{print $1}' \
+              | xargs -r -n1 -I{} docker rmi "$img:{}" || true
+          done

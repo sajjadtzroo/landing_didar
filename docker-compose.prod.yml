@@ -5,6 +5,30 @@
 # Only Caddy publishes ports (80/443, auto-TLS). `!override` UNpublishes the
 # dev port mappings from the base file — plain `ports: []` would merge, not
 # clear. Requires compose >= 2.24.
+#
+# IMAGE_TAG: set by the deploy workflow to the short git SHA, so every deploy
+# is an addressable image and rollback is `IMAGE_TAG=<old-sha> ... up -d --no-build`.
+
+# Prod values shared by the API and the one-shot `migrate` service (the base
+# file's env anchor can't be referenced across files, so overrides repeat here).
+x-backend-env-prod: &backend-env-prod
+  DATABASE_URL: postgresql+asyncpg://didar:${POSTGRES_PASSWORD}@db:5432/didar
+  APP_ENV: prod
+  COOKIE_SECURE: "true"
+  COOKIE_SAMESITE: none
+  FRONTEND_ORIGIN: https://${DOMAIN:?set in /opt/didar/.env}
+  ADMIN_ORDER_BASE_URL: https://${DOMAIN}/admin/orders
+  ADMIN_PASSWORD: ""
+  ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?set in /opt/didar/.env}
+  SECRET_KEY: ${SECRET_KEY:?set in /opt/didar/.env}
+  SMS_PROVIDER: ${SMS_PROVIDER:-log}
+  SMS_SENDER: ${SMS_SENDER:-}
+  SMS_ADMIN_PHONE: ${SMS_ADMIN_PHONE:-}
+  PAYAMSMS_SYSTEM_NAME: ${PAYAMSMS_SYSTEM_NAME:-}
+  PAYAMSMS_USERNAME: ${PAYAMSMS_USERNAME:-}
+  PAYAMSMS_PASSWORD: ${PAYAMSMS_PASSWORD:-}
+  PAYAMSMS_CLIENT_ID: ${PAYAMSMS_CLIENT_ID:-}
+  PAYAMSMS_CLIENT_SECRET: ${PAYAMSMS_CLIENT_SECRET:-}
 
 services:
   db:
@@ -17,31 +41,26 @@ services:
     restart: unless-stopped
     ports: !override []
 
+  migrate:
+    image: didar-backend:${IMAGE_TAG:-latest}
+    environment: *backend-env-prod
+
   backend:
+    image: didar-backend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     ports: !override []
-    environment:
-      DATABASE_URL: postgresql+asyncpg://didar:${POSTGRES_PASSWORD}@db:5432/didar
-      APP_ENV: prod
-      COOKIE_SECURE: "true"
-      COOKIE_SAMESITE: none
-      FRONTEND_ORIGIN: https://${DOMAIN:?set in /opt/didar/.env}
-      ADMIN_ORDER_BASE_URL: https://${DOMAIN}/admin/orders
-      ADMIN_PASSWORD: ""
-      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?set in /opt/didar/.env}
-      SECRET_KEY: ${SECRET_KEY:?set in /opt/didar/.env}
-      SMS_PROVIDER: ${SMS_PROVIDER:-log}
-      SMS_SENDER: ${SMS_SENDER:-}
-      SMS_ADMIN_PHONE: ${SMS_ADMIN_PHONE:-}
-      PAYAMSMS_SYSTEM_NAME: ${PAYAMSMS_SYSTEM_NAME:-}
-      PAYAMSMS_USERNAME: ${PAYAMSMS_USERNAME:-}
-      PAYAMSMS_PASSWORD: ${PAYAMSMS_PASSWORD:-}
-      PAYAMSMS_CLIENT_ID: ${PAYAMSMS_CLIENT_ID:-}
-      PAYAMSMS_CLIENT_SECRET: ${PAYAMSMS_CLIENT_SECRET:-}
+    environment: *backend-env-prod
 
   frontend:
+    image: didar-frontend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     ports: !override []
+    build:
+      context: ./frontend
+      args:
+        # Baked into the nitro routeRules at build time — the browser's
+        # same-origin /api/v1 calls proxy here (NOT the old Liara default).
+        NUXT_PROXY_API_ORIGIN: http://backend:8000
     environment:
       NUXT_PUBLIC_API_BASE: https://api.${DOMAIN}/api/v1
       NUXT_API_BASE_INTERNAL: http://backend:8000/api/v1
@@ -61,6 +80,29 @@ services:
     depends_on:
       - backend
       - frontend
+
+  # Daily pg_dump with 14-day retention. /opt/didar/backups lives on the host —
+  # copy it off-box (rclone/scp); a backup on the same disk is not a backup.
+  db-backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - /opt/didar/backups:/backups
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        while true; do
+          pg_dump -h db -U didar didar | gzip > /backups/didar-$$(date +%F-%H%M).sql.gz \
+            && echo "backup OK $$(date -Iseconds)" \
+            || echo "backup FAILED $$(date -Iseconds)" >&2
+          find /backups -name '*.sql.gz' -mtime +14 -delete
+          sleep 86400
+        done
 
 volumes:
   caddy_data:

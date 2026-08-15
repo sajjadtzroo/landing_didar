@@ -33,11 +33,10 @@ if [ -n "$PROMETHEUS_MULTIPROC_DIR" ]; then
   mkdir -p "$PROMETHEUS_MULTIPROC_DIR" && rm -f "$PROMETHEUS_MULTIPROC_DIR"/*.db
 fi
 
-echo "Running migrations..."
-alembic upgrade head
+# Migrations/seed do NOT run here: with multiple workers/replicas an
+# entrypoint-side `alembic upgrade` races itself. The one-shot `migrate`
+# compose service owns them; backend waits on its completion (compose
+# `service_completed_successfully`).
 
-echo "Seeding (idempotent)..."
-python -m app.seed
-
-echo "Starting API..."
+echo "Starting..."
 exec "$@"

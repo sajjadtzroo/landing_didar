@@ -11,6 +11,11 @@ COPY package.json package-lock.json ./
 ENV npm_config_sharp_libvips_binary_host="https://registry.npmmirror.com/-/binary/sharp-libvips"
 RUN npm ci --legacy-peer-deps
 COPY . .
+# Build-time: nuxt.config.ts reads process.env.NUXT_PROXY_API_ORIGIN for the
+# /api/v1 + /media nitro proxy targets (routeRules are baked into the bundle).
+# Without this a prod build silently proxies to the old Liara default.
+ARG NUXT_PROXY_API_ORIGIN
+ENV NUXT_PROXY_API_ORIGIN=${NUXT_PROXY_API_ORIGIN}
 RUN npm run build
 
 FROM node:22-alpine

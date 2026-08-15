@@ -93,34 +93,37 @@ The runner only makes **outbound** connections to GitHub — no inbound ports.
 # then either push to main, or Actions → deploy → Run workflow
 ```
 
-First boot runs `alembic upgrade head` + idempotent seed automatically
-(backend entrypoint). Verify: `https://api.<domain>/health` and `/ready`.
+Migrations + idempotent seed run in the one-shot `migrate` compose service
+**before** the API starts (`depends_on: service_completed_successfully`) — the
+backend entrypoint deliberately does not migrate, so N workers/replicas can
+never race a schema change. Verify: `https://api.<domain>/health` and `/ready`.
 
 Manual fallback (no CI): on the server,
 `git pull && docker compose -p didar -f docker-compose.yml -f docker-compose.prod.yml --env-file /opt/didar/.env up -d --build`.
 
 ## 5. Backups (the thing a VPS does NOT do for you)
 
-```bash
-cat > /etc/cron.daily/didar-pgdump <<'EOF'
-#!/bin/sh
-docker compose -p didar exec -T db pg_dump -U didar didar | gzip \
-  > /opt/didar/backups/didar-$(date +%F).sql.gz
-find /opt/didar/backups -name '*.sql.gz' -mtime +14 -delete
-EOF
-chmod +x /etc/cron.daily/didar-pgdump && mkdir -p /opt/didar/backups
-```
+The prod overlay runs a `db-backup` service: daily `pg_dump | gzip` into
+`/opt/didar/backups` with 14-day retention (the deploy workflow creates the
+dir). Nothing to install — but **copy backups off-box** (rclone to any
+S3/another server); a backup on the same disk is not a backup.
 
-Copy backups off-box (rclone to any S3/another server) — a backup on the same
-disk is not a backup.
+Restore drill: `gunzip -c didar-<date>.sql.gz | docker compose -p didar exec -T db psql -U didar didar`.
 
 ## 6. Rollback
 
-Every deploy builds from the checked-out commit, so:
-Actions → deploy → Run workflow on the previous good commit, **or** on the
-server: `git checkout <sha>` + the manual command from §4. Migrations are
-forward-only — a rollback that crosses a schema migration needs the matching
-`alembic downgrade` first (rare; most of ours are additive).
+Every deploy tags images with the commit SHA (`didar-backend:<sha>`, last 5
+kept). Fast path — no rebuild:
+
+```bash
+IMAGE_TAG=<old-sha> docker compose -p didar \
+  -f docker-compose.yml -f docker-compose.prod.yml \
+  --env-file /opt/didar/.env up -d --no-build
+```
+
+Or re-run the deploy workflow on the previous good commit (full rebuild).
+Migrations are forward-only — a rollback that crosses a schema migration needs
+the matching `alembic downgrade` first (rare; most of ours are additive).
 
 ## Known limits (accepted)
 

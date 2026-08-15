@@ -7,6 +7,39 @@ x-logging: &default-logging
       max-size: "20m"
       max-file: "5"
 
+# One env block, two consumers: the API and the one-shot `migrate` service
+# (migrations/seed need the same settings the app boots with).
+x-backend-env: &backend-env
+  DATABASE_URL: postgresql+asyncpg://didar:didar@db:5432/didar
+  # Shared cache + exact cross-worker rate limits. Blank = in-process mode.
+  REDIS_URL: redis://redis:6379/0
+  FRONTEND_ORIGIN: http://localhost:3001
+  # Dev defaults — override in a real .env. admin/admin123 hash below.
+  ADMIN_USERNAME: admin
+  # Dev bootstrap: entrypoint hashes this at boot. Prod: set ADMIN_PASSWORD_HASH.
+  ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+  ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
+  SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+  COOKIE_SECURE: "false"
+  SMS_PROVIDER: ${SMS_PROVIDER:-log}
+  SMS_SENDER: ${SMS_SENDER:-}
+  PAYAMSMS_SYSTEM_NAME: ${PAYAMSMS_SYSTEM_NAME:-}
+  PAYAMSMS_USERNAME: ${PAYAMSMS_USERNAME:-}
+  PAYAMSMS_PASSWORD: ${PAYAMSMS_PASSWORD:-}
+  PAYAMSMS_CLIENT_ID: ${PAYAMSMS_CLIENT_ID:-}
+  PAYAMSMS_CLIENT_SECRET: ${PAYAMSMS_CLIENT_SECRET:-}
+  # Structured logs for the observability stack (human-readable if false).
+  LOG_JSON: ${LOG_JSON:-true}
+  APP_ENV: dev
+  ADMIN_ORDER_BASE_URL: http://localhost:3001/admin/orders
+  # MinIO object storage (values from the gitignored root .env). Empty →
+  # falls back to LocalStorage, so the stack still runs without them.
+  MINIO_ENDPOINT: ${MINIO_ENDPOINT:-}
+  MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-}
+  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-}
+  MINIO_BUCKET: ${MINIO_BUCKET:-}
+  MINIO_SECURE: ${MINIO_SECURE:-true}
+
 services:
   db:
     <<: *default-logging
@@ -50,44 +83,32 @@ services:
     ports:
       - "6381:6379"   # 6379/6380 taken by other local stacks
 
+  # One-shot: `alembic upgrade head` + idempotent seed, exactly once per
+  # `up`, BEFORE the API starts. Keeping this out of the backend entrypoint
+  # means N workers/replicas can never race the same migration.
+  migrate:
+    build: ./backend
+    image: didar-backend:dev
+    <<: *default-logging
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: *backend-env
+    command: sh -c "alembic upgrade head && python -m app.seed"
+
   backend:
     build: ./backend
+    image: didar-backend:dev
     <<: *default-logging
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql+asyncpg://didar:didar@db:5432/didar
-      # Shared cache + exact cross-worker rate limits. Blank = in-process mode.
-      REDIS_URL: redis://redis:6379/0
-      FRONTEND_ORIGIN: http://localhost:3001
-      # Dev defaults — override in a real .env. admin/admin123 hash below.
-      ADMIN_USERNAME: admin
-      # Dev bootstrap: entrypoint hashes this at boot. Prod: set ADMIN_PASSWORD_HASH.
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
-      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
-      COOKIE_SECURE: "false"
-      SMS_PROVIDER: ${SMS_PROVIDER:-log}
-      SMS_SENDER: ${SMS_SENDER:-}
-      PAYAMSMS_SYSTEM_NAME: ${PAYAMSMS_SYSTEM_NAME:-}
-      PAYAMSMS_USERNAME: ${PAYAMSMS_USERNAME:-}
-      PAYAMSMS_PASSWORD: ${PAYAMSMS_PASSWORD:-}
-      PAYAMSMS_CLIENT_ID: ${PAYAMSMS_CLIENT_ID:-}
-      PAYAMSMS_CLIENT_SECRET: ${PAYAMSMS_CLIENT_SECRET:-}
-      # Structured logs for the observability stack (human-readable if false).
-      LOG_JSON: ${LOG_JSON:-true}
-      APP_ENV: dev
-      ADMIN_ORDER_BASE_URL: http://localhost:3001/admin/orders
-      # MinIO object storage (values from the gitignored root .env). Empty →
-      # falls back to LocalStorage, so the stack still runs without them.
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-}
-      MINIO_BUCKET: ${MINIO_BUCKET:-}
-      MINIO_SECURE: ${MINIO_SECURE:-true}
+      migrate:
+        condition: service_completed_successfully
+    environment: *backend-env
     volumes:
       - media:/app/media
     ports:
@@ -95,6 +116,7 @@ services:
 
   frontend:
     build: ./frontend
+    image: didar-frontend:dev
     <<: *default-logging
     depends_on:
       - backend
