@@ -1,17 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.db import get_db
 from app.core.limiter import limiter
-from app.core.security import (
-    SESSION_COOKIE,
-    issue_session,
-    verify_password_async,
-)
+from app.core.security import SESSION_COOKIE, issue_session
+from app.domains.users.actions import UserAction
 from app.domains.users.dependencies import resolve_admin
-from app.domains.users.models import AuditLog, User
 from app.domains.users.schemas import LoginIn, MeOut
 
 router = APIRouter()
@@ -35,33 +30,12 @@ async def login(
     request: Request,
     payload: LoginIn,
     response: Response,
-    db: AsyncSession = Depends(get_db),
+    action: UserAction = Depends(),
 ):
     """Named users first; the env-var admin stays as a zero-config bootstrap
     superadmin. Both outcomes are audited (login is the one mutation the audit
     middleware can't attribute — there's no cookie yet)."""
-    role = None
-    user = (
-        await db.execute(
-            select(User).where(User.username == payload.username, User.is_active)
-        )
-    ).scalar_one_or_none()
-    if user is not None and await verify_password_async(payload.password, user.password_hash):
-        role = user.role.value
-    elif payload.username == settings.admin_username and await verify_password_async(
-        payload.password, settings.admin_password_hash
-    ):
-        role = "superadmin"
-
-    db.add(
-        AuditLog(
-            actor=payload.username[:60],
-            action="auth.login",
-            status=200 if role else 401,
-        )
-    )
-    await db.commit()
-
+    role = await action.login(payload.username, payload.password)
     if role is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"

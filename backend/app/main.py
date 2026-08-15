@@ -49,9 +49,9 @@ from app.domains.pricing.router_public import router as pricing_public
 from app.domains.serials.router_admin import router as serials_admin
 from app.domains.serials.router_admin_buybacks import router as serials_admin_buybacks
 from app.domains.serials.router_public import router as serials_public
-from app.domains.users.router_admin_audit import router as users_admin_audit
-from app.domains.users.router_admin_users import router as users_admin_users
-from app.domains.users.router_auth import router as users_auth
+from app.domains.users.routers.admin_audit import router as users_admin_audit
+from app.domains.users.routers.admin_users import router as users_admin_users
+from app.domains.users.routers.auth import router as users_auth
 
 # Route everything (app + uvicorn + sqlalchemy) through loguru's single sink.
 setup_logging()
