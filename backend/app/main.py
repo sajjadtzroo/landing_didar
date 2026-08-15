@@ -38,8 +38,8 @@ from app.domains.content.router_admin_portfolios import (
     router as content_admin_portfolios,
 )
 from app.domains.content.router_public import router as content_public
-from app.domains.customers.router_account import router as customers_account
-from app.domains.customers.router_admin import router as customers_admin
+from app.domains.customers.routers.account import router as customers_account
+from app.domains.customers.routers.admin import router as customers_admin
 from app.domains.dashboard.router_admin import router as dashboard_admin
 from app.domains.orders.routers.admin import router as orders_admin
 from app.domains.orders.routers.public import router as orders_public

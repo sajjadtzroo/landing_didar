@@ -57,7 +57,7 @@ type = "layers"
 layers = ["app.domains", "app.shared", "app.core"]
 
 [[tool.importlinter.contracts]]
-name = "Domain DAG (02-domain-map.md) — three documented router-level exceptions"
+name = "Domain DAG (02-domain-map.md) — documented upward exceptions"
 type = "layers"
 containers = ["app.domains"]
 layers = [
@@ -74,7 +74,8 @@ layers = [
 ]
 ignore_imports = [
   "app.domains.orders.actions.order_action -> app.domains.serials.service",
-  "app.domains.customers.router_account -> app.domains.orders",
+  "app.domains.customers.routers.account -> app.domains.orders",
+  "app.domains.customers.queries.customer_query -> app.domains.orders",
   "app.domains.users.router_admin_users -> app.domains.agents",
 ]
 
@@ -211,9 +212,10 @@ source_modules = [
 forbidden_modules = [
   "app.domains.customers.models",
   "app.domains.customers.schemas",
+  "app.domains.customers.queries",
+  "app.domains.customers.actions",
+  "app.domains.customers.routers",
   "app.domains.customers.dependencies",
-  "app.domains.customers.router_account",
-  "app.domains.customers.router_admin",
 ]
 
 [[tool.importlinter.contracts]]
