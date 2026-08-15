@@ -4,8 +4,12 @@ from sqlalchemy import select
 from app.domains.agents.models import MobileGalleryItem
 from app.domains.agents.schemas import GalleryAssignIn, GallerySellIn
 from app.domains.catalog import Product
-from app.domains.serials import ProductSerial, ProductSerialStatus
-from app.domains.serials import service as serial_service
+from app.domains.serials import (
+    ProductSerial,
+    ProductSerialStatus,
+    SerialAction,
+    normalize,
+)
 from app.domains.users import AdminRole, User
 from app.shared.cqrs import BaseAction
 
@@ -22,7 +26,7 @@ class GalleryAction(BaseAction[MobileGalleryItem]):
         if agent is None or agent.role != AdminRole.agent:
             raise HTTPException(404, detail="Agent not found")
 
-        normalized = serial_service.normalize(payload.code)
+        normalized = normalize(payload.code)
         serial = (
             await self.db.execute(
                 select(ProductSerial).where(ProductSerial.code == normalized)
@@ -92,8 +96,7 @@ class GalleryAction(BaseAction[MobileGalleryItem]):
             raise HTTPException(409, detail="وضعیت سریال اجازه فروش نمی‌دهد")
 
         serial.status = ProductSerialStatus.sold
-        serial_service.record_event(
-            self.db,
+        SerialAction(self.db).record_event(
             item.serial_id,
             "sold",
             {"quick_sale": True, "agent": agent.username},

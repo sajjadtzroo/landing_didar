@@ -9,7 +9,7 @@ from app.domains.agents.actions import GalleryAction
 from app.domains.agents.models import MobileGalleryItem
 from app.domains.agents.queries import GalleryQuery
 from app.domains.agents.schemas import GalleryAssignIn, GalleryItemOut, GalleryOut
-from app.domains.serials import service as serial_service
+from app.domains.serials import format_code
 from app.domains.users import require_admin
 
 router = APIRouter(dependencies=[Depends(require_admin)])
@@ -18,7 +18,7 @@ router = APIRouter(dependencies=[Depends(require_admin)])
 def _to_out(i: MobileGalleryItem) -> GalleryItemOut:
     return GalleryItemOut(
         id=i.id,
-        code=serial_service.format_code(i.serial.code),
+        code=format_code(i.serial.code),
         product_name=i.serial.product_name,
         image_url=i.serial.image_url,
         kind=i.kind,

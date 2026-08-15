@@ -4,26 +4,38 @@ are serial-lifecycle events; the passport endpoint reads all three).
 
 PUBLIC API — the only surface other code may import from."""
 
-from app.domains.serials import service
-from app.domains.serials.serial_models import (
+from app.domains.serials.actions import (
+    ActivateWarrantyAction,
+    BuybackAction,
+    SerialAction,
+)
+from app.domains.serials.models import (
+    BuybackRequest,
+    BuybackStatus,
     ProductSerial,
     ProductSerialStatus,
     SerialEvent,
     SerialScan,
-)
-from app.domains.serials.warranty_models import (
-    BuybackRequest,
-    BuybackStatus,
     Warranty,
 )
+from app.domains.serials.queries import BuybackQuery, SerialQuery, WarrantyQuery
+from app.domains.serials.services import format_code, normalize, qr_png
 
 __all__ = [
+    "ActivateWarrantyAction",
+    "BuybackAction",
+    "BuybackQuery",
     "BuybackRequest",
     "BuybackStatus",
     "ProductSerial",
     "ProductSerialStatus",
+    "SerialAction",
     "SerialEvent",
+    "SerialQuery",
     "SerialScan",
     "Warranty",
-    "service",
+    "WarrantyQuery",
+    "format_code",
+    "normalize",
+    "qr_png",
 ]

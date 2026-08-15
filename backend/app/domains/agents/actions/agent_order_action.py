@@ -8,7 +8,7 @@ from app.domains.orders import (
     OrderCreate,
     OrderStatus,
 )
-from app.domains.serials import service as serial_service
+from app.domains.serials import SerialAction
 from app.domains.users import User
 from app.shared.cqrs import BaseAction
 
@@ -46,7 +46,7 @@ class AgentOrderAction(BaseAction[Order]):
         serials exactly like the admin path. change_status does not commit;
         this command owns the one transaction."""
         await OrderAction(self.db).change_status(order, OrderStatus.delivered)
-        await serial_service.generate_for_order(self.db, order)
+        await SerialAction(self.db).generate_for_order(order)
         order.delivery_assignee = agent.full_name or agent.username
         order.delivery_proof = proof.model_dump(exclude_none=True)
         return await self.commit_and_refresh(order)

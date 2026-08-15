@@ -32,9 +32,9 @@ class OrderAction(BaseAction[Order]):
             await self.change_status(order, payload.status)
             # Delivered => mint one authenticity serial per piece (idempotent).
             if order.status == OrderStatus.delivered:
-                from app.domains.serials import service as serial_service
+                from app.domains.serials import SerialAction
 
-                await serial_service.generate_for_order(self.db, order)
+                await SerialAction(self.db).generate_for_order(order)
         if payload.internal_note is not None:
             order.internal_note = payload.internal_note
         if payload.is_read is not None:
@@ -51,8 +51,8 @@ class OrderAction(BaseAction[Order]):
         """Manual fallback: mint serials for an order (e.g. delivered before
         this feature existed). Idempotent — returns the order's codes whether
         it minted now or already had them."""
-        from app.domains.serials import service as serial_service
+        from app.domains.serials import SerialAction
 
-        await serial_service.generate_for_order(self.db, order)
+        await SerialAction(self.db).generate_for_order(order)
         await self.commit_and_refresh(order)
         return order.serial_codes

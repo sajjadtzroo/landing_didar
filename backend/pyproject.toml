@@ -35,11 +35,8 @@ ignore = ["B008"]  # FastAPI Depends() in defaults is idiomatic
 "app/domains/catalog/services/minio_import.py" = ["E501"]
 "app/domains/catalog/models/import_job.py" = ["E501"]
 "app/domains/catalog/routers/admin.py" = ["E501"]
-"app/domains/serials/router_admin.py" = ["E501"]
-"app/domains/serials/router_admin_buybacks.py" = ["E501"]
-"app/domains/serials/router_public.py" = ["E501"]
-"app/domains/serials/serial_models.py" = ["E501"]
-"app/domains/serials/warranty_models.py" = ["E501"]
+"app/domains/serials/models/serial.py" = ["E501"]
+"app/domains/serials/models/warranty.py" = ["E501"]
 
 # Architecture contract (G2/G8): run `lint-imports` locally and in CI
 # (.github/workflows/backend.yml). Structure: docs/architecture/02-domain-map.md.
@@ -68,7 +65,7 @@ layers = [
   "users",
 ]
 ignore_imports = [
-  "app.domains.orders.actions.order_action -> app.domains.serials.service",
+  "app.domains.orders.actions.order_action -> app.domains.serials",
   "app.domains.customers.routers.account -> app.domains.orders",
   "app.domains.customers.queries.customer_query -> app.domains.orders",
   "app.domains.users.queries.user_query -> app.domains.agents",
@@ -159,13 +156,12 @@ source_modules = [
   "app.domains.users",
 ]
 forbidden_modules = [
-  "app.domains.serials.serial_models",
-  "app.domains.serials.warranty_models",
-  "app.domains.serials.serial_schemas",
-  "app.domains.serials.warranty_schemas",
-  "app.domains.serials.router_admin",
-  "app.domains.serials.router_admin_buybacks",
-  "app.domains.serials.router_public",
+  "app.domains.serials.models",
+  "app.domains.serials.schemas",
+  "app.domains.serials.queries",
+  "app.domains.serials.actions",
+  "app.domains.serials.routers",
+  "app.domains.serials.services",
 ]
 
 [[tool.importlinter.contracts]]

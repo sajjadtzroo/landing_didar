@@ -26,7 +26,7 @@ from app.domains.agents.schemas import (
     VisitOut,
 )
 from app.domains.orders import DeliveryProof
-from app.domains.serials import service as serial_service
+from app.domains.serials import format_code
 from app.domains.users import User, require_agent
 
 router = APIRouter()
@@ -114,7 +114,7 @@ async def my_visits(
 def _gallery_out(i: MobileGalleryItem) -> GalleryItemOut:
     return GalleryItemOut(
         id=i.id,
-        code=serial_service.format_code(i.serial.code),
+        code=format_code(i.serial.code),
         product_name=i.serial.product_name,
         image_url=i.serial.image_url,
         kind=i.kind,

@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.domains.serials.warranty_models import BuybackStatus
+from app.domains.serials.models import BuybackStatus
 from app.shared.validation import PHONE_RE
 
 
