@@ -1078,6 +1078,192 @@
     "title": "ContactMethod",
     "type": "string"
    },
+   "ConversationAdminItem": {
+    "description": "Inbox row: conversation + who it is + what's pending.",
+    "properties": {
+     "admin_last_read_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Admin Last Read At"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "customer_id": {
+      "format": "uuid",
+      "title": "Customer Id",
+      "type": "string"
+     },
+     "customer_last_read_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Customer Last Read At"
+     },
+     "customer_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Customer Name"
+     },
+     "customer_phone": {
+      "title": "Customer Phone",
+      "type": "string"
+     },
+     "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+     },
+     "last_message": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Message"
+     },
+     "last_message_at": {
+      "format": "date-time",
+      "title": "Last Message At",
+      "type": "string"
+     },
+     "status": {
+      "$ref": "#/components/schemas/ConversationStatus"
+     },
+     "subject": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subject"
+     },
+     "unread": {
+      "title": "Unread",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "status",
+     "subject",
+     "created_at",
+     "last_message_at",
+     "customer_last_read_at",
+     "admin_last_read_at",
+     "customer_id",
+     "customer_phone",
+     "customer_name",
+     "unread",
+     "last_message"
+    ],
+    "title": "ConversationAdminItem",
+    "type": "object"
+   },
+   "ConversationOut": {
+    "properties": {
+     "admin_last_read_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Admin Last Read At"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "customer_last_read_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Customer Last Read At"
+     },
+     "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+     },
+     "last_message_at": {
+      "format": "date-time",
+      "title": "Last Message At",
+      "type": "string"
+     },
+     "status": {
+      "$ref": "#/components/schemas/ConversationStatus"
+     },
+     "subject": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subject"
+     }
+    },
+    "required": [
+     "id",
+     "status",
+     "subject",
+     "created_at",
+     "last_message_at",
+     "customer_last_read_at",
+     "admin_last_read_at"
+    ],
+    "title": "ConversationOut",
+    "type": "object"
+   },
+   "ConversationStatus": {
+    "enum": [
+     "open",
+     "resolved",
+     "closed"
+    ],
+    "title": "ConversationStatus",
+    "type": "string"
+   },
    "CustomerAdminOut": {
     "properties": {
      "created_at": {
@@ -1934,6 +2120,81 @@
      "username"
     ],
     "title": "MeOut",
+    "type": "object"
+   },
+   "MessageIn": {
+    "properties": {
+     "client_msg_id": {
+      "anyOf": [
+       {
+        "format": "uuid",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Client Msg Id"
+     },
+     "content": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "Content",
+      "type": "string"
+     }
+    },
+    "required": [
+     "content"
+    ],
+    "title": "MessageIn",
+    "type": "object"
+   },
+   "MessageOut": {
+    "properties": {
+     "client_msg_id": {
+      "anyOf": [
+       {
+        "format": "uuid",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Client Msg Id"
+     },
+     "content": {
+      "title": "Content",
+      "type": "string"
+     },
+     "conversation_id": {
+      "format": "uuid",
+      "title": "Conversation Id",
+      "type": "string"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+     },
+     "sender_role": {
+      "$ref": "#/components/schemas/SenderRole"
+     }
+    },
+    "required": [
+     "id",
+     "conversation_id",
+     "sender_role",
+     "content",
+     "client_msg_id",
+     "created_at"
+    ],
+    "title": "MessageOut",
     "type": "object"
    },
    "OrderCreate": {
@@ -3506,6 +3767,14 @@
     "title": "ProductUpdate",
     "type": "object"
    },
+   "SenderRole": {
+    "enum": [
+     "customer",
+     "admin"
+    ],
+    "title": "SenderRole",
+    "type": "string"
+   },
    "SerialEventOut": {
     "description": "One passport-timeline entry. `minted` is derived from created_at; stored\ntypes are sold/revoked/restored (+ warranty/buyback in later phases).",
     "properties": {
@@ -3810,6 +4079,49 @@
      "issued_at"
     ],
     "title": "SerialVerifyOut",
+    "type": "object"
+   },
+   "StatusIn": {
+    "properties": {
+     "status": {
+      "$ref": "#/components/schemas/ConversationStatus"
+     }
+    },
+    "required": [
+     "status"
+    ],
+    "title": "StatusIn",
+    "type": "object"
+   },
+   "SubjectIn": {
+    "properties": {
+     "subject": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subject"
+     }
+    },
+    "title": "SubjectIn",
+    "type": "object"
+   },
+   "TicketOut": {
+    "properties": {
+     "ticket": {
+      "title": "Ticket",
+      "type": "string"
+     }
+    },
+    "required": [
+     "ticket"
+    ],
+    "title": "TicketOut",
     "type": "object"
    },
    "UserCreate": {
@@ -4149,6 +4461,275 @@
  },
  "openapi": "3.1.0",
  "paths": {
+  "/api/v1/account/chat/conversations": {
+   "get": {
+    "operationId": "list_conversations_api_v1_account_chat_conversations_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ConversationOut"
+         },
+         "title": "Response List Conversations Api V1 Account Chat Conversations Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Conversations",
+    "tags": [
+     "account:chat"
+    ]
+   },
+   "post": {
+    "operationId": "open_conversation_api_v1_account_chat_conversations_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SubjectIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ConversationOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Open Conversation",
+    "tags": [
+     "account:chat"
+    ]
+   }
+  },
+  "/api/v1/account/chat/conversations/{conv_id}/messages": {
+   "get": {
+    "operationId": "list_messages_api_v1_account_chat_conversations__conv_id__messages_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "conv_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Conv Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "after",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "format": "uuid",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "After"
+      }
+     },
+     {
+      "in": "query",
+      "name": "before",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "format": "uuid",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Before"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/MessageOut"
+         },
+         "title": "Response List Messages Api V1 Account Chat Conversations  Conv Id  Messages Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Messages",
+    "tags": [
+     "account:chat"
+    ]
+   },
+   "post": {
+    "operationId": "send_message_api_v1_account_chat_conversations__conv_id__messages_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "conv_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Conv Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MessageIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MessageOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Send Message",
+    "tags": [
+     "account:chat"
+    ]
+   }
+  },
+  "/api/v1/account/chat/conversations/{conv_id}/read": {
+   "post": {
+    "operationId": "mark_read_api_v1_account_chat_conversations__conv_id__read_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "conv_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Conv Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Mark Read",
+    "tags": [
+     "account:chat"
+    ]
+   }
+  },
+  "/api/v1/account/chat/ws-ticket": {
+   "post": {
+    "operationId": "ws_ticket_api_v1_account_chat_ws_ticket_post",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TicketOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Ws Ticket",
+    "tags": [
+     "account:chat"
+    ]
+   }
+  },
   "/api/v1/account/logout": {
    "post": {
     "operationId": "logout_api_v1_account_logout_post",
@@ -4906,6 +5487,326 @@
     "summary": "Update Buyback",
     "tags": [
      "admin:buybacks"
+    ]
+   }
+  },
+  "/api/v1/admin/chat/conversations": {
+   "get": {
+    "operationId": "inbox_api_v1_admin_chat_conversations_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "status",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/ConversationStatus"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ConversationAdminItem"
+         },
+         "title": "Response Inbox Api V1 Admin Chat Conversations Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Inbox",
+    "tags": [
+     "admin:chat"
+    ]
+   }
+  },
+  "/api/v1/admin/chat/conversations/{conv_id}/messages": {
+   "get": {
+    "operationId": "list_messages_api_v1_admin_chat_conversations__conv_id__messages_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "conv_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Conv Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "after",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "format": "uuid",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "After"
+      }
+     },
+     {
+      "in": "query",
+      "name": "before",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "format": "uuid",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Before"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/MessageOut"
+         },
+         "title": "Response List Messages Api V1 Admin Chat Conversations  Conv Id  Messages Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Messages",
+    "tags": [
+     "admin:chat"
+    ]
+   },
+   "post": {
+    "operationId": "send_message_api_v1_admin_chat_conversations__conv_id__messages_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "conv_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Conv Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MessageIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MessageOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Send Message",
+    "tags": [
+     "admin:chat"
+    ]
+   }
+  },
+  "/api/v1/admin/chat/conversations/{conv_id}/read": {
+   "post": {
+    "operationId": "mark_read_api_v1_admin_chat_conversations__conv_id__read_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "conv_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Conv Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Mark Read",
+    "tags": [
+     "admin:chat"
+    ]
+   }
+  },
+  "/api/v1/admin/chat/conversations/{conv_id}/status": {
+   "post": {
+    "operationId": "set_status_api_v1_admin_chat_conversations__conv_id__status_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "conv_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Conv Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StatusIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Set Status",
+    "tags": [
+     "admin:chat"
+    ]
+   }
+  },
+  "/api/v1/admin/chat/ws-ticket": {
+   "post": {
+    "operationId": "ws_ticket_api_v1_admin_chat_ws_ticket_post",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TicketOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Ws Ticket",
+    "tags": [
+     "admin:chat"
     ]
    }
   },
