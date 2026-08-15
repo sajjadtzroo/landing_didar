@@ -24,6 +24,9 @@ backend/media/
 # Large binary assets (store via LFS or externally)
 *.mp4
 
+# IDE
+.idea/
+
 # OS
 .DS_Store
 

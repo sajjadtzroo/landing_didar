@@ -1,4 +1,9 @@
-# Deploy to Liara
+# Deploy to Liara — ⚠️ DEPRECATED
+
+> **This path is deprecated.** Production runs on a self-hosted VPS with
+> Docker Compose + Caddy — see **`docs/deploy-vps.md`** and
+> `.github/workflows/deploy.yml`. This file is kept only as a reference for
+> tearing down / migrating off the old Liara apps.
 
 Two Docker apps + one managed PostgreSQL, all in region **iran**.
 Config lives in `backend/liara.json` and `frontend/liara.json`.
@@ -46,7 +51,7 @@ liara env:set --app didar-gold-api \
   DATABASE_URL="postgresql+asyncpg://<user>:<pass>@<host>:<port>/<db>" \
   FRONTEND_ORIGIN="https://didar-gold.liara.run" \
   ADMIN_ORDER_BASE_URL="https://didar-gold.liara.run/admin/orders" \
-  SECRET_KEY="7ZlVnGpo6VA_bGqikwtaaThkPZiDm3lqScRgvm7rf7Gw0JoBlA7UxS_ilfCSbOnf" \
+  SECRET_KEY="<openssl rand -base64 48 — never commit the real value>" \
   ADMIN_USERNAME="admin" \
   ADMIN_PASSWORD_HASH="<bcrypt-hash>"
 ```
