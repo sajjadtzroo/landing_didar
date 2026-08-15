@@ -86,8 +86,10 @@ export default defineNuxtConfig({
     // in the background. Biggest SSR throughput win. Staleness ceiling: 60s.
     '/l/**': { swr: 60 },
     // Storefront pages are identical per visitor too (cart/favorites live
-    // client-side) — same SWR win. Cached responses are compressed per-request
-    // by server/plugins/compression.ts (beforeResponse), never in the cache.
+    // client-side) — same SWR win. Dynamic-HTML compression is Caddy's job
+    // (deploy/Caddyfile `encode`); an in-app beforeResponse compressor used to
+    // live here but mangled error pages (gzip bytes UTF-8-coerced by nitro's
+    // error renderer) and was removed — do not reintroduce app-level gzip.
     '/shop': { swr: 60 },
     '/shop/**': { swr: 60 },
     '/products/**': { swr: 60 },
