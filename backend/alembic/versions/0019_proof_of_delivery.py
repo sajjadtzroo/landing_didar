@@ -30,6 +30,10 @@ def upgrade() -> None:
     op.add_column("orders", sa.Column("delivery_proof", postgresql.JSONB(), nullable=True))
 
     # Backfill: first time each order entered `delivered`, per the status log.
+    # Compared as text on purpose: 'delivered' is added to the order_status enum
+    # in 0019's ancestor 0016, and alembic runs the whole upgrade in one
+    # transaction — Postgres rejects a new enum value used before its ADD VALUE
+    # commits (UnsafeNewEnumValueUsageError). Casting to text sidesteps that.
     op.execute(
         """
         UPDATE orders o
@@ -37,7 +41,7 @@ def upgrade() -> None:
         FROM (
             SELECT order_id, MIN(created_at) AS first_delivered
             FROM order_status_log
-            WHERE to_status = 'delivered'
+            WHERE to_status::text = 'delivered'
             GROUP BY order_id
         ) sub
         WHERE o.id = sub.order_id AND o.delivered_at IS NULL
