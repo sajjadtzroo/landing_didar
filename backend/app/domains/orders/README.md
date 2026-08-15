@@ -16,7 +16,6 @@ implementation** of the canonical skeleton in `../CLAUDE.md`.
 | `routers/public.py` | checkout + `/orders/track` + `/products/best-sellers` |
 | `routers/admin.py` | admin list/export/detail/patch/generate-serials |
 | `services/notifications/` | SMS adapter (PayamSMS) with log fallback for dev/tests |
-| `service.py` | DEPRECATED shim for the agents domain — delete after agents refactor |
 
 ## Routes
 

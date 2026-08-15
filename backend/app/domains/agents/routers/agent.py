@@ -4,12 +4,16 @@ assignment is the security boundary."""
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends
 
-from app.core.db import get_db
-from app.domains.agents.models import AgentRetailer, AgentVisit, MobileGalleryItem
+from app.domains.agents.actions import AgentOrderAction, AgentVisitAction, GalleryAction
+from app.domains.agents.models import MobileGalleryItem
+from app.domains.agents.queries import (
+    AgentOrderQuery,
+    AgentRetailerQuery,
+    AgentVisitQuery,
+    GalleryQuery,
+)
 from app.domains.agents.schemas import (
     AgentOrderCreate,
     AgentOrderDetailOut,
@@ -21,41 +25,19 @@ from app.domains.agents.schemas import (
     VisitCreate,
     VisitOut,
 )
-from app.domains.customers import Customer
-from app.domains.orders import DeliveryProof, Order, OrderCreate, OrderStatus
-from app.domains.orders import service as order_service
-from app.domains.serials import ProductSerial, ProductSerialStatus
+from app.domains.orders import DeliveryProof
 from app.domains.serials import service as serial_service
-from app.domains.users import AdminRole, User, require_agent
+from app.domains.users import User, require_agent
 
 router = APIRouter()
 
 
-async def _assigned_customer(
-    db: AsyncSession, agent: User, customer_id: uuid.UUID
-) -> Customer:
-    """The security boundary: an agent may only act on retailers assigned to them."""
-    link = await db.get(AgentRetailer, (agent.id, customer_id))
-    if link is None:
-        raise HTTPException(404, detail="Retailer not found")
-    customer = await db.get(Customer, customer_id)
-    if customer is None:
-        raise HTTPException(404, detail="Retailer not found")
-    return customer
-
-
 @router.get("/retailers", response_model=list[AgentRetailerOut])
 async def my_retailers(
-    agent: User = Depends(require_agent), db: AsyncSession = Depends(get_db)
+    agent: User = Depends(require_agent),
+    retailers: AgentRetailerQuery = Depends(),
 ):
-    rows = (
-        await db.execute(
-            select(Customer)
-            .join(AgentRetailer, AgentRetailer.customer_id == Customer.id)
-            .where(AgentRetailer.agent_id == agent.id)
-            .order_by(Customer.created_at)
-        )
-    ).scalars().all()
+    rows = await retailers.assigned_customers(agent.id)
     out = []
     for c in rows:
         default = next((a for a in c.addresses if a.is_default), None) or (
@@ -78,39 +60,20 @@ async def my_retailers(
 async def place_order(
     payload: AgentOrderCreate,
     agent: User = Depends(require_agent),
-    db: AsyncSession = Depends(get_db),
+    retailers: AgentRetailerQuery = Depends(),
+    action: AgentOrderAction = Depends(),
 ):
     """Order on behalf of an assigned retailer. Identity comes from the retailer's
     profile (server-side), items/province from the agent's form."""
-    customer = await _assigned_customer(db, agent, payload.customer_id)
-    create = OrderCreate(
-        full_name=(customer.full_name or customer.store_name or "خرده‌فروش دیدار")[:60],
-        phone=customer.phone,
-        store_name=(customer.store_name or customer.full_name or "فروشگاه")[:80],
-        province=payload.province,
-        city=payload.city,
-        contact_method="agent",
-        note=payload.note,
-        items=payload.items,
-    )
-    order = await order_service.create_order(db, create, idempotency_key=None, ip=None)
-    order.agent_id = agent.id
-    await db.commit()
-    await db.refresh(order)
-    return order
+    customer = await retailers.assigned_customer_or_404(agent.id, payload.customer_id)
+    return await action.place_for_retailer(agent, customer, payload)
 
 
 @router.get("/orders", response_model=list[AgentOrderOut])
 async def my_orders(
-    agent: User = Depends(require_agent), db: AsyncSession = Depends(get_db)
+    agent: User = Depends(require_agent), orders: AgentOrderQuery = Depends()
 ):
-    rows = await db.execute(
-        select(Order)
-        .where(Order.agent_id == agent.id)
-        .order_by(Order.created_at.desc())
-        .limit(100)
-    )
-    return rows.scalars().all()
+    return await orders.for_agent(agent.id)
 
 
 @router.post("/orders/{order_id}/deliver", response_model=AgentOrderDetailOut)
@@ -118,50 +81,33 @@ async def deliver_order(
     order_id: uuid.UUID,
     proof: DeliveryProof,
     agent: User = Depends(require_agent),
-    db: AsyncSession = Depends(get_db),
+    orders: AgentOrderQuery = Depends(),
+    action: AgentOrderAction = Depends(),
 ):
     """ثبت تحویل پایه — the agent marks their own order delivered with proof;
     mints authenticity serials exactly like the admin path."""
-    order = await db.get(Order, order_id)
-    is_super = agent.role == AdminRole.superadmin  # oversight path
-    if order is None or (not is_super and order.agent_id != agent.id):
-        raise HTTPException(404, detail="Order not found")
-    await order_service.change_status(db, order, OrderStatus.delivered)
-    await serial_service.generate_for_order(db, order)
-    order.delivery_assignee = agent.full_name or agent.username
-    order.delivery_proof = proof.model_dump(exclude_none=True)
-    await db.commit()
-    await db.refresh(order)
-    return order
+    order = await orders.owned_or_404(order_id, agent)
+    return await action.deliver(order, agent, proof)
 
 
 @router.post("/visits", response_model=VisitOut, status_code=201)
 async def log_visit(
     payload: VisitCreate,
     agent: User = Depends(require_agent),
-    db: AsyncSession = Depends(get_db),
+    retailers: AgentRetailerQuery = Depends(),
+    action: AgentVisitAction = Depends(),
 ):
-    await _assigned_customer(db, agent, payload.customer_id)
-    visit = AgentVisit(
-        agent_id=agent.id, customer_id=payload.customer_id, note=payload.note
-    )
-    db.add(visit)
-    await db.commit()
-    await db.refresh(visit)
-    return visit
+    await retailers.assigned_customer_or_404(agent.id, payload.customer_id)
+    return await action.log(agent.id, payload)
 
 
 @router.get("/visits", response_model=list[VisitOut])
 async def my_visits(
     customer_id: uuid.UUID | None = None,
     agent: User = Depends(require_agent),
-    db: AsyncSession = Depends(get_db),
+    visits: AgentVisitQuery = Depends(),
 ):
-    stmt = select(AgentVisit).where(AgentVisit.agent_id == agent.id)
-    if customer_id:
-        stmt = stmt.where(AgentVisit.customer_id == customer_id)
-    rows = await db.execute(stmt.order_by(AgentVisit.created_at.desc()).limit(100))
-    return rows.scalars().all()
+    return await visits.for_agent(agent.id, customer_id)
 
 
 # --- گالری سیار (WO 7.6): what I'm carrying + quick sale ---
@@ -180,15 +126,9 @@ def _gallery_out(i: MobileGalleryItem) -> GalleryItemOut:
 
 @router.get("/gallery", response_model=GalleryOut)
 async def my_gallery(
-    agent: User = Depends(require_agent), db: AsyncSession = Depends(get_db)
+    agent: User = Depends(require_agent), gallery: GalleryQuery = Depends()
 ):
-    items = (
-        await db.execute(
-            select(MobileGalleryItem)
-            .where(MobileGalleryItem.agent_id == agent.id)
-            .order_by(MobileGalleryItem.created_at.desc())
-        )
-    ).scalars().all()
+    items = await gallery.for_agent(agent.id)
     active = [i for i in items if i.status == "with_agent"]
     counts = {
         "with_agent": len(active),
@@ -205,35 +145,10 @@ async def quick_sell(
     item_id: uuid.UUID,
     payload: GallerySellIn,
     agent: User = Depends(require_agent),
-    db: AsyncSession = Depends(get_db),
+    gallery: GalleryQuery = Depends(),
+    action: GalleryAction = Depends(),
 ):
     """فروش فوری در حالت محدود (WO 7.6): sell a carried sellable piece on the
     spot — the serial flips to sold with a passport event; no order row."""
-    item = await db.get(MobileGalleryItem, item_id)
-    if item is None or item.agent_id != agent.id:
-        raise HTTPException(404, detail="Item not found")
-    if item.status != "with_agent":
-        raise HTTPException(409, detail="این قطعه همراه شما نیست")
-    if item.kind != "sellable":
-        raise HTTPException(409, detail="کالای نمونه قابل فروش نیست")
-    # Row-lock the serial so two concurrent sells can't both pass the check.
-    serial = (
-        await db.execute(
-            select(ProductSerial)
-            .where(ProductSerial.id == item.serial_id)
-            .with_for_update()
-        )
-    ).scalar_one()
-    if serial.status != ProductSerialStatus.in_stock:
-        raise HTTPException(409, detail="وضعیت سریال اجازه فروش نمی‌دهد")
-
-    serial.status = ProductSerialStatus.sold
-    serial_service.record_event(
-        db, item.serial_id, "sold", {"quick_sale": True, "agent": agent.username}
-    )
-    item.status = "sold"
-    if payload.note:
-        item.note = payload.note
-    await db.commit()
-    await db.refresh(item)
-    return _gallery_out(item)
+    item = await gallery.owned_or_404(item_id, agent.id)
+    return _gallery_out(await action.quick_sell(item, agent, payload))

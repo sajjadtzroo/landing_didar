@@ -3,17 +3,14 @@ and see what each agent is carrying."""
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends
 
-from app.core.db import get_db
+from app.domains.agents.actions import GalleryAction
 from app.domains.agents.models import MobileGalleryItem
+from app.domains.agents.queries import GalleryQuery
 from app.domains.agents.schemas import GalleryAssignIn, GalleryItemOut, GalleryOut
-from app.domains.catalog import Product
-from app.domains.serials import ProductSerial, ProductSerialStatus
 from app.domains.serials import service as serial_service
-from app.domains.users import AdminRole, User, require_admin
+from app.domains.users import require_admin
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
@@ -43,79 +40,34 @@ def _counts(items: list[MobileGalleryItem]) -> dict[str, int]:
 
 
 @router.get("/mobile-gallery/agents")
-async def gallery_agents(db: AsyncSession = Depends(get_db)):
+async def gallery_agents(gallery: GalleryQuery = Depends()):
     """Active agent accounts for the picker (admin-level; /admin/users is
     superadmin-only by design)."""
-    rows = (
-        await db.execute(
-            select(User).where(User.role == AdminRole.agent, User.is_active)
-            .order_by(User.created_at)
-        )
-    ).scalars().all()
-    return [{"id": str(u.id), "username": u.username, "full_name": u.full_name} for u in rows]
+    rows = await gallery.active_agents()
+    return [
+        {"id": str(u.id), "username": u.username, "full_name": u.full_name}
+        for u in rows
+    ]
 
 
 @router.get("/mobile-gallery", response_model=GalleryOut)
-async def list_gallery(agent_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    items = (
-        await db.execute(
-            select(MobileGalleryItem)
-            .where(MobileGalleryItem.agent_id == agent_id)
-            .order_by(MobileGalleryItem.created_at.desc())
-        )
-    ).scalars().all()
+async def list_gallery(agent_id: uuid.UUID, gallery: GalleryQuery = Depends()):
+    items = await gallery.for_agent(agent_id)
     return GalleryOut(items=[_to_out(i) for i in items], counts=_counts(items))
 
 
 @router.post("/mobile-gallery", response_model=GalleryItemOut, status_code=201)
-async def assign_item(payload: GalleryAssignIn, db: AsyncSession = Depends(get_db)):
+async def assign_item(payload: GalleryAssignIn, action: GalleryAction = Depends()):
     """تحویل اولیه کالا به ایجنت: an in-stock serial goes into the agent's bag."""
-    agent = await db.get(User, payload.agent_id)
-    if agent is None or agent.role != AdminRole.agent:
-        raise HTTPException(404, detail="Agent not found")
-
-    normalized = serial_service.normalize(payload.code)
-    serial = (
-        await db.execute(select(ProductSerial).where(ProductSerial.code == normalized))
-    ).scalar_one_or_none()
-    if serial is None:
-        raise HTTPException(404, detail="سریال یافت نشد")
-    if serial.status != ProductSerialStatus.in_stock:
-        raise HTTPException(409, detail="فقط سریال‌های موجود (فروخته‌نشده) قابل تحویل‌اند")
-    active = (
-        await db.execute(
-            select(MobileGalleryItem.id).where(
-                MobileGalleryItem.serial_id == serial.id,
-                MobileGalleryItem.status == "with_agent",
-            )
-        )
-    ).scalar_one_or_none()
-    if active:
-        raise HTTPException(409, detail="این قطعه هم‌اکنون همراه یک ایجنت است")
-
-    kind = payload.kind
-    if kind is None:
-        product = await db.get(Product, serial.product_id)
-        kind = "sample" if (product and product.product_status == "sample") else "sellable"
-
-    item = MobileGalleryItem(
-        agent_id=payload.agent_id, serial_id=serial.id, kind=kind, note=payload.note
-    )
-    db.add(item)
-    await db.commit()
-    await db.refresh(item)
-    return _to_out(item)
+    return _to_out(await action.assign(payload))
 
 
 @router.patch("/mobile-gallery/{item_id}/return", response_model=GalleryItemOut)
-async def return_item(item_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def return_item(
+    item_id: uuid.UUID,
+    gallery: GalleryQuery = Depends(),
+    action: GalleryAction = Depends(),
+):
     """ثبت برگشت ساده: the piece is physically back at the office."""
-    item = await db.get(MobileGalleryItem, item_id)
-    if item is None:
-        raise HTTPException(404, detail="Item not found")
-    if item.status != "with_agent":
-        raise HTTPException(409, detail="این قطعه همراه ایجنت نیست")
-    item.status = "returned"
-    await db.commit()
-    await db.refresh(item)
-    return _to_out(item)
+    item = await gallery.by_id_or_404(item_id, detail="Item not found")
+    return _to_out(await action.return_item(item))

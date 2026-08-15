@@ -24,8 +24,8 @@ from app.core.metrics import (
     RATELIMIT_TRIPS,
     metrics_endpoint,
 )
-from app.domains.agents.router_admin_gallery import router as agents_admin_gallery
-from app.domains.agents.router_agent import router as agents_agent
+from app.domains.agents.routers.admin_gallery import router as agents_admin_gallery
+from app.domains.agents.routers.agent import router as agents_agent
 from app.domains.catalog.routers.admin import router as catalog_admin
 from app.domains.catalog.routers.public import router as catalog_public
 from app.domains.chat.realtime import stop_reader as chat_stop_reader
