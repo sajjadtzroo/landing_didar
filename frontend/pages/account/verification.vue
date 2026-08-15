@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ExternalLink, Trash2 } from 'lucide-vue-next'
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
 definePageMeta({ middleware: 'customer' })
 

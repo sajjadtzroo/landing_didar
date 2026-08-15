@@ -25,8 +25,8 @@ async function submit() {
 </script>
 
 <template>
-  <!-- Always-navy login screen (matches the brand's login treatment). -->
   <div class="flex min-h-dvh items-center justify-center bg-navy px-6" data-theme="dark">
+    <!-- Always-navy login screen (matches the brand's login treatment). -->
     <form
       class="w-full max-w-sm border border-gold/30 bg-navy-deep p-8"
       @submit.prevent="submit"

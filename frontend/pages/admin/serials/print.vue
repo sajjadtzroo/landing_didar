@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowRight, Printer } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { ProductSerial, SerialListResponse } from '~/types'
 import { toFa } from '~/utils/format'
 

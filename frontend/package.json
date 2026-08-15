@@ -8,7 +8,11 @@
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
     "postinstall": "nuxt prepare",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@nuxt/image": "^1.8.1",
@@ -29,10 +33,16 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@nuxt/eslint-config": "^1.17.0",
     "@nuxtjs/tailwindcss": "^6.12.2",
     "@vite-pwa/assets-generator": "^1.0.2",
     "@vite-pwa/nuxt": "^1.1.1",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/test-utils": "^2.4.11",
+    "eslint": "^9.39.5",
+    "happy-dom": "^20.11.2",
     "typescript": "^5.7.2",
+    "vitest": "^4.1.10",
     "vue-tsc": "^2.2.0"
   }
 }

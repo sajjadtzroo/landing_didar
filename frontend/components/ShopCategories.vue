@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { CONTENT } from '~/constants/content'
-import { toFa } from '~/utils/format'
 
 // Visual category chooser for /shop — the single source of truth for the active
 // category (the filter bar no longer duplicates it). Mirrors the product

@@ -24,6 +24,7 @@ withDefaults(
     title: () => CONTENT.products.title,
     description: () => CONTENT.products.description,
     anchorId: 'products',
+    viewAllTo: undefined, // no CTA unless a route is given
   },
 )
 

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Heart, Home, ShoppingBag, ShoppingCart, User } from 'lucide-vue-next'
-import { computed } from 'vue'
 import { CONTENT } from '~/constants/content'
 import { toFa } from '~/utils/format'
 

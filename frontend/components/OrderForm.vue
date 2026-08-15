@@ -195,7 +195,7 @@ function onInvalidField(field: string) {
         </select>
       </FormField>
 
-      <FormField :label="CONTENT.form.city" v-slot="{ id, describedBy }">
+      <FormField :label="CONTENT.form.city" v-slot="{ id }">
         <input :id="id" v-model="city" type="text" class="form-control" />
       </FormField>
 
