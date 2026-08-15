@@ -141,7 +141,8 @@ source_modules = [
   "app.domains.users",
 ]
 forbidden_modules = [
-  "app.domains.dashboard.router_admin",
+  "app.domains.dashboard.queries",
+  "app.domains.dashboard.routers",
 ]
 
 [[tool.importlinter.contracts]]
