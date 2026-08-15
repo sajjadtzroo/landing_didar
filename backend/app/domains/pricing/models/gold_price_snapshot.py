@@ -16,4 +16,6 @@ class GoldPriceSnapshot(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
     items: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     source: Mapped[str] = mapped_column(String(20), nullable=False, default="tgju")
-    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )

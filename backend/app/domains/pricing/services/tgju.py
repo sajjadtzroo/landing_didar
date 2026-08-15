@@ -8,15 +8,14 @@ ponytail: dict cache; TGJU covers every index the panel shows, so no second sour
 """
 
 import asyncio
-from datetime import UTC, datetime
 
 import httpx
 from loguru import logger
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.core.cache import cache_get, cache_set
 from app.core.db import SessionLocal
-from app.domains.pricing.models import GoldPriceSnapshot
+from app.domains.pricing.actions import PriceAction
+from app.domains.pricing.queries import PriceQuery
 
 TGJU_URL = "https://call.tgju.org/ajax.json"
 _TTL = 90.0  # seconds; TGJU updates every few seconds but the panel polls ~60s
@@ -44,23 +43,10 @@ async def _save_snapshot(items: list[dict], source: str = "tgju") -> None:
     """Upsert the single last-good row (id=1). Never raises — a DB hiccup must not
     break serving live prices."""
     try:
+        # Runs outside any request (background refresh_loop too), so the action
+        # gets its own short-lived session instead of a DI-injected one.
         async with SessionLocal() as s:
-            stmt = pg_insert(GoldPriceSnapshot).values(
-                id=1, items=items, source=source, fetched_at=datetime.now(UTC)
-            )
-            stmt = stmt.on_conflict_do_update(
-                index_elements=["id"],
-                # subscript access: the column is named "items", which shadows the
-                # ColumnCollection.items() method under attribute access.
-                set_={
-                    "items": stmt.excluded["items"],
-                    "source": stmt.excluded["source"],
-                    "fetched_at": stmt.excluded["fetched_at"],
-                    "updated_at": datetime.now(UTC),
-                },
-            )
-            await s.execute(stmt)
-            await s.commit()
+            await PriceAction(s).upsert_board(items, source=source)
     except Exception:  # noqa: BLE001
         logger.exception("gold prices: failed to persist snapshot")
 
@@ -69,7 +55,7 @@ async def _load_snapshot() -> dict | None:
     """Return {items, fetched_at} from the persisted last-good row, or None."""
     try:
         async with SessionLocal() as s:
-            row = await s.get(GoldPriceSnapshot, 1)
+            row = await PriceQuery(s).last_board()
             if row and row.items:
                 return {"items": row.items, "fetched_at": row.fetched_at.isoformat()}
     except Exception:  # noqa: BLE001

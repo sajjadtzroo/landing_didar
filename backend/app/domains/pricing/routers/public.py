@@ -3,7 +3,7 @@ domain migration; registered with tags=["public"] so OpenAPI is unchanged."""
 
 from fastapi import APIRouter, Response
 
-from app.domains.pricing.service import get_gold_prices
+from app.domains.pricing.services import get_gold_prices
 
 router = APIRouter()
 

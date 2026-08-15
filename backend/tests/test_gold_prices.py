@@ -4,7 +4,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy import text
 
-import app.domains.pricing.service as mod
+import app.domains.pricing.services.tgju as mod
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

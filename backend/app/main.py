@@ -44,8 +44,8 @@ from app.domains.dashboard.routers.admin import router as dashboard_admin
 from app.domains.orders.routers.admin import router as orders_admin
 from app.domains.orders.routers.public import router as orders_public
 from app.domains.pricing import refresh_loop
-from app.domains.pricing.router_admin import router as pricing_admin
-from app.domains.pricing.router_public import router as pricing_public
+from app.domains.pricing.routers.admin import router as pricing_admin
+from app.domains.pricing.routers.public import router as pricing_public
 from app.domains.serials.router_admin import router as serials_admin
 from app.domains.serials.router_admin_buybacks import router as serials_admin_buybacks
 from app.domains.serials.router_public import router as serials_public
