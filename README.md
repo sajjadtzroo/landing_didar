@@ -12,8 +12,8 @@ an order/lead-request flow.
 - **Analytics:** Matomo only (no Google anything).
 
 ```
-/frontend   Nuxt app
-/backend    FastAPI app  (app/api, models, schemas, services, core; alembic/)
+/frontend   Nuxt app     — domain-grouped; conventions in frontend/README.md
+/backend    FastAPI app  — modular monolith; conventions in backend/app/domains/CLAUDE.md
 docker-compose.yml
 ```
 

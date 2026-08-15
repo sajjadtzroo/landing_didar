@@ -16,6 +16,16 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt',
   ],
 
+  // components/ is grouped by domain (ui/, layout/, catalog/, …) purely for
+  // code organisation. pathPrefix:false keeps registered names identical to
+  // the flat layout (<ProductCard>, not <CatalogProductCard>) — zero template
+  // churn. Filenames must therefore stay globally unique across subfolders.
+  components: [{ path: '~/components', pathPrefix: false }],
+
+  // Nuxt only auto-imports top-level composables/ by default; the glob makes
+  // the domain subfolders (composables/ui, composables/account, …) scanned too.
+  imports: { dirs: ['composables/**'] },
+
   css: ['~/assets/css/main.css'],
 
   // Pre-compress built JS/CSS (gzip + brotli) so the server serves compressed
