@@ -6,7 +6,7 @@ import pytest
 import app.core.db as _db_mod
 from app.core.limiter import limiter
 from app.domains.content import Landing
-from app.domains.content import service as _content_service
+from app.domains.content.services import cache as _content_cache
 from app.domains.orders.routers import public as _orders_public
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
@@ -271,7 +271,7 @@ async def test_bust_landing_cache_drops_entry(_sessionmaker):
     from app.core.cache import cache_get, cache_set
 
     await cache_set("cache:landing:z", "cached", ttl=999)
-    await _content_service.bust_landing_cache("z")
+    await _content_cache.bust_landing_cache("z")
     assert await cache_get("cache:landing:z") is None
 
 

@@ -35,7 +35,6 @@ ignore = ["B008"]  # FastAPI Depends() in defaults is idiomatic
 "app/domains/catalog/services/minio_import.py" = ["E501"]
 "app/domains/catalog/models/import_job.py" = ["E501"]
 "app/domains/catalog/routers/admin.py" = ["E501"]
-"app/domains/content/router_admin_portfolios.py" = ["E501"]
 "app/domains/serials/router_admin.py" = ["E501"]
 "app/domains/serials/router_admin_buybacks.py" = ["E501"]
 "app/domains/serials/router_public.py" = ["E501"]
@@ -235,11 +234,10 @@ source_modules = [
 forbidden_modules = [
   "app.domains.content.models",
   "app.domains.content.schemas",
-  "app.domains.content.router_admin_faqs",
-  "app.domains.content.router_admin_landings",
-  "app.domains.content.router_admin_portfolios",
-  "app.domains.content.router_public",
-  "app.domains.content.service",
+  "app.domains.content.queries",
+  "app.domains.content.actions",
+  "app.domains.content.routers",
+  "app.domains.content.services",
 ]
 
 [[tool.importlinter.contracts]]

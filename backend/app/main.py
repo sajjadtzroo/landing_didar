@@ -32,12 +32,12 @@ from app.domains.chat.realtime import stop_reader as chat_stop_reader
 from app.domains.chat.router import router as chat_account
 from app.domains.chat.router_admin import router as chat_admin
 from app.domains.chat.router_ws import router as chat_ws
-from app.domains.content.router_admin_faqs import router as content_admin_faqs
-from app.domains.content.router_admin_landings import router as content_admin_landings
-from app.domains.content.router_admin_portfolios import (
+from app.domains.content.routers.admin_faqs import router as content_admin_faqs
+from app.domains.content.routers.admin_landings import router as content_admin_landings
+from app.domains.content.routers.admin_portfolios import (
     router as content_admin_portfolios,
 )
-from app.domains.content.router_public import router as content_public
+from app.domains.content.routers.public import router as content_public
 from app.domains.customers.routers.account import router as customers_account
 from app.domains.customers.routers.admin import router as customers_admin
 from app.domains.dashboard.routers.admin import router as dashboard_admin

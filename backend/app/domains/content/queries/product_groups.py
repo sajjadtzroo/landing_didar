@@ -1,33 +1,15 @@
-"""Content-domain helpers: public-cache busting + group→product resolution.
+"""Group→product resolution shared by the landing and portfolio read sides.
 
-Moved verbatim from app/api/v1/public.py during the domain migration."""
+Moved verbatim from the old content service during the CQRS split. Lives in
+queries/ because it is a pure read against the live catalog."""
 
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.cache import cache_delete
 from app.domains.catalog import Product
 from app.domains.content.schemas import LandingGroupOut
-
-
-async def bust_landing_cache(slug: str) -> None:
-    """Drop a landing's cached payload so an admin edit shows immediately instead
-    of after the TTL. Called by the admin landings router on mutate."""
-    await cache_delete(f"cache:landing:{slug}")
-
-
-async def bust_portfolios_cache() -> None:
-    """Drop the cached /portfolios payload so an admin edit shows immediately.
-    Called by the admin portfolios router on mutate."""
-    await cache_delete("cache:portfolios")
-
-
-async def bust_portfolio_cache(slug: str) -> None:
-    """Drop a single portfolio's cached detail payload. Called by the admin
-    portfolios router on mutate (alongside bust_portfolios_cache for the list)."""
-    await cache_delete(f"cache:portfolio:{slug}")
 
 
 def _as_uuid(value: object) -> uuid.UUID | None:
