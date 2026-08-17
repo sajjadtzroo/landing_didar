@@ -82,6 +82,7 @@ export interface CartItem {
   name: string
   sku: string
   weightGrams: number | null
+  weightDisplay: string | null // range text (e.g. «۱۲-۱۵ گرم») when the piece varies
   imageUrl: string | null
   quantity: number
 }

@@ -1,13 +1,25 @@
 <script setup lang="ts">
 import { Trash2 } from 'lucide-vue-next'
+import { computed } from 'vue'
 import { CONTENT } from '~/constants/content'
-import { formatGrams } from '~/utils/format'
+import { formatGrams, toFa } from '~/utils/format'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [boolean]; continue: [] }>()
 
 const cart = useCartStore()
 const { trackEvent } = useAnalytics()
+
+// Grand total as a weight range («۲۴-۳۰ گرم») when any piece varies; a plain
+// number when every item has a single weight.
+const totalWeightLabel = computed(() => {
+  const { min, max } = cart.totalWeightRange
+  if (min === 0 && max === 0) return null
+  if (min === max) return formatGrams(min)
+  return `${toFa(min.toLocaleString('en-US', { maximumFractionDigits: 2 }))}-${toFa(
+    max.toLocaleString('en-US', { maximumFractionDigits: 2 }),
+  )} گرم`
+})
 
 function remove(productId: string, name: string) {
   cart.removeItem(productId)
@@ -40,7 +52,11 @@ function remove(productId: string, name: string) {
         <div class="min-w-0 flex-1">
           <p class="truncate text-ink">{{ item.name }}</p>
           <p class="mt-1 text-sm text-gold-text">
-            {{ formatGrams(item.weightGrams) ?? CONTENT.products.priceOnRequest }}
+            {{
+              item.weightDisplay
+                ? toFa(item.weightDisplay)
+                : (formatGrams(item.weightGrams) ?? CONTENT.products.priceOnRequest)
+            }}
           </p>
           <div class="mt-2 flex items-center gap-3">
             <QtyStepper
@@ -64,7 +80,7 @@ function remove(productId: string, name: string) {
       <div class="mb-4 flex items-center justify-between text-ink">
         <span>{{ CONTENT.cart.total }}</span>
         <span class="font-medium text-gold-text">
-          {{ formatGrams(cart.total) ?? CONTENT.products.priceOnRequest }}
+          {{ totalWeightLabel ?? CONTENT.products.priceOnRequest }}
         </span>
       </div>
       <button
