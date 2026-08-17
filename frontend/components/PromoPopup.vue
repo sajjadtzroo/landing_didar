@@ -3,15 +3,20 @@
 // text, gold sparkle) with a CTA. Shows on every landing load; re-opens on
 // client-side navigation between landings. No persistence, by design.
 import { Sparkles, X } from 'lucide-vue-next'
-import { nextTick, ref, watch } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { CONTENT } from '~/constants/content'
 
 withDefaults(defineProps<{ text?: string }>(), { text: () => CONTENT.promo })
 
 const route = useRoute()
-const open = ref(true)
+// Client-only: a Teleport+Transition modal rendered during SSR mismatches on
+// hydration — the close handler never binds (dead ✕) and mobile browsers drop
+// it entirely. Start closed on the server, open after mount so the client
+// renders it fresh with handlers attached. (No SEO value in SSR-ing a promo.)
+const open = ref(false)
 const card = ref<HTMLElement | null>(null)
 
+onMounted(() => (open.value = true))
 // Re-show whenever the landing slug changes (SPA nav counts as a "load").
 watch(() => route.params.slug, () => (open.value = true))
 
