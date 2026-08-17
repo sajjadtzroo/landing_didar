@@ -125,11 +125,19 @@ async function onHeart() {
         </p>
         <!-- Value row: weight leads (wholesale signal), then عیار + اجرت -->
         <p
-          v-if="product.weight_grams || product.karat || product.ojrat_percent"
+          v-if="product.weight_display || product.weight_grams || product.karat || product.ojrat_percent"
           class="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm"
         >
-          <span v-if="product.weight_grams" class="tnum font-medium text-gold-text">
-            {{ toFa(Number(product.weight_grams)) }} {{ CONTENT.products.gram }}
+          <!-- weight_display (range like «۱۲-۱۵ گرم») wins over the single number -->
+          <span
+            v-if="product.weight_display || product.weight_grams"
+            class="tnum font-medium text-gold-text"
+          >
+            {{
+              product.weight_display
+                ? toFa(product.weight_display)
+                : `${toFa(Number(product.weight_grams))} ${CONTENT.products.gram}`
+            }}
           </span>
           <span v-if="product.karat" class="tnum text-ink-muted">
             · {{ CONTENT.products.karat }} {{ toFa(product.karat) }}

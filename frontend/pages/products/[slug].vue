@@ -62,10 +62,12 @@ const specs = computed(() => {
   const p = product.value
   if (!p) return []
   const rows: { label: string; value: string }[] = []
-  if (p.weight_grams) {
+  if (p.weight_display || p.weight_grams) {
     rows.push({
       label: CONTENT.products.weight,
-      value: `${toFa(Number(p.weight_grams))} ${CONTENT.products.gram}`,
+      value: p.weight_display
+        ? toFa(p.weight_display)
+        : `${toFa(Number(p.weight_grams))} ${CONTENT.products.gram}`,
     })
   }
   rows.push({ label: CONTENT.products.karat, value: p.karat ? toFa(p.karat) : '—' })

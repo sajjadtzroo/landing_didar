@@ -5,6 +5,7 @@ export interface Product {
   sku: string
   description: string | null
   weight_grams: string | null
+  weight_display: string | null // free-text weight range (e.g. «۱۲-۱۵ گرم»)
   karat: number | null
   price: string | null // null => price on request
   ojrat_percent: string | null // اجرت (making-fee %)

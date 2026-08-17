@@ -145,8 +145,19 @@ export default defineNuxtConfig({
   },
 
   image: {
-    format: ['avif', 'webp'],
-    // Product imagery is served from the live Didar site + placeholder host.
-    domains: ['didargold.com', 'placehold.co'],
+    format: ['webp'],
+    // IPX must fetch the real bytes to optimize. /media is a nitro proxy (not a
+    // real file and not a whitelisted host), so bare /media srcs produced a
+    // /_ipx/…/media/… that 404'd — every product/portfolio image was broken.
+    // Alias resolves /media/* to the backend origin (whitelisted below) so IPX
+    // fetches + optimizes it server-side; the rendered src stays clean.
+    domains: [
+      'didargold.com',
+      'placehold.co',
+      'didar-gold-api.liara.run',
+    ],
+    alias: {
+      '/media': 'https://didar-gold-api.liara.run/media',
+    },
   },
 })
