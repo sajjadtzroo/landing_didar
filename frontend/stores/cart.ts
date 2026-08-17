@@ -53,6 +53,17 @@ export const useCartStore = defineStore('cart', {
         quantity,
       })
     },
+    // Refresh weight fields on stored items from the live catalog. Fixes items
+    // persisted before weight_display existed (they'd otherwise show the midpoint).
+    syncWeights(products: Product[]) {
+      const byId = new Map(products.map((p) => [p.id, p]))
+      for (const item of this.items) {
+        const p = byId.get(item.productId)
+        if (!p) continue
+        item.weightGrams = p.weight_grams != null ? Number(p.weight_grams) : null
+        item.weightDisplay = p.weight_display ?? null
+      }
+    },
     updateQuantity(productId: string, quantity: number) {
       const item = this.items.find((i) => i.productId === productId)
       if (!item) return

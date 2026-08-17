@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Trash2 } from 'lucide-vue-next'
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
 import { CONTENT } from '~/constants/content'
+import type { Product } from '~/types'
 import { formatGrams, toFa } from '~/utils/format'
 
 const props = defineProps<{ modelValue: boolean }>()
@@ -9,6 +10,18 @@ const emit = defineEmits<{ 'update:modelValue': [boolean]; continue: [] }>()
 
 const cart = useCartStore()
 const { trackEvent } = useAnalytics()
+
+// Backfill weight data onto cart items from the live catalog — items persisted
+// before weight_display existed (localStorage) otherwise show the old midpoint.
+// Reuses the shared 'products' fetch (cached) so it's ~free on shop pages.
+const { data: products } = useFetch<Product[]>('/products', {
+  baseURL: useApiBase(),
+  key: 'products',
+  default: () => [],
+})
+watchEffect(() => {
+  if (products.value?.length) cart.syncWeights(products.value)
+})
 
 // Grand total as a weight range («۲۴-۳۰ گرم») when any piece varies; a plain
 // number when every item has a single weight.
