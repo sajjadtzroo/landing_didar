@@ -16,6 +16,7 @@ class ProductBase(BaseModel):
     sku: str = Field(min_length=1, max_length=40)
     description: str | None = None
     weight_grams: Decimal | None = None
+    weight_display: str | None = Field(default=None, max_length=40)
     karat: int | None = Field(default=None, ge=1, le=24)
     price: Decimal | None = None  # None => price on request
     # اجرت (making-fee %)
@@ -39,6 +40,7 @@ class ProductUpdate(BaseModel):
     sku: str | None = Field(default=None, min_length=1, max_length=40)
     description: str | None = None
     weight_grams: Decimal | None = None
+    weight_display: str | None = Field(default=None, max_length=40)
     karat: int | None = Field(default=None, ge=1, le=24)
     price: Decimal | None = None
     ojrat_percent: Decimal | None = Field(default=None, ge=0, le=100)

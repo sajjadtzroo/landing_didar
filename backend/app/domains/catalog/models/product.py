@@ -28,6 +28,9 @@ class Product(Base):
     sku: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     weight_grams: Mapped[float | None] = mapped_column(Numeric(8, 2))
+    # Free-text weight shown to customers when a piece/set has a RANGE ("۱۲-۱۵
+    # گرم") the single numeric can't express. weight_grams stays for sort/filter.
+    weight_display: Mapped[str | None] = mapped_column(String(40))
     karat: Mapped[int | None] = mapped_column(Integer)
     # NULL price => "price on request" (gold rate moves daily)
     price: Mapped[float | None] = mapped_column(Numeric(12, 0))
