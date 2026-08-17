@@ -39,7 +39,7 @@ const weightLabel = (p: Product) =>
           :to="`/products/${top.slug}`"
           class="group relative block"
         >
-          <div class="relative aspect-[4/3] overflow-hidden bg-navy-deep">
+          <div class="relative aspect-[4/3] overflow-hidden bg-white">
             <img
               v-if="top.image_url"
               :src="top.image_url"
@@ -49,7 +49,7 @@ const weightLabel = (p: Product) =>
             />
             <!-- Display numeral: the "chart" signal -->
             <span
-              class="tnum absolute -top-2 end-3 text-7xl font-bold leading-none text-gold-soft/90 drop-shadow sm:text-8xl"
+              class="tnum absolute end-3 top-1 text-6xl font-bold leading-none text-gold-text/90 drop-shadow-lg sm:text-7xl"
               aria-hidden="true"
             >
               {{ toFa(1) }}
@@ -83,9 +83,9 @@ const weightLabel = (p: Product) =>
                 :src="p.image_url"
                 :alt="''"
                 loading="lazy"
-                class="h-14 w-14 shrink-0 object-cover"
+                class="h-14 w-14 shrink-0 bg-white object-contain"
               />
-              <div v-else class="h-14 w-14 shrink-0 bg-navy-deep" aria-hidden="true" />
+              <div v-else class="h-14 w-14 shrink-0 bg-white/10" aria-hidden="true" />
               <div class="min-w-0 flex-1">
                 <p class="truncate font-medium transition-colors group-hover:text-gold-soft">
                   {{ p.name }}
