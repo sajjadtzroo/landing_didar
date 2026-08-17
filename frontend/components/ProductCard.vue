@@ -65,12 +65,12 @@ async function onHeart() {
       class="block w-full text-start"
       :aria-label="`${CONTENT.products.viewDetails}: ${product.name}`"
     >
-      <div class="relative aspect-square overflow-hidden bg-media-surface">
+      <div class="relative aspect-square overflow-hidden bg-white">
         <NuxtImg
           v-if="product.image_url"
           :src="product.image_url"
           :alt="product.name"
-          class="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+          class="h-full w-full object-contain transition duration-700 group-hover:scale-105"
           width="400"
           height="400"
           format="webp"
@@ -83,7 +83,7 @@ async function onHeart() {
           v-if="product.image_url && hoverImage"
           :src="hoverImage"
           :alt="product.name"
-          class="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity
+          class="absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity
             duration-500 group-hover:opacity-100"
           width="400"
           height="400"
@@ -183,10 +183,5 @@ async function onHeart() {
       </template>
     </div>
 
-    <!-- Signature gold accent: grows from the start edge on hover -->
-    <span
-      class="pointer-events-none absolute inset-x-0 bottom-0 h-1 origin-right scale-x-[.18]
-        bg-gold transition-transform duration-500 group-hover:scale-x-100"
-    />
   </article>
 </template>

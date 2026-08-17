@@ -41,7 +41,7 @@ const runners = computed(() => props.products.slice(1, 5))
               :src="top.image_url"
               :alt="top.name"
               loading="lazy"
-              class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              class="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
             />
             <!-- Display numeral: the "chart" signal -->
             <span

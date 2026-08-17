@@ -148,13 +148,13 @@ async function onHeart() {
         <div class="flex flex-col gap-3">
           <div
             ref="imageEl"
-            class="corner-soft relative aspect-square overflow-hidden border border-line bg-media-surface"
+            class="corner-soft relative aspect-square overflow-hidden border border-line bg-white"
           >
             <NuxtImg
               v-if="mainSrc"
               :src="mainSrc"
               :alt="product.name"
-              class="h-full w-full object-cover"
+              class="h-full w-full object-contain"
               width="800"
               height="800"
               format="webp"
@@ -186,7 +186,7 @@ async function onHeart() {
               v-for="(src, i) in gallery"
               :key="src"
               type="button"
-              class="corner-soft aspect-square overflow-hidden border bg-media-surface transition"
+              class="corner-soft aspect-square overflow-hidden border bg-white transition"
               :class="i === active ? 'border-gold' : 'border-line hover:border-navy'"
               :aria-label="`نمایش تصویر ${toFa(i + 1)}`"
               :aria-current="i === active"
@@ -195,7 +195,7 @@ async function onHeart() {
               <NuxtImg
                 :src="src"
                 :alt="`${product.name} — ${toFa(i + 1)}`"
-                class="h-full w-full object-cover"
+                class="h-full w-full object-contain"
                 width="120"
                 height="120"
                 format="webp"

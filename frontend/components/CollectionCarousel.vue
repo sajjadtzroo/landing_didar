@@ -70,12 +70,12 @@ const cards = computed(() =>
             border-line bg-surface-raised transition duration-300 hover:-translate-y-1
             hover:border-gold hover:shadow-luxury sm:basis-[calc(50%-0.5rem)]"
         >
-          <div class="relative aspect-[16/9] overflow-hidden bg-media-surface">
+          <div class="relative aspect-[16/9] overflow-hidden bg-white">
             <NuxtImg
               v-if="pf.cover"
               :src="pf.cover"
               :alt="pf.name"
-              class="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+              class="h-full w-full object-contain transition duration-700 group-hover:scale-105"
               width="640"
               height="360"
               format="webp"
