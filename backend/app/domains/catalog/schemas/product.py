@@ -27,6 +27,7 @@ class ProductBase(BaseModel):
     product_status: ProductStatus = "sellable"
     warrantable: bool = True
     is_active: bool = True
+    is_featured: bool = False
     sort_order: int = 0
 
 
@@ -50,6 +51,7 @@ class ProductUpdate(BaseModel):
     product_status: ProductStatus | None = None
     warrantable: bool | None = None
     is_active: bool | None = None
+    is_featured: bool | None = None
     sort_order: int | None = None
 
 

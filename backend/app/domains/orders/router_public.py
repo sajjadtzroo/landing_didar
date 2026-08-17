@@ -45,21 +45,36 @@ async def best_sellers(response: Response, db: AsyncSession = Depends(get_db)):
     cached = await cache_get("cache:best-sellers")
     if cached is not None:
         return cached
+    # Curated first: if any product is flagged featured, that IS the carousel.
+    # Falls back to real sales data (units sold) when nothing is curated.
     rows = (
         await db.execute(
             select(Product)
-            .join(OrderItem, OrderItem.product_id == Product.id)
-            .join(Order, OrderItem.order_id == Order.id)
             .where(
                 Product.is_active,
                 Product.product_status != "not_for_sale",
-                Order.status != OrderStatus.cancelled,
+                Product.is_featured,
             )
-            .group_by(Product.id)
-            .order_by(func.sum(OrderItem.quantity).desc())
+            .order_by(Product.sort_order, Product.id)
             .limit(8)
         )
     ).scalars().all()
+    if not rows:
+        rows = (
+            await db.execute(
+                select(Product)
+                .join(OrderItem, OrderItem.product_id == Product.id)
+                .join(Order, OrderItem.order_id == Order.id)
+                .where(
+                    Product.is_active,
+                    Product.product_status != "not_for_sale",
+                    Order.status != OrderStatus.cancelled,
+                )
+                .group_by(Product.id)
+                .order_by(func.sum(OrderItem.quantity).desc())
+                .limit(8)
+            )
+        ).scalars().all()
     items = [ProductOut.model_validate(p) for p in rows]
     await cache_set("cache:best-sellers", items, _BEST_SELLERS_TTL)
     return items

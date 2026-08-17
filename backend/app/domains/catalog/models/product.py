@@ -56,4 +56,9 @@ class Product(Base):
         Boolean, default=True, server_default="true", nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Curated into the "پرفروش‌ترین‌ها" carousel. When any product is featured the
+    # section shows the curated set; otherwise it falls back to real sales data.
+    is_featured: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
