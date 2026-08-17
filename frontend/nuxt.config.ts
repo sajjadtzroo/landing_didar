@@ -67,6 +67,14 @@ export default defineNuxtConfig({
     '/media/**': {
       proxy: `${process.env.NUXT_PROXY_API_ORIGIN || 'https://didar-gold-api.liara.run'}/media/**`,
     },
+    // Optimized product/media images are immutable per URL (filenames are stable
+    // per SKU). IPX defaulted them to max-age=60, so it re-encoded every image
+    // every minute under real traffic. Cache a year at the edge + browser: the
+    // first visitor pays the ~0.4s optimize, everyone after is instant. Swap a
+    // photo → upload under a new filename (or redeploy) to bust.
+    '/_ipx/**': {
+      headers: { 'cache-control': 'public, max-age=31536000, immutable' },
+    },
     '/admin/**': { ssr: false },
     '/agent/**': { ssr: false },
     // Customer panel is session-gated (no SEO value) — render client-side.
