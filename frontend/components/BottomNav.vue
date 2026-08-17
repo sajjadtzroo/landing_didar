@@ -32,9 +32,10 @@ const isActive = (to: string) =>
     </NuxtLink>
 
     <NuxtLink
-      to="/"
+      to="/l/one"
       class="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[11px] transition"
-      :class="route.path === '/' ? 'text-gold-text' : 'text-ink-muted'"
+      :class="route.path.startsWith('/l') ? 'text-gold-text' : 'text-ink-muted'"
+      :aria-current="route.path.startsWith('/l') ? 'page' : undefined"
     >
       <Home :size="22" aria-hidden="true" />
       {{ CONTENT.nav.home }}
