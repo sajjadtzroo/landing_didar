@@ -28,5 +28,18 @@ export function useUiState() {
     clearEcommerceCart()
   }
 
-  return { cartOpen, orderOpen, successRef, openCart, openOrder, onOrderSuccess }
+  // Dismiss the full-screen order-success overlay.
+  function closeSuccess() {
+    successRef.value = null
+  }
+
+  return {
+    cartOpen,
+    orderOpen,
+    successRef,
+    openCart,
+    openOrder,
+    onOrderSuccess,
+    closeSuccess,
+  }
 }

@@ -12,6 +12,10 @@ const props = defineProps<{ products: Product[] }>()
 
 const top = computed(() => props.products[0])
 const runners = computed(() => props.products.slice(1, 5))
+
+// Show the weight range («۱۲-۱۵ گرم») when the piece varies, else the number.
+const weightLabel = (p: Product) =>
+  p.weight_display ? toFa(p.weight_display) : formatGramsCompact(p.weight_grams)
 </script>
 
 <template>
@@ -55,8 +59,8 @@ const runners = computed(() => props.products.slice(1, 5))
             <span class="text-lg font-medium transition-colors group-hover:text-gold-soft">
               {{ top.name }}
             </span>
-            <span v-if="top.weight_grams" class="tnum shrink-0 text-sm text-cream/70">
-              {{ formatGramsCompact(top.weight_grams) }}
+            <span v-if="top.weight_display || top.weight_grams" class="tnum shrink-0 text-sm text-cream/70">
+              {{ weightLabel(top) }}
             </span>
           </div>
         </NuxtLink>
@@ -86,8 +90,8 @@ const runners = computed(() => props.products.slice(1, 5))
                 <p class="truncate font-medium transition-colors group-hover:text-gold-soft">
                   {{ p.name }}
                 </p>
-                <p v-if="p.weight_grams" class="tnum mt-0.5 text-sm text-cream/60">
-                  {{ formatGramsCompact(p.weight_grams) }}
+                <p v-if="p.weight_display || p.weight_grams" class="tnum mt-0.5 text-sm text-cream/60">
+                  {{ weightLabel(p) }}
                 </p>
               </div>
               <ChevronLeft
