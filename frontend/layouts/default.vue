@@ -10,6 +10,10 @@ const { cartOpen, orderOpen, successRef, openCart, openOrder, onOrderSuccess } =
   useUiState()
 const route = useRoute()
 const isLanding = computed(() => route.path.startsWith('/l'))
+// The promo strip + nav are both fixed; when the promo is open the nav drops by
+// its height (top-20 sm:top-14). Page content pads for the nav only, so without
+// matching that shift the fixed nav clips the first heading (کاتالوگ محصولات).
+const { open: promoOpen } = usePromo()
 
 // The Promo strip + Footer are shared chrome but their content/visibility are
 // per-landing. The layout resolves them itself (rather than reading state the
@@ -63,7 +67,11 @@ useHead({
       <PromoPopup v-if="chrome?.sections.promo !== false" :text="chrome?.promoText" />
     </template>
 
-    <slot />
+    <!-- Shift content down by the promo height when open, matching the nav's
+         top-20 sm:top-14 shift, so headings clear the fixed nav. -->
+    <div :class="!isLanding && promoOpen ? 'pt-20 sm:pt-14' : ''">
+      <slot />
+    </div>
 
     <ContactFooter
       v-if="!isLanding || chrome?.sections.footer !== false"
