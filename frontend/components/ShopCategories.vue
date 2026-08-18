@@ -19,6 +19,7 @@ const CATS = [
   { key: 'daily', label: CONTENT.products.daily.title },
   { key: 'lux_daily', label: CONTENT.products.lux_daily.title },
   { key: 'luxury', label: CONTENT.products.luxury.title },
+  { key: 'watch', label: CONTENT.products.watch.title },
 ] as const
 
 function count(key: string) {
@@ -38,7 +39,7 @@ function pick(key: string) {
          the catalogue below the fold); desktop keeps the four big tiles. -->
     <div
       class="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2
-        sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0"
+        sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0"
     >
       <button
         v-for="c in CATS"
@@ -83,10 +84,16 @@ function pick(key: string) {
               <path d="M24 27 l4 5 -4 6 -4 -6 z" />
             </template>
             <!-- luxury → a faceted diamond -->
-            <template v-else>
+            <template v-else-if="c.key === 'luxury'">
               <path d="M14 12 h20 l6 8 -16 18 -16 -18 z" />
               <path d="M8 20 h32" />
               <path d="M20 12 l-6 8 10 18 M28 12 l6 8 -10 18" />
+            </template>
+            <!-- watch → a wristwatch (face + band + hands) -->
+            <template v-else>
+              <circle cx="24" cy="24" r="9" />
+              <path d="M24 24 v-4.5 M24 24 l3.5 2" />
+              <path d="M19 15.5 l1 -6.5 h8 l1 6.5 M19 32.5 l1 6.5 h8 l1 -6.5" />
             </template>
           </svg>
         </span>
