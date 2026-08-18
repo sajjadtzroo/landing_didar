@@ -50,10 +50,8 @@ function goToCategory(key: string) {
 // no-IPX reasoning as before). First slide SSRs eager; rotation is client-only
 // and skipped for prefers-reduced-motion.
 const HERO_SLIDES = [
-  '/shop-hero-1.jpg',
-  '/shop-hero-3.jpg',
-  '/shop-hero-4.jpg',
-  '/shop-hero-5.jpg',
+  '/shop-hero-a.webp',
+  '/shop-hero-b.webp',
 ]
 const heroIndex = ref(0)
 let heroTimer: ReturnType<typeof setInterval> | undefined
