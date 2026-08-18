@@ -18,7 +18,7 @@ const blank = () => ({
   weight_grams: '',
   karat: 18,
   ojrat_percent: '' as string | number,
-  category: 'daily' as 'daily' | 'lux_daily' | 'luxury',
+  category: 'daily' as 'daily' | 'lux_daily' | 'luxury' | 'watch',
   supplier: '',
   product_status: 'sellable' as 'sellable' | 'sample' | 'not_for_sale',
   warrantable: true,
@@ -271,6 +271,7 @@ async function move(index: number, dir: -1 | 1) {
             <option value="daily">روزمره</option>
             <option value="lux_daily">لوکس روزمره</option>
             <option value="luxury">لوکس</option>
+            <option value="watch">ساعت</option>
           </select>
         </FormField>
         <FormField label="تأمین‌کننده / سازنده (اختیاری)" v-slot="{ id }">

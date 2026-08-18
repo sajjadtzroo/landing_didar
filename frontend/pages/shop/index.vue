@@ -35,7 +35,7 @@ const total = computed(() => (products.value || []).length)
 
 // Active-product count per category, for the category cards.
 const categoryCounts = computed(() => {
-  const c: Record<string, number> = { daily: 0, lux_daily: 0, luxury: 0 }
+  const c: Record<string, number> = { daily: 0, lux_daily: 0, luxury: 0, watch: 0 }
   for (const p of products.value || []) if (c[p.category] != null) c[p.category]++
   return c
 })

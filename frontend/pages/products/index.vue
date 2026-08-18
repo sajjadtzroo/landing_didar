@@ -23,6 +23,7 @@ const CATEGORIES = [
   { key: 'daily', label: CONTENT.products.daily.title },
   { key: 'lux_daily', label: CONTENT.products.lux_daily.title },
   { key: 'luxury', label: CONTENT.products.luxury.title },
+  { key: 'watch', label: CONTENT.products.watch.title },
 ] as const
 
 // URL-synced filter state (shareable; /shop links in with ?cat=…).

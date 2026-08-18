@@ -11,7 +11,7 @@ export interface Product {
   ojrat_percent: string | null // اجرت (making-fee %)
   image_url: string | null // primary/thumbnail (= images[0] after a MinIO import)
   images: string[] // gallery paths imported from MinIO; [] until imported
-  category: 'daily' | 'lux_daily' | 'luxury' // landing carousel grouping
+  category: 'daily' | 'lux_daily' | 'luxury' | 'watch' // landing carousel grouping
   // Sellability, orthogonal to is_active: sample = shown but not orderable.
   product_status: 'sellable' | 'sample' | 'not_for_sale'
   warrantable: boolean

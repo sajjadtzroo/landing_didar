@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-Category = Literal["daily", "lux_daily", "luxury"]
+Category = Literal["daily", "lux_daily", "luxury", "watch"]
 # Sellability, orthogonal to is_active: sellable (normal), sample (نمونه — shown
 # but not orderable), not_for_sale (غیرقابل‌فروش — hidden from the public shop).
 ProductStatus = Literal["sellable", "sample", "not_for_sale"]

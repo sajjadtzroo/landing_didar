@@ -11,7 +11,7 @@ class Product(Base):
     __tablename__ = "products"
     __table_args__ = (
         CheckConstraint(
-            "category IN ('daily', 'lux_daily', 'luxury')",
+            "category IN ('daily', 'lux_daily', 'luxury', 'watch')",
             name="ck_products_category",
         ),
         CheckConstraint(
