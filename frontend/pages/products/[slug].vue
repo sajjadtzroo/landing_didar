@@ -224,7 +224,12 @@ async function onHeart() {
             </div>
           </div>
 
-          <p v-if="product.description" class="mt-6 text-base leading-8 text-ink-muted">
+          <!-- whitespace-pre-line: descriptions are multi-paragraph (line breaks
+               are meaningful headings/sections), so preserve them. -->
+          <p
+            v-if="product.description"
+            class="mt-6 whitespace-pre-line text-base leading-8 text-ink-muted"
+          >
             {{ product.description }}
           </p>
 
