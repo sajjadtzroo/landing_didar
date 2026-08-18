@@ -260,10 +260,18 @@ if isinstance(get_storage(), MinioStorage):
                 resp.close()
                 resp.release_conn()
 
+        # products/ and uploads/ have stable, unique keys (per-SKU photos, uuid
+        # uploads) → cache hard so browsers/edge serve them without re-fetching.
+        # Other media (hero swaps etc.) gets a shorter, revalidatable window.
+        if key.startswith(("products/", "uploads/")):
+            cache = "public, max-age=31536000, immutable"
+        else:
+            cache = "public, max-age=86400"
+
         return StreamingResponse(
             _iter(),
             media_type=ctype,
-            headers={"Cache-Control": "private, max-age=300"},
+            headers={"Cache-Control": cache},
         )
 else:
     app.mount(

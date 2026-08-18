@@ -9,6 +9,7 @@ import type { Product } from '~/types'
 import { formatGramsCompact, toFa } from '~/utils/format'
 
 const props = defineProps<{ products: Product[] }>()
+const { full, card } = useProductImage()
 
 const top = computed(() => props.products[0])
 const runners = computed(() => props.products.slice(1, 5))
@@ -42,7 +43,7 @@ const weightLabel = (p: Product) =>
           <div class="relative aspect-[4/3] overflow-hidden bg-white">
             <img
               v-if="top.image_url"
-              :src="top.image_url"
+              :src="full(top.image_url)"
               :alt="top.name"
               loading="lazy"
               class="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
@@ -80,7 +81,7 @@ const weightLabel = (p: Product) =>
               </span>
               <img
                 v-if="p.image_url"
-                :src="p.image_url"
+                :src="card(p.image_url)"
                 :alt="''"
                 loading="lazy"
                 class="h-14 w-14 shrink-0 bg-white object-contain"

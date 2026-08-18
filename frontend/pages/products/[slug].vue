@@ -30,6 +30,7 @@ const related = computed(() =>
 const cart = useCartStore()
 const { toast } = useToast()
 const { isFav, toggle } = useFavorites()
+const { full, card } = useProductImage()
 const {
   trackEvent,
   addEcommerceItem,
@@ -150,15 +151,14 @@ async function onHeart() {
             ref="imageEl"
             class="corner-soft relative aspect-square overflow-hidden border border-line bg-white"
           >
-            <NuxtImg
+            <!-- Full-res webp straight from /media (no IPX). -->
+            <img
               v-if="mainSrc"
-              :src="mainSrc"
+              :src="full(mainSrc)"
               :alt="product.name"
               class="h-full w-full object-contain"
               width="800"
               height="800"
-              format="webp"
-              sizes="(max-width: 1024px) 100vw, 600px"
               fetchpriority="high"
             />
             <!-- Fallback when a product has no imagery yet (parity with cards) -->
@@ -192,13 +192,13 @@ async function onHeart() {
               :aria-current="i === active"
               @click="active = i"
             >
-              <NuxtImg
-                :src="src"
+              <img
+                :src="card(src)"
                 :alt="`${product.name} — ${toFa(i + 1)}`"
                 class="h-full w-full object-contain"
                 width="120"
                 height="120"
-                format="webp"
+                loading="lazy"
               />
             </button>
           </div>

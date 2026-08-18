@@ -13,6 +13,7 @@ const cart = useCartStore()
 const { openCart } = useUiState()
 const { toast } = useToast()
 const { isFav, toggle } = useFavorites()
+const { card } = useProductImage()
 const selected = computed(() => cart.isSelected(props.product.id))
 const qty = computed(() => cart.quantityOf(props.product.id))
 // Sample pieces (نمونه) are shown for reference but can't be ordered.
@@ -66,29 +67,26 @@ async function onHeart() {
       :aria-label="`${CONTENT.products.viewDetails}: ${product.name}`"
     >
       <div class="relative aspect-square overflow-hidden bg-white">
-        <NuxtImg
+        <!-- Served straight from /media (pre-optimized 640px webp), not IPX. -->
+        <img
           v-if="product.image_url"
-          :src="product.image_url"
+          :src="card(product.image_url)"
           :alt="product.name"
           class="h-full w-full object-contain transition duration-700 group-hover:scale-105"
           width="400"
           height="400"
-          format="webp"
-          sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 320px"
           :loading="index < 4 ? 'eager' : 'lazy'"
           :fetchpriority="index === 0 ? 'high' : undefined"
         />
         <!-- Second gallery image: crossfades in on hover -->
-        <NuxtImg
+        <img
           v-if="product.image_url && hoverImage"
-          :src="hoverImage"
+          :src="card(hoverImage)"
           :alt="product.name"
           class="absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity
             duration-500 group-hover:opacity-100"
           width="400"
           height="400"
-          format="webp"
-          sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 320px"
           loading="lazy"
           aria-hidden="true"
         />
