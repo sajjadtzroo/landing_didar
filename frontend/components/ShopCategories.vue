@@ -25,6 +25,17 @@ const CATS = [
 function count(key: string) {
   return key === '' ? total.value : (props.counts?.[key] ?? 0)
 }
+
+// Hide empty categories ("all" always shows); size the grid to what's left.
+const visibleCats = computed(() => CATS.filter((c) => c.key === '' || count(c.key) > 0))
+const GRID_COLS: Record<number, string> = {
+  2: 'sm:grid-cols-2',
+  3: 'sm:grid-cols-3',
+  4: 'sm:grid-cols-4',
+  5: 'sm:grid-cols-5',
+}
+const gridColsClass = computed(() => GRID_COLS[visibleCats.value.length] ?? 'sm:grid-cols-5')
+
 function pick(key: string) {
   // Tapping "all" clears; tapping a category selects it (no toggle-off — "all"
   // is the explicit reset now).
@@ -39,10 +50,11 @@ function pick(key: string) {
          the catalogue below the fold); desktop keeps the four big tiles. -->
     <div
       class="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2
-        sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0"
+        sm:mx-0 sm:grid sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0"
+      :class="gridColsClass"
     >
       <button
-        v-for="c in CATS"
+        v-for="c in visibleCats"
         :key="c.key || 'all'"
         type="button"
         class="group relative flex w-[124px] shrink-0 snap-start flex-col items-center gap-2

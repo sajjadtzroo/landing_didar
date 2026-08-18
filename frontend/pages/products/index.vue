@@ -26,6 +26,11 @@ const CATEGORIES = [
   { key: 'watch', label: CONTENT.products.watch.title },
 ] as const
 
+// Only offer category filters that actually have products.
+const availableCategories = computed(() =>
+  CATEGORIES.filter((c) => (products.value || []).some((p) => p.category === c.key)),
+)
+
 // URL-synced filter state (shareable; /shop links in with ?cat=…).
 const { search, category, collection, sort, weightMin, weightMax, ojratMin, ojratMax, karat, clear } =
   useShopFilters()
@@ -190,7 +195,7 @@ useHead({
           {{ CONTENT.shop.all }}
         </button>
         <button
-          v-for="c in CATEGORIES"
+          v-for="c in availableCategories"
           :key="c.key"
           type="button"
           class="h-9 border px-3 text-sm transition"
