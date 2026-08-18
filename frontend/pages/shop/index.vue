@@ -52,6 +52,7 @@ function goToCategory(key: string) {
 const HERO_SLIDES = [
   '/shop-hero-a.webp',
   '/shop-hero-b.webp',
+  '/shop-hero-c.webp',
 ]
 const heroIndex = ref(0)
 let heroTimer: ReturnType<typeof setInterval> | undefined
