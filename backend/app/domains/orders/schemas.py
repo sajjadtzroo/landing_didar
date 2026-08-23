@@ -19,8 +19,10 @@ class OrderItemIn(BaseModel):
 class OrderCreate(BaseModel):
     full_name: str = Field(min_length=3, max_length=60)
     phone: str = Field(pattern=PHONE_RE)
-    store_name: str = Field(min_length=2, max_length=80)
-    province: str
+    # Only name + phone are required — the rest speed the follow-up call but must
+    # not block the order (they were killing conversion). Empty is stored as "".
+    store_name: str | None = Field(default=None, max_length=80)
+    province: str | None = None
     city: str | None = Field(default=None, max_length=60)
     contact_method: ContactMethod = ContactMethod.call
     note: str | None = Field(default=None, max_length=300)
@@ -37,8 +39,8 @@ class OrderCreate(BaseModel):
 
     @field_validator("province")
     @classmethod
-    def province_in_list(cls, v: str) -> str:
-        if v not in IRAN_PROVINCES:
+    def province_in_list(cls, v: str | None) -> str | None:
+        if v and v not in IRAN_PROVINCES:
             raise ValueError("province must be one of the Iran province list")
         return v
 

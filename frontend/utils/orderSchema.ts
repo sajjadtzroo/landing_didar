@@ -12,12 +12,9 @@ export const orderSchema = z.object({
     .min(3, CONTENT.form.errors.fullName)
     .max(60, CONTENT.form.errors.fullName),
   phone: z.string().regex(/^09\d{9}$/, CONTENT.form.errors.phone),
-  store_name: z
-    .string()
-    .trim()
-    .min(2, CONTENT.form.errors.storeName)
-    .max(80, CONTENT.form.errors.storeName),
-  province: z.enum(provinceValues, { message: CONTENT.form.errors.province }),
+  // Only name + phone are required; the rest just speed the follow-up call.
+  store_name: z.string().trim().max(80, CONTENT.form.errors.storeName).optional().or(z.literal('')),
+  province: z.enum(provinceValues, { message: CONTENT.form.errors.province }).or(z.literal('')).optional(),
   city: z.string().max(60).optional().or(z.literal('')),
   contact_method: z.enum(['call', 'agent', 'whatsapp']).default('call'),
   note: z.string().max(300, CONTENT.form.errors.note).optional().or(z.literal('')),

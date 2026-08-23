@@ -75,7 +75,7 @@ const submit = handleSubmit(async (values) => {
       },
     })
     // Custom dimensions must be set before the goal/order events fire.
-    setCustomDimension(Number(cfg.matomoDimProvince), values.province)
+    setCustomDimension(Number(cfg.matomoDimProvince), values.province || '')
     setCustomDimension(Number(cfg.matomoDimSource), attribution.utm_source || 'direct')
     const total = Math.round(cart.total)
     trackEvent('order', 'submitted', values.province, total)
@@ -169,7 +169,6 @@ function onInvalidField(field: string) {
       <FormField
         :label="CONTENT.form.storeName"
         :error="errors.store_name"
-        required
         v-slot="{ id, describedBy }"
       >
         <input
@@ -182,7 +181,7 @@ function onInvalidField(field: string) {
         />
       </FormField>
 
-      <FormField :label="CONTENT.form.province" :error="errors.province" required v-slot="{ id, describedBy }">
+      <FormField :label="CONTENT.form.province" :error="errors.province" v-slot="{ id, describedBy }">
         <select
           :id="id"
           v-model="province"

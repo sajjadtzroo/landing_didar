@@ -48,6 +48,13 @@ def test_requires_at_least_one_item():
         OrderCreate(**_payload(items=[]))
 
 
+def test_only_name_and_phone_required():
+    # store_name + province are optional now (they were killing conversion) —
+    # name + phone + an item is a complete order; the rest default to None.
+    o = OrderCreate(full_name="Ali Rezaei", phone="09121234567", items=[{"quantity": 1}])
+    assert o.store_name is None and o.province is None
+
+
 # ---- Guest checkout + phone-linked accounts ----
 _asyncio = pytest.mark.asyncio(loop_scope="session")
 
