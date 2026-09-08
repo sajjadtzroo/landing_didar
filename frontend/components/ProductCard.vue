@@ -7,7 +7,9 @@ import { toFa } from '~/utils/format'
 
 // `shop` mode (storefront /shop) adds a favorite heart + add-to-cart button.
 // No price anywhere (wholesale gold — the value shown is weight + عیار + اجرت).
-const props = defineProps<{ product: Product; index: number; shop?: boolean }>()
+// `from` + `fromTitle`: when set, the product link carries ?from=&fromTitle= so the
+// detail page can render a context-aware back bar (landing vs shop).
+const props = defineProps<{ product: Product; index: number; shop?: boolean; from?: string; fromTitle?: string }>()
 
 const cart = useCartStore()
 const { openCart } = useUiState()
@@ -62,7 +64,7 @@ async function onHeart() {
     </button>
 
     <NuxtLink
-      :to="`/products/${product.slug}`"
+      :to="from ? { path: `/products/${product.slug}`, query: { from, ...(fromTitle ? { fromTitle } : {}) } } : `/products/${product.slug}`"
       class="block w-full text-start"
       :aria-label="`${CONTENT.products.viewDetails}: ${product.name}`"
     >

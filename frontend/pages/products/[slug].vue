@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronLeft, Heart } from 'lucide-vue-next'
+import { ChevronLeft, Heart, House } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { CONTENT } from '~/constants/content'
 import type { Product } from '~/types'
@@ -7,6 +7,10 @@ import { toFa } from '~/utils/format'
 
 const route = useRoute()
 const slug = route.params.slug as string
+const fromPath = (route.query.from as string) || null
+const fromTitle = (route.query.fromTitle as string) || null
+// Show landing back bar when user navigated here from a landing products page.
+const fromLanding = computed(() => fromPath?.startsWith('/l/'))
 
 // Single product (SSR). Stable per-slug key so the client reuses the payload.
 const { data: product } = await useFetch<Product>(`/products/${slug}`, {
@@ -134,9 +138,25 @@ async function onHeart() {
 
 <template>
   <main v-if="product" class="pt-16 sm:pt-20">
+    <!-- Landing back bar: shown when user navigated here from a landing products page -->
+    <div v-if="fromLanding" class="border-b border-line bg-surface-raised">
+      <div class="mx-auto flex max-w-content items-center gap-3 px-5 py-3 sm:px-10">
+        <NuxtLink
+          :to="fromPath!"
+          class="flex items-center gap-2 text-sm text-ink-muted transition hover:text-gold-text"
+          :aria-label="`بازگشت به ${fromTitle || 'صفحه قبل'}`"
+        >
+          <House :size="16" aria-hidden="true" />
+          <span>{{ fromTitle || CONTENT.nav.home }}</span>
+        </NuxtLink>
+        <span class="text-line" aria-hidden="true">/</span>
+        <span class="text-sm text-ink">{{ product.name }}</span>
+      </div>
+    </div>
+
     <div class="mx-auto max-w-content px-5 py-10 sm:px-10">
-      <!-- Breadcrumb -->
-      <nav class="mb-8 flex items-center gap-2 text-sm text-ink-muted" aria-label="مسیر">
+      <!-- Breadcrumb: shown when user came from shop (default context) -->
+      <nav v-if="!fromLanding" class="mb-8 flex items-center gap-2 text-sm text-ink-muted" aria-label="مسیر">
         <NuxtLink to="/" class="hover:text-gold-text">{{ CONTENT.nav.home }}</NuxtLink>
         <ChevronLeft :size="14" class="rotate-180" aria-hidden="true" />
         <NuxtLink to="/shop" class="hover:text-gold-text">{{ CONTENT.nav.shop }}</NuxtLink>

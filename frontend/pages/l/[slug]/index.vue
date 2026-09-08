@@ -10,6 +10,9 @@ const route = useRoute()
 const slug = route.params.slug as string
 const base = useApiBase()
 
+// Remember which landing the user visited so خانه stays in the navbar on /shop etc.
+useLandingContext().value = slug
+
 // Per-slug key: base URL differs server vs client, so a stable explicit key is
 // required or the client refetches and flashes empty (see the old index.vue note).
 const { data: landing, error } = await useFetch<Landing>(`/landings/${slug}`, {

@@ -81,6 +81,8 @@ useHead(() => ({
           :product="p"
           :index="i"
           shop
+          :from="`/l/${slug}`"
+          :from-title="landingTitle"
         />
       </div>
 
