@@ -29,6 +29,13 @@ const { data: portfolios } = useFetch<Portfolio[]>('/portfolios', {
   key: 'portfolios',
 })
 const collections = computed(() => portfolios.value || [])
+
+const route = useRoute()
+// On any /l/{slug} or /l/{slug}/... page, home links back to that landing.
+const homeLink = computed(() => {
+  const m = route.path.match(/^\/l\/([^/]+)/)
+  return m ? `/l/${m[1]}` : '/l/one'
+})
 </script>
 
 <template>
@@ -54,7 +61,7 @@ const collections = computed(() => portfolios.value || [])
 
       <!-- Section links, centered -->
       <div class="hidden items-center gap-8 sm:flex">
-        <NuxtLink to="/l/one" :class="linkClass" :active-class="linkActive">
+        <NuxtLink :to="homeLink" :class="linkClass" :active-class="linkActive">
           {{ CONTENT.nav.home }}
         </NuxtLink>
 
