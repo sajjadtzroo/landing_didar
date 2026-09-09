@@ -32,8 +32,10 @@ const related = computed(() =>
 )
 
 const { data: siteSettings } = useSiteSettings()
-const { customer } = useCustomerAuth()
-const showSpecs = computed(() => !siteSettings.value?.price_requires_login || !!customer.value)
+const { customer, ensure } = useCustomerAuth()
+if (import.meta.client) ensure()
+// Only ojrat is price-sensitive; weight + karat always shown.
+const showOjrat = computed(() => !siteSettings.value?.price_requires_login || !!customer.value)
 
 const cart = useCartStore()
 const { toast } = useToast()
@@ -65,9 +67,8 @@ const categoryLabel = computed(() =>
 // Sample pieces (نمونه) are shown for reference but can't be ordered.
 const isSample = computed(() => product.value?.product_status === 'sample')
 
-// Spec tiles: weight leads (the wholesale value signal), then عیار + اجرت —
-// same value hierarchy as the shop cards.
-const specs = computed(() => {
+// Weight + karat tiles — always visible.
+const baseSpecs = computed(() => {
   const p = product.value
   if (!p) return []
   const rows: { label: string; value: string }[] = []
@@ -80,13 +81,18 @@ const specs = computed(() => {
     })
   }
   rows.push({ label: CONTENT.products.karat, value: p.karat ? toFa(p.karat) : '—' })
-  rows.push({
+  return rows
+})
+// Ojrat tile — gated by admin setting.
+const ojratSpec = computed(() => {
+  const p = product.value
+  if (!p) return null
+  return {
     label: CONTENT.products.ojrat,
     value: p.ojrat_percent
       ? `${toFa(Number(p.ojrat_percent))}٪`
       : CONTENT.products.priceOnRequest,
-  })
-  return rows
+  }
 })
 
 const canonical = `${useSiteUrl()}/products/${slug}`
@@ -236,27 +242,28 @@ async function onHeart() {
           <h1 class="text-3xl font-medium text-ink sm:text-4xl">{{ product.name }}</h1>
           <p class="tnum mt-2 text-sm text-ink-muted">{{ CONTENT.products.sku }} {{ product.sku }}</p>
 
-          <!-- Spec tiles: weight-first value hierarchy (matches the shop cards) -->
-          <div v-if="showSpecs" class="mt-6 grid grid-cols-3 gap-3">
+          <!-- Spec tiles: weight + karat always shown; ojrat gated by setting -->
+          <div class="mt-6 grid grid-cols-3 gap-3">
             <div
-              v-for="s in specs"
+              v-for="s in baseSpecs"
               :key="s.label"
               class="corner-soft border border-line bg-surface-raised p-4 text-center"
             >
               <p class="text-xs text-ink-muted">{{ s.label }}</p>
               <p class="tnum mt-1 text-base font-medium text-gold-text sm:text-lg">{{ s.value }}</p>
             </div>
+            <!-- Ojrat tile -->
+            <div v-if="ojratSpec && showOjrat" class="corner-soft border border-line bg-surface-raised p-4 text-center">
+              <p class="text-xs text-ink-muted">{{ ojratSpec.label }}</p>
+              <p class="tnum mt-1 text-base font-medium text-gold-text sm:text-lg">{{ ojratSpec.value }}</p>
+            </div>
+            <div v-else-if="siteSettings?.price_requires_login" class="corner-soft border border-line bg-surface-raised p-4 text-center">
+              <p class="text-xs text-ink-muted">{{ CONTENT.products.ojrat }}</p>
+              <NuxtLink to="/account" class="mt-1 block text-xs text-gold-text hover:underline">
+                {{ CONTENT.products.loginToSeeSpecs }}
+              </NuxtLink>
+            </div>
           </div>
-          <p
-            v-else
-            class="corner-soft mt-6 border border-line bg-surface-raised px-4 py-5
-              text-center text-sm text-ink-muted"
-          >
-            {{ CONTENT.products.loginToSeeSpecs }}
-            <NuxtLink to="/account" class="ms-1 text-gold-text hover:underline">
-              {{ CONTENT.nav.account }}
-            </NuxtLink>
-          </p>
 
           <!-- whitespace-pre-line: descriptions are multi-paragraph (line breaks
                are meaningful headings/sections), so preserve them. -->
