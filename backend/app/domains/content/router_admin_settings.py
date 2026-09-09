@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -40,9 +42,9 @@ async def update_settings(
             INSERT INTO site_settings (id, data)
             VALUES (1, :data::jsonb)
             ON CONFLICT (id) DO UPDATE
-              SET data = site_settings.data || :data::jsonb
+              SET data = EXCLUDED.data
         """),
-        {"data": f'{{"price_requires_login": {str(payload.price_requires_login).lower()}}}'},
+        {"data": json.dumps({"price_requires_login": payload.price_requires_login})},
     )
     await db.commit()
     await cache_delete("cache:site_settings")
