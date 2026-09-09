@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Package,
   ScrollText,
+  Settings,
   ShieldCheck,
   ShoppingCart,
   Users,
@@ -63,6 +64,7 @@ const groups = computed(() => [
           items: [
             { to: '/admin/users', label: 'کاربران', icon: Users },
             { to: '/admin/audit', label: 'گزارش فعالیت', icon: History },
+            { to: '/admin/settings', label: 'تنظیمات', icon: Settings },
           ],
         },
       ]
