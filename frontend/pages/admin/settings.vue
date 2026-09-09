@@ -70,7 +70,7 @@ async function toggle() {
           <span
             class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white
               shadow ring-0 transition duration-200"
-            :class="settings?.price_requires_login ? '-translate-x-5' : 'translate-x-0'"
+            :class="settings?.price_requires_login ? 'translate-x-5' : 'translate-x-0'"
           />
         </button>
       </div>
