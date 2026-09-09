@@ -4,13 +4,13 @@ Moved verbatim from app/api/v1/public.py during the domain migration; paths,
 tags and response models are unchanged (registered with tags=["public"])."""
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.cache import cache_get, cache_set
 from app.core.content_defaults import default_content
 from app.core.db import get_db
-from app.domains.content.models import FAQ, Landing, Portfolio, SiteSettings
+from app.domains.content.models import FAQ, Landing, Portfolio
 from app.domains.content.schemas import FAQOut, LandingDetailOut, PortfolioPublicOut
 from app.domains.content.service import resolve_groups
 
@@ -121,18 +121,24 @@ async def list_faqs(response: Response, db: AsyncSession = Depends(get_db)):
     return items
 
 
-class _SettingsOut(dict):
-    pass
-
-
 @router.get("/settings")
 async def get_site_settings(response: Response, db: AsyncSession = Depends(get_db)):
-    """Public site settings (price visibility, etc.). Cached like other public reads."""
+    """Public site settings. Uses raw SQL so it never 500s even if the ORM
+    mapping or table is in a transient bad state."""
     response.headers["Cache-Control"] = _CACHE_CONTROL
     cached = await cache_get("cache:site_settings")
     if cached is not None:
         return cached
-    row = await db.get(SiteSettings, 1)
-    out = {"price_requires_login": row.price_requires_login if row else False}
+    price_requires_login = False
+    try:
+        result = await db.execute(
+            text("SELECT data FROM site_settings WHERE id = 1")
+        )
+        row = result.scalar_one_or_none()
+        if row:
+            price_requires_login = bool(row.get("price_requires_login", False))
+    except Exception:
+        pass
+    out = {"price_requires_login": price_requires_login}
     await cache_set("cache:site_settings", out, _CACHE_TTL)
     return out
