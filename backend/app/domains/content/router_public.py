@@ -122,13 +122,8 @@ async def list_faqs(response: Response, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/settings")
-async def get_site_settings(response: Response, db: AsyncSession = Depends(get_db)):
-    """Public site settings. Uses raw SQL so it never 500s even if the ORM
-    mapping or table is in a transient bad state."""
-    response.headers["Cache-Control"] = _CACHE_CONTROL
-    cached = await cache_get("cache:site_settings")
-    if cached is not None:
-        return cached
+async def get_site_settings(db: AsyncSession = Depends(get_db)):
+    """Public site settings — no cache so admin changes propagate immediately."""
     price_requires_login = False
     try:
         result = await db.execute(
@@ -139,6 +134,4 @@ async def get_site_settings(response: Response, db: AsyncSession = Depends(get_d
             price_requires_login = bool(row.get("price_requires_login", False))
     except Exception:
         pass
-    out = {"price_requires_login": price_requires_login}
-    await cache_set("cache:site_settings", out, _CACHE_TTL)
-    return out
+    return {"price_requires_login": price_requires_login}

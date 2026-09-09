@@ -9,11 +9,13 @@ const { data: settings, refresh } = await useAsyncData('admin-settings', () =>
 
 const saving = ref(false)
 const saved = ref(false)
+const error = ref('')
 
 async function toggle() {
   if (!settings.value) return
   saving.value = true
   saved.value = false
+  error.value = ''
   try {
     await apiFetch('/admin/settings', {
       method: 'PATCH',
@@ -22,6 +24,9 @@ async function toggle() {
     await refresh()
     saved.value = true
     setTimeout(() => { saved.value = false }, 2000)
+  } catch {
+    error.value = 'خطا در ذخیره‌سازی — دوباره تلاش کنید'
+    await refresh()
   } finally {
     saving.value = false
   }
@@ -71,6 +76,7 @@ async function toggle() {
       </div>
 
       <p v-if="saved" class="mt-4 text-sm text-green-600">✓ ذخیره شد</p>
+      <p v-if="error" class="mt-4 text-sm text-red-600">{{ error }}</p>
     </div>
   </div>
 </template>
