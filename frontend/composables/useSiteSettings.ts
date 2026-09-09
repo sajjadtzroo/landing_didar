@@ -2,12 +2,8 @@ interface SiteSettings {
   price_requires_login: boolean
 }
 
-// Fetched once per SSR render / client session. Cached by Nuxt via key.
+// Reads the site settings payload fetched once in the default layout.
+// Components use this to get an already-resolved value (no SSR timing issues).
 export function useSiteSettings() {
-  const base = useApiBase()
-  return useFetch<SiteSettings>('/settings', {
-    baseURL: base,
-    key: 'site-settings',
-    default: (): SiteSettings => ({ price_requires_login: false }),
-  })
+  return useNuxtData<SiteSettings>('site-settings')
 }

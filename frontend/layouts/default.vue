@@ -15,6 +15,15 @@ const isLanding = computed(() => route.path.startsWith('/l'))
 // matching that shift the fixed nav clips the first heading (کاتالوگ محصولات).
 const { open: promoOpen } = usePromo()
 
+// Fetch site settings once in the layout so all components read a resolved value.
+// useFetch inside components isn't awaited by Suspense, so the default (false)
+// would always win there. Fetching here with `await` gives SSR the correct value.
+await useFetch('/settings', {
+  baseURL: useApiBase(),
+  key: 'site-settings',
+  default: () => ({ price_requires_login: false }),
+})
+
 // The Promo strip + Footer are shared chrome but their content/visibility are
 // per-landing. The layout resolves them itself (rather than reading state the
 // page sets) — on SSR the page is async and its setup runs AFTER the layout's
