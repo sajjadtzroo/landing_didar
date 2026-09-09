@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.cache import cache_delete
 from app.core.db import get_db
-from app.domains.content.models import SiteSettings
 from app.domains.users import require_admin
 
 router = APIRouter(dependencies=[Depends(require_admin)])
@@ -18,28 +18,33 @@ class SettingsPatch(BaseModel):
     price_requires_login: bool
 
 
-async def _get_or_create(db: AsyncSession) -> SiteSettings:
-    row = await db.get(SiteSettings, 1)
-    if row is None:
-        row = SiteSettings(id=1, data={"price_requires_login": False})
-        db.add(row)
-        await db.flush()
-    return row
+async def _read(db: AsyncSession) -> bool:
+    result = await db.execute(text("SELECT data FROM site_settings WHERE id = 1"))
+    row = result.scalar_one_or_none()
+    if row:
+        return bool(row.get("price_requires_login", False))
+    return False
 
 
 @router.get("/settings", response_model=SettingsOut)
 async def get_settings(db: AsyncSession = Depends(get_db)):
-    row = await _get_or_create(db)
-    return SettingsOut(price_requires_login=row.price_requires_login)
+    return SettingsOut(price_requires_login=await _read(db))
 
 
 @router.patch("/settings", response_model=SettingsOut)
 async def update_settings(
     payload: SettingsPatch, db: AsyncSession = Depends(get_db)
 ):
-    row = await _get_or_create(db)
-    row.data = {**(row.data or {}), "price_requires_login": payload.price_requires_login}
+    await db.execute(
+        text("""
+            INSERT INTO site_settings (id, data)
+            VALUES (1, :data::jsonb)
+            ON CONFLICT (id) DO UPDATE
+              SET data = site_settings.data || :data::jsonb
+        """),
+        {"data": f'{{"price_requires_login": {str(payload.price_requires_login).lower()}}}'},
+    )
     await db.commit()
-    await db.refresh(row)
     await cache_delete("cache:site_settings")
-    return SettingsOut(price_requires_login=row.price_requires_login)
+    value = await _read(db)
+    return SettingsOut(price_requires_login=value)
