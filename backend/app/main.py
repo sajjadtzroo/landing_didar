@@ -37,6 +37,7 @@ from app.domains.content.router_admin_landings import router as content_admin_la
 from app.domains.content.router_admin_portfolios import (
     router as content_admin_portfolios,
 )
+from app.domains.content.router_admin_settings import router as content_admin_settings
 from app.domains.content.router_public import router as content_public
 from app.domains.customers.router_account import router as customers_account
 from app.domains.customers.router_admin import router as customers_admin
@@ -343,6 +344,9 @@ app.include_router(
 )
 app.include_router(
     content_admin_portfolios, prefix=f"{API}/admin", tags=["admin:portfolios"]
+)
+app.include_router(
+    content_admin_settings, prefix=f"{API}/admin", tags=["admin:settings"]
 )
 app.include_router(dashboard_admin, prefix=f"{API}/admin", tags=["admin:stats"])
 app.include_router(pricing_admin, prefix=f"{API}/admin", tags=["admin:prices"])

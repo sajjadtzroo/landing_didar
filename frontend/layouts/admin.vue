@@ -23,6 +23,7 @@ const SECTIONS: [string, string][] = [
   ['/admin/buybacks', 'درخواست‌های بازخرید'],
   ['/admin/users', 'کاربران'],
   ['/admin/audit', 'گزارش فعالیت'],
+  ['/admin/settings', 'تنظیمات'],
 ]
 const pageTitle = computed(
   () => SECTIONS.find(([p]) => route.path.startsWith(p))?.[1] ?? 'داشبورد',

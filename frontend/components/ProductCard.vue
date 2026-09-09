@@ -5,11 +5,14 @@ import { CONTENT } from '~/constants/content'
 import type { Product } from '~/types'
 import { toFa } from '~/utils/format'
 
-// `shop` mode (storefront /shop) adds a favorite heart + add-to-cart button.
-// No price anywhere (wholesale gold — the value shown is weight + عیار + اجرت).
-// `from` + `fromTitle`: when set, the product link carries ?from=&fromTitle= so the
-// detail page can render a context-aware back bar (landing vs shop).
 const props = defineProps<{ product: Product; index: number; shop?: boolean; from?: string; fromTitle?: string }>()
+
+const { data: siteSettings } = useSiteSettings()
+const { customer } = useCustomerAuth()
+// Specs (weight/karat/ojrat) are hidden from guests when the admin gates them.
+const showSpecs = computed(() =>
+  !siteSettings.value?.price_requires_login || !!customer.value,
+)
 
 const cart = useCartStore()
 const { openCart } = useUiState()
@@ -124,27 +127,31 @@ async function onHeart() {
           {{ CONTENT.products.sku }} {{ product.sku }}
         </p>
         <!-- Value row: weight leads (wholesale signal), then عیار + اجرت -->
-        <p
-          v-if="product.weight_display || product.weight_grams || product.karat || product.ojrat_percent"
-          class="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm"
-        >
-          <!-- weight_display (range like «۱۲-۱۵ گرم») wins over the single number -->
-          <span
-            v-if="product.weight_display || product.weight_grams"
-            class="tnum font-medium text-gold-text"
+        <template v-if="showSpecs">
+          <p
+            v-if="product.weight_display || product.weight_grams || product.karat || product.ojrat_percent"
+            class="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm"
           >
-            {{
-              product.weight_display
-                ? toFa(product.weight_display)
-                : `${toFa(Number(product.weight_grams))} ${CONTENT.products.gram}`
-            }}
-          </span>
-          <span v-if="product.karat" class="tnum text-ink-muted">
-            · {{ CONTENT.products.karat }} {{ toFa(product.karat) }}
-          </span>
-          <span v-if="product.ojrat_percent" class="tnum text-ink-muted">
-            · {{ CONTENT.products.ojrat }} {{ toFa(Number(product.ojrat_percent)) }}٪
-          </span>
+            <span
+              v-if="product.weight_display || product.weight_grams"
+              class="tnum font-medium text-gold-text"
+            >
+              {{
+                product.weight_display
+                  ? toFa(product.weight_display)
+                  : `${toFa(Number(product.weight_grams))} ${CONTENT.products.gram}`
+              }}
+            </span>
+            <span v-if="product.karat" class="tnum text-ink-muted">
+              · {{ CONTENT.products.karat }} {{ toFa(product.karat) }}
+            </span>
+            <span v-if="product.ojrat_percent" class="tnum text-ink-muted">
+              · {{ CONTENT.products.ojrat }} {{ toFa(Number(product.ojrat_percent)) }}٪
+            </span>
+          </p>
+        </template>
+        <p v-else class="mt-3 text-xs text-ink-muted">
+          {{ CONTENT.products.loginToSeeSpecs }}
         </p>
       </div>
     </NuxtLink>

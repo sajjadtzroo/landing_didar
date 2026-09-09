@@ -197,6 +197,7 @@ export const CONTENT = {
     added: 'انتخاب‌شده',
     sample: 'نمونه',
     sampleNote: 'نمونه — غیرقابل سفارش',
+    loginToSeeSpecs: 'برای مشاهده مشخصات وارد شوید',
     weight: 'وزن',
     karat: 'عیار',
     ojrat: 'اجرت',
