@@ -1,0 +1,22 @@
+# VPS override for the observability stack.
+#   docker compose -f observability/docker-compose.observability.yml \
+#     -f observability/docker-compose.observability.vps.yml --profile linux up -d
+#
+# - The app stack runs as project "didar" there, so the external network name
+#   differs from the dev default.
+# - Grafana binds to loopback: a 0.0.0.0 publish would bypass UFW (Docker
+#   manages its own iptables chain) and expose it to the internet. Host Nginx
+#   serves it at /grafana/ instead.
+
+services:
+  grafana:
+    ports: !override
+      - "127.0.0.1:3002:3000"
+    environment:
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+
+networks:
+  app:
+    name: didar_default
+    external: true
