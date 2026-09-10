@@ -1,5 +1,5 @@
-# VPS override: host Nginx proxies to loopback ports; no Caddy, no domain
-# (plain HTTP on the IP — Let's Encrypt can't issue for a bare IP).
+# VPS override: host Nginx proxies to loopback ports; no Caddy. TLS terminates
+# at Nginx (certbot); didargold.ir A-records point at this box.
 #   docker compose -p didar -f docker-compose.yml -f docker-compose.vps.yml \
 #     --env-file /opt/app/.env up -d --build
 # Requires compose >= 2.24 for `ports: !override`.
@@ -29,11 +29,10 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-didar}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-didar}
       REDIS_URL: redis://redis:6379/0
       APP_ENV: prod
-      # HTTP on a bare IP — secure cookies would never be sent by the browser.
-      COOKIE_SECURE: "false"
+      COOKIE_SECURE: "true"
       COOKIE_SAMESITE: lax
-      FRONTEND_ORIGIN: http://194.5.188.21
-      ADMIN_ORDER_BASE_URL: http://194.5.188.21/admin/orders
+      FRONTEND_ORIGIN: https://didargold.ir
+      ADMIN_ORDER_BASE_URL: https://didargold.ir/admin/orders
       ADMIN_PASSWORD: ""
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?set in /opt/app/.env}
       SECRET_KEY: ${SECRET_KEY:?set in /opt/app/.env}
