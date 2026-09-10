@@ -37,7 +37,7 @@ def upgrade() -> None:
         FROM (
             SELECT order_id, MIN(created_at) AS first_delivered
             FROM order_status_log
-            WHERE to_status = 'delivered'
+            WHERE to_status::text = 'delivered'
             GROUP BY order_id
         ) sub
         WHERE o.id = sub.order_id AND o.delivered_at IS NULL

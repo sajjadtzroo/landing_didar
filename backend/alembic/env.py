@@ -30,7 +30,13 @@ def run_migrations_offline() -> None:
 
 def do_run_migrations(connection) -> None:
     context.configure(
-        connection=connection, target_metadata=target_metadata, compare_type=True
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True,
+        # Commit each migration separately: 0016 adds an enum value that 0019
+        # uses — in one shared transaction a FRESH database hits Postgres's
+        # "unsafe use of new value" error (incremental prod deploys never did).
+        transaction_per_migration=True,
     )
     with context.begin_transaction():
         context.run_migrations()
