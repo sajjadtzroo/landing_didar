@@ -32,6 +32,7 @@ const panelOpen = ref(false)
 function startCreate() {
   Object.assign(form, blank())
   editImages.value = []
+  clearPending()
   editing.value = false
   panelOpen.value = true
 }
@@ -77,7 +78,15 @@ async function save() {
   if (editing.value) {
     await apiFetch(`/admin/products/${form.id}`, { method: 'PATCH', body })
   } else {
-    await apiFetch('/admin/products', { method: 'POST', body })
+    const created = await apiFetch<Product>('/admin/products', { method: 'POST', body })
+    if (pendingFiles.value.length) {
+      try {
+        await uploadGalleryBatch(created.id, pendingFiles.value)
+      } catch {
+        alert('محصول ساخته شد ولی بارگذاری تصاویر ناموفق بود — از دکمه بارگذاری روی ردیف محصول دوباره تلاش کنید.')
+      }
+      clearPending()
+    }
   }
   panelOpen.value = false
   await refresh()
@@ -128,17 +137,35 @@ async function uploadImage(p: Product, e: Event) {
   await refresh()
 }
 
-// Gallery inside the edit sheet: thumbnails + add-more, same endpoint.
+// Gallery inside the sheet. Editing: upload immediately to the product's
+// sku folder. Creating: the product doesn't exist yet, so hold the picked
+// files locally (with object-URL previews) and upload the batch right after
+// the create POST returns an id.
 const editImages = ref<string[]>([])
 const uploadingGallery = ref(false)
+const pendingFiles = ref<File[]>([])
+const pendingPreviews = ref<string[]>([])
+
+async function uploadGalleryBatch(productId: string, files: File[]) {
+  const fd = new FormData()
+  for (const f of files) fd.append('files', f)
+  return apiFetch<Product>(`/admin/products/${productId}/images`, { method: 'POST', body: fd })
+}
+
 async function pickGallery(e: Event) {
   const files = (e.target as HTMLInputElement).files
   if (!files?.length) return
+  if (!editing.value) {
+    for (const f of files) {
+      pendingFiles.value.push(f)
+      pendingPreviews.value.push(URL.createObjectURL(f))
+    }
+    ;(e.target as HTMLInputElement).value = ''
+    return
+  }
   uploadingGallery.value = true
   try {
-    const fd = new FormData()
-    for (const f of files) fd.append('files', f)
-    const updated = await apiFetch<Product>(`/admin/products/${form.id}/images`, { method: 'POST', body: fd })
+    const updated = await uploadGalleryBatch(form.id, Array.from(files))
     editImages.value = updated.images ?? []
     form.image_url = updated.image_url ?? form.image_url
     await refresh()
@@ -148,6 +175,12 @@ async function pickGallery(e: Event) {
     uploadingGallery.value = false
     ;(e.target as HTMLInputElement).value = ''
   }
+}
+
+function clearPending() {
+  pendingPreviews.value.forEach(u => URL.revokeObjectURL(u))
+  pendingFiles.value = []
+  pendingPreviews.value = []
 }
 
 // --- Bulk CSV import (background job with progress polling) ---
@@ -322,16 +355,24 @@ async function move(index: number, dir: -1 | 1) {
           </label>
           <NuxtImg v-if="form.image_url" :src="form.image_url" alt="" class="mt-2 h-24 w-24 object-cover" />
         </div>
-        <div v-if="editing">
-          <p class="mb-1.5 text-sm">گالری تصاویر ({{ toFa(editImages.length) }})</p>
-          <div v-if="editImages.length" class="flex flex-wrap gap-2">
+        <div>
+          <p class="mb-1.5 text-sm">
+            گالری تصاویر ({{ toFa(editing ? editImages.length : pendingFiles.length) }})
+          </p>
+          <div v-if="editing && editImages.length" class="flex flex-wrap gap-2">
             <NuxtImg v-for="src in editImages" :key="src" :src="src" alt="" class="h-16 w-16 border border-line object-cover" />
+          </div>
+          <div v-else-if="!editing && pendingPreviews.length" class="flex flex-wrap gap-2">
+            <img v-for="src in pendingPreviews" :key="src" :src="src" alt="" class="h-16 w-16 border border-line object-cover" />
           </div>
           <label class="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs text-gold-text hover:underline">
             <Upload :size="14" />
             {{ uploadingGallery ? 'در حال بارگذاری…' : 'افزودن تصاویر (چند فایل هم‌زمان)' }}
             <input type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden" @change="pickGallery" />
           </label>
+          <p v-if="!editing && pendingFiles.length" class="mt-1 text-xs text-ink-muted">
+            تصاویر پس از ذخیره محصول بارگذاری می‌شوند.
+          </p>
         </div>
         <FormField label="وزن (گرم)" v-slot="{ id }"><input :id="id" v-model="form.weight_grams" type="number" step="0.01" class="form-control" /></FormField>
         <FormField label="عیار" v-slot="{ id }"><input :id="id" v-model="form.karat" type="number" class="form-control" /></FormField>
