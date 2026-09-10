@@ -17,6 +17,10 @@ class Storage(Protocol):
         """Persist bytes, return a loadable URL (or /media path in dev)."""
         ...
 
+    async def save_at(self, key: str, data: bytes, content_type: str | None = None) -> str:
+        """Persist bytes under an explicit key, return its /media URL."""
+        ...
+
 
 def _keyed_name(filename: str) -> str:
     ext = os.path.splitext(filename)[1].lower() or ".bin"
@@ -33,6 +37,15 @@ class LocalStorage:
         # write off the event loop so a slow disk doesn't stall the worker
         await asyncio.to_thread((self.root / name).write_bytes, data)
         return f"{settings.media_url_prefix}/{name}"
+
+    async def save_at(self, key: str, data: bytes, content_type: str | None = None) -> str:
+        """Persist under an explicit key (e.g. products/<sku>/<name>)."""
+        dest = self.root / key
+        def _write() -> None:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(data)
+        await asyncio.to_thread(_write)
+        return f"{settings.media_url_prefix}/{key}"
 
 
 class MinioStorage:
@@ -62,6 +75,18 @@ class MinioStorage:
             io.BytesIO(data),
             len(data),
             content_type,
+        )
+        return f"{settings.media_url_prefix}/{key}"
+
+    async def save_at(self, key: str, data: bytes, content_type: str | None = None) -> str:
+        """Persist under an explicit key (e.g. products/<sku>/<name>)."""
+        await asyncio.to_thread(
+            self._client.put_object,
+            self._bucket,
+            key,
+            io.BytesIO(data),
+            len(data),
+            content_type or mimetypes.guess_type(key)[0] or "application/octet-stream",
         )
         return f"{settings.media_url_prefix}/{key}"
 

@@ -31,6 +31,7 @@ const panelOpen = ref(false)
 
 function startCreate() {
   Object.assign(form, blank())
+  editImages.value = []
   editing.value = false
   panelOpen.value = true
 }
@@ -50,6 +51,7 @@ function startEdit(p: Product) {
     warrantable: p.warrantable ?? true,
     is_active: p.is_active,
   })
+  editImages.value = p.images ?? []
   editing.value = true
   panelOpen.value = true
 }
@@ -114,13 +116,38 @@ async function pickFormImage(e: Event) {
   }
 }
 
+// Gallery upload (multi-select): server converts each to webp and stores them
+// under products/{sku}/ in MinIO, appending to product.images.
 async function uploadImage(p: Product, e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
+  const files = (e.target as HTMLInputElement).files
+  if (!files?.length) return
   const fd = new FormData()
-  fd.append('file', file)
-  await apiFetch(`/admin/products/${p.id}/image`, { method: 'POST', body: fd })
+  for (const f of files) fd.append('files', f)
+  await apiFetch(`/admin/products/${p.id}/images`, { method: 'POST', body: fd })
+  ;(e.target as HTMLInputElement).value = ''
   await refresh()
+}
+
+// Gallery inside the edit sheet: thumbnails + add-more, same endpoint.
+const editImages = ref<string[]>([])
+const uploadingGallery = ref(false)
+async function pickGallery(e: Event) {
+  const files = (e.target as HTMLInputElement).files
+  if (!files?.length) return
+  uploadingGallery.value = true
+  try {
+    const fd = new FormData()
+    for (const f of files) fd.append('files', f)
+    const updated = await apiFetch<Product>(`/admin/products/${form.id}/images`, { method: 'POST', body: fd })
+    editImages.value = updated.images ?? []
+    form.image_url = updated.image_url ?? form.image_url
+    await refresh()
+  } catch {
+    alert('بارگذاری تصاویر ناموفق بود.')
+  } finally {
+    uploadingGallery.value = false
+    ;(e.target as HTMLInputElement).value = ''
+  }
 }
 
 // --- Bulk CSV import (background job with progress polling) ---
@@ -262,9 +289,9 @@ async function move(index: number, dir: -1 | 1) {
           </p>
         </div>
 
-        <label class="flex h-11 w-11 cursor-pointer items-center justify-center text-ink-muted hover:text-gold-text" aria-label="بارگذاری تصویر">
+        <label class="flex h-11 w-11 cursor-pointer items-center justify-center text-ink-muted hover:text-gold-text" aria-label="بارگذاری تصاویر">
           <Upload :size="16" />
-          <input type="file" accept="image/*" class="hidden" @change="uploadImage(p, $event)" />
+          <input type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden" @change="uploadImage(p, $event)" />
         </label>
         <button class="flex h-11 items-center px-2 text-xs" @click="toggleActive(p)">
           {{ p.is_active ? 'فعال' : 'غیرفعال' }}
@@ -294,6 +321,17 @@ async function move(index: number, dir: -1 | 1) {
             <input type="file" accept="image/*" class="hidden" @change="pickFormImage" />
           </label>
           <NuxtImg v-if="form.image_url" :src="form.image_url" alt="" class="mt-2 h-24 w-24 object-cover" />
+        </div>
+        <div v-if="editing">
+          <p class="mb-1.5 text-sm">گالری تصاویر ({{ toFa(editImages.length) }})</p>
+          <div v-if="editImages.length" class="flex flex-wrap gap-2">
+            <NuxtImg v-for="src in editImages" :key="src" :src="src" alt="" class="h-16 w-16 border border-line object-cover" />
+          </div>
+          <label class="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs text-gold-text hover:underline">
+            <Upload :size="14" />
+            {{ uploadingGallery ? 'در حال بارگذاری…' : 'افزودن تصاویر (چند فایل هم‌زمان)' }}
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden" @change="pickGallery" />
+          </label>
         </div>
         <FormField label="وزن (گرم)" v-slot="{ id }"><input :id="id" v-model="form.weight_grams" type="number" step="0.01" class="form-control" /></FormField>
         <FormField label="عیار" v-slot="{ id }"><input :id="id" v-model="form.karat" type="number" class="form-control" /></FormField>

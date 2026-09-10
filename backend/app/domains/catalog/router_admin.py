@@ -1,3 +1,5 @@
+import asyncio
+import io
 import uuid
 
 from fastapi import (
@@ -156,6 +158,39 @@ async def delete_product(product_id: str, db: AsyncSession = Depends(get_db)):
     await db.commit()
 
 
+# Product gallery uploads: normalized to webp (smaller, single format on the
+# storefront) and stored under products/{sku}/ so all of a product's photos
+# live in one folder — same layout the MinIO {sku}/ sync job produces.
+_ALLOWED_PRODUCT_IMAGE = {"image/jpeg", "image/png", "image/webp"}
+
+
+def _to_webp(data: bytes) -> bytes:
+    from PIL import Image
+
+    img = Image.open(io.BytesIO(data))
+    if img.mode not in ("RGB", "RGBA"):
+        img = img.convert("RGBA" if img.mode in ("P", "LA") else "RGB")
+    buf = io.BytesIO()
+    img.save(buf, "WEBP", quality=85, method=4)
+    return buf.getvalue()
+
+
+async def _store_product_image(product: Product, file: UploadFile) -> str:
+    if file.content_type not in _ALLOWED_PRODUCT_IMAGE:
+        raise HTTPException(415, detail="Unsupported media type")
+    data = await file.read()
+    if len(data) > _MAX_MEDIA_BYTES:
+        raise HTTPException(413, detail="File too large (max 60MB)")
+    if not sniff_ok(file.content_type, data):
+        raise HTTPException(415, detail="File content does not match its type")
+    try:
+        webp = await asyncio.to_thread(_to_webp, data)
+    except Exception:
+        raise HTTPException(415, detail="Invalid or corrupt image")
+    key = f"products/{product.sku}/{uuid.uuid4().hex[:8]}.webp"
+    return await get_storage().save_at(key, webp, "image/webp")
+
+
 @router.post("/products/{product_id}/image", response_model=AdminProductOut)
 async def upload_product_image(
     product_id: str,
@@ -165,8 +200,28 @@ async def upload_product_image(
     product = await db.get(Product, product_id)
     if not product:
         raise HTTPException(404, detail="Product not found")
-    url = await get_storage().save(file.filename or "upload", await file.read())
-    product.image_url = url
+    product.image_url = await _store_product_image(product, file)
+    await db.commit()
+    await db.refresh(product)
+    return product
+
+
+@router.post("/products/{product_id}/images", response_model=AdminProductOut)
+async def upload_product_images(
+    product_id: str,
+    files: list[UploadFile] = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """Append photos to the product gallery. Each file is converted to webp and
+    stored under products/{sku}/; gallery order = upload/append order."""
+    product = await db.get(Product, product_id)
+    if not product:
+        raise HTTPException(404, detail="Product not found")
+    urls = list(product.images or [])
+    for f in files:
+        urls.append(await _store_product_image(product, f))
+    product.images = urls
+    product.image_url = urls[0]
     await db.commit()
     await db.refresh(product)
     return product
