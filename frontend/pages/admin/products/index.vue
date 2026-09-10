@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowDown, ArrowUp, FileSpreadsheet, ImageDown, Pencil, Plus, Trash2, Upload } from 'lucide-vue-next'
-import { onBeforeUnmount, reactive, ref } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { ImportJob, Product } from '~/types'
 import { toFa } from '~/utils/format'
 
@@ -28,6 +28,14 @@ const blank = () => ({
 const form = reactive(blank())
 const editing = ref(false)
 const panelOpen = ref(false)
+
+// Deep link from the storefront quick-edit button: /admin/products?edit=<id>
+onMounted(() => {
+  const id = useRoute().query.edit as string | undefined
+  if (!id) return
+  const p = products.value?.find(x => x.id === id)
+  if (p) startEdit(p)
+})
 
 function startCreate() {
   Object.assign(form, blank())

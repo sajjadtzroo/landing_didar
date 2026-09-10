@@ -6,6 +6,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   try {
     const me = await apiFetch<{ username: string; role: string }>('/admin/me')
     useAdminAuth().setIdentity(me.username, me.role)
+    // Marker for storefront admin conveniences (e.g. quick-edit on product
+    // pages) — just a hint; anything gated by it re-verifies via /admin/me.
+    localStorage.setItem('didar-admin', '1')
     if (me.role === 'agent') return navigateTo('/agent')
   } catch {
     return navigateTo('/admin/login')

@@ -164,7 +164,9 @@ async def delete_product(product_id: str, db: AsyncSession = Depends(get_db)):
 _ALLOWED_PRODUCT_IMAGE = {"image/jpeg", "image/png", "image/webp"}
 
 
-def _to_webp(data: bytes) -> bytes:
+def _webp_variants(data: bytes) -> tuple[bytes, bytes]:
+    """Full-size webp + 640px `-sm` card variant — the storefront's card()
+    helper rewrites <name>.webp to <name>-sm.webp, so both must exist."""
     from PIL import Image
 
     img = Image.open(io.BytesIO(data))
@@ -172,7 +174,11 @@ def _to_webp(data: bytes) -> bytes:
         img = img.convert("RGBA" if img.mode in ("P", "LA") else "RGB")
     buf = io.BytesIO()
     img.save(buf, "WEBP", quality=85, method=4)
-    return buf.getvalue()
+    sm = img.copy()
+    sm.thumbnail((640, 640))
+    buf_sm = io.BytesIO()
+    sm.save(buf_sm, "WEBP", quality=80, method=4)
+    return buf.getvalue(), buf_sm.getvalue()
 
 
 async def _store_product_image(product: Product, file: UploadFile) -> str:
@@ -184,11 +190,12 @@ async def _store_product_image(product: Product, file: UploadFile) -> str:
     if not sniff_ok(file.content_type, data):
         raise HTTPException(415, detail="File content does not match its type")
     try:
-        webp = await asyncio.to_thread(_to_webp, data)
+        full, sm = await asyncio.to_thread(_webp_variants, data)
     except Exception:
         raise HTTPException(415, detail="Invalid or corrupt image")
-    key = f"products/{product.sku}/{uuid.uuid4().hex[:8]}.webp"
-    return await get_storage().save_at(key, webp, "image/webp")
+    stem = f"products/{product.sku}/{uuid.uuid4().hex[:8]}"
+    await get_storage().save_at(f"{stem}-sm.webp", sm, "image/webp")
+    return await get_storage().save_at(f"{stem}.webp", full, "image/webp")
 
 
 @router.post("/products/{product_id}/image", response_model=AdminProductOut)

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronLeft, Heart, House } from 'lucide-vue-next'
+import { ChevronLeft, Heart, House, Pencil } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { CONTENT } from '~/constants/content'
 import type { Product } from '~/types'
@@ -49,6 +49,19 @@ const {
 
 const qty = ref(1)
 const imageEl = ref<HTMLElement | null>(null)
+
+// Admin quick-edit: only probe /admin/me when a prior admin login left its
+// marker, so regular visitors never hit the admin endpoint.
+const isAdmin = ref(false)
+onMounted(async () => {
+  if (localStorage.getItem('didar-admin') !== '1') return
+  try {
+    await apiFetch('/admin/me')
+    isAdmin.value = true
+  } catch {
+    localStorage.removeItem('didar-admin')
+  }
+})
 
 // Gallery: MinIO-imported photos, falling back to the single image_url.
 const active = ref(0)
@@ -239,7 +252,16 @@ async function onHeart() {
           <p v-if="categoryLabel" class="mb-2 text-xs tracking-[0.25em] text-gold-text sm:text-sm">
             {{ categoryLabel }}
           </p>
-          <h1 class="text-3xl font-medium text-ink sm:text-4xl">{{ product.name }}</h1>
+          <div class="flex items-start justify-between gap-3">
+            <h1 class="text-3xl font-medium text-ink sm:text-4xl">{{ product.name }}</h1>
+            <NuxtLink
+              v-if="isAdmin"
+              :to="`/admin/products?edit=${product.id}`"
+              class="mt-1 flex shrink-0 items-center gap-1 border border-line px-3 py-1.5 text-xs text-ink-muted hover:border-gold hover:text-gold-text"
+            >
+              <Pencil :size="12" /> ویرایش
+            </NuxtLink>
+          </div>
           <p class="tnum mt-2 text-sm text-ink-muted">{{ CONTENT.products.sku }} {{ product.sku }}</p>
 
           <!-- Spec tiles: weight + karat always shown; ojrat gated by setting -->
