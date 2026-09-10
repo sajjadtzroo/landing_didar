@@ -217,9 +217,13 @@ async def upload_product_images(
     product = await db.get(Product, product_id)
     if not product:
         raise HTTPException(404, detail="Product not found")
-    urls = list(product.images or [])
-    for f in files:
-        urls.append(await _store_product_image(product, f))
+    # Convert/store concurrently — Pillow runs in threads, MinIO puts are I/O.
+    # gather keeps result order = file order; any failure rejects the whole
+    # batch before commit, so the gallery never half-updates.
+    new_urls = await asyncio.gather(
+        *(_store_product_image(product, f) for f in files)
+    )
+    urls = [*(product.images or []), *new_urls]
     product.images = urls
     product.image_url = urls[0]
     await db.commit()

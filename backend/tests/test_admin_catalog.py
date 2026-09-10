@@ -12,6 +12,18 @@ def _sku():
     return f"SKU-{uuid.uuid4().hex[:8]}"
 
 
+def _png() -> bytes:
+    # Real PNG bytes — uploads are magic-byte sniffed and re-encoded to webp,
+    # so a fake header is rejected with 415.
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (4, 4), "red").save(buf, "PNG")
+    return buf.getvalue()
+
+
 async def test_requires_auth(client):
     assert (await client.get(PRODUCTS)).status_code == 401
     assert (await client.get(FAQS)).status_code == 401
@@ -69,12 +81,55 @@ async def test_product_validation(admin_client):
 async def test_upload_product_image(admin_client):
     created = await admin_client.post(PRODUCTS, json={"name": "P", "sku": _sku()})
     pid = created.json()["id"]
+    sku = created.json()["sku"]
     r = await admin_client.post(
         f"{PRODUCTS}/{pid}/image",
-        files={"file": ("photo.png", b"\x89PNG\r\n", "image/png")},
+        files={"file": ("photo.png", _png(), "image/png")},
     )
     assert r.status_code == 200
-    assert r.json()["image_url"].startswith("/media/")
+    # stored under the product's sku folder, converted to webp
+    assert r.json()["image_url"].startswith(f"/media/products/{sku}/")
+    assert r.json()["image_url"].endswith(".webp")
+
+
+async def test_upload_product_gallery_multi(admin_client):
+    created = await admin_client.post(PRODUCTS, json={"name": "G", "sku": _sku()})
+    pid = created.json()["id"]
+    png = _png()
+    r = await admin_client.post(
+        f"{PRODUCTS}/{pid}/images",
+        files=[
+            ("files", ("a.png", png, "image/png")),
+            ("files", ("b.png", png, "image/png")),
+            ("files", ("c.png", png, "image/png")),
+        ],
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert len(body["images"]) == 3
+    assert all(u.endswith(".webp") for u in body["images"])
+    assert body["image_url"] == body["images"][0]
+
+    # a second batch appends instead of replacing
+    r2 = await admin_client.post(
+        f"{PRODUCTS}/{pid}/images",
+        files=[("files", ("d.png", png, "image/png"))],
+    )
+    assert r2.status_code == 200
+    assert len(r2.json()["images"]) == 4
+
+    # a fake image in the batch rejects the whole request
+    bad = await admin_client.post(
+        f"{PRODUCTS}/{pid}/images",
+        files=[
+            ("files", ("ok.png", png, "image/png")),
+            ("files", ("fake.png", b"\x89PNG\r\nnot-an-image", "image/png")),
+        ],
+    )
+    assert bad.status_code == 415
+    check = await admin_client.get(PRODUCTS)
+    prod = next(p for p in check.json() if p["id"] == pid)
+    assert len(prod["images"]) == 4  # unchanged
 
 
 async def test_upload_image_404(admin_client):
