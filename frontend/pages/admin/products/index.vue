@@ -15,6 +15,7 @@ const blank = () => ({
   name: '',
   slug: '',
   sku: '',
+  image_url: '',
   weight_grams: '',
   karat: 18,
   ojrat_percent: '' as string | number,
@@ -39,6 +40,7 @@ function startEdit(p: Product) {
     name: p.name,
     slug: p.slug ?? '',
     sku: p.sku,
+    image_url: p.image_url ?? '',
     weight_grams: p.weight_grams ?? '',
     karat: p.karat ?? 18,
     ojrat_percent: p.ojrat_percent ?? '',
@@ -57,6 +59,7 @@ async function save() {
     name: form.name,
     slug: form.slug || null,
     sku: form.sku,
+    image_url: form.image_url || null,
     weight_grams: form.weight_grams === '' ? null : Number(form.weight_grams),
     karat: form.karat ? Number(form.karat) : null,
     ojrat_percent: form.ojrat_percent === '' ? null : Number(form.ojrat_percent),
@@ -90,6 +93,25 @@ async function remove(p: Product) {
   if (!confirm(`حذف «${p.name}»؟`)) return
   await apiFetch(`/admin/products/${p.id}`, { method: 'DELETE' })
   await refresh()
+}
+
+// Form-panel upload: goes through the generic /admin/media endpoint (MinIO)
+// so it works before the product exists (create flow) — the returned URL is
+// saved with the product as image_url.
+const { upload } = useAdminUpload()
+const uploadingForm = ref(false)
+async function pickFormImage(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  uploadingForm.value = true
+  try {
+    form.image_url = await upload(file)
+  } catch {
+    alert('بارگذاری تصویر ناموفق بود.')
+  } finally {
+    uploadingForm.value = false
+    ;(e.target as HTMLInputElement).value = ''
+  }
 }
 
 async function uploadImage(p: Product, e: Event) {
@@ -263,6 +285,16 @@ async function move(index: number, dir: -1 | 1) {
           <input :id="id" v-model="form.slug" dir="ltr" class="form-control" placeholder="atrin-necklace" />
         </FormField>
         <FormField label="کد (SKU)" v-slot="{ id }"><input :id="id" v-model="form.sku" class="form-control" /></FormField>
+        <div>
+          <p class="mb-1.5 text-sm">تصویر محصول</p>
+          <input v-model="form.image_url" dir="ltr" class="form-control" placeholder="/media/…" />
+          <label class="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs text-gold-text hover:underline">
+            <Upload :size="14" />
+            {{ uploadingForm ? 'در حال بارگذاری…' : 'بارگذاری تصویر' }}
+            <input type="file" accept="image/*" class="hidden" @change="pickFormImage" />
+          </label>
+          <NuxtImg v-if="form.image_url" :src="form.image_url" alt="" class="mt-2 h-24 w-24 object-cover" />
+        </div>
         <FormField label="وزن (گرم)" v-slot="{ id }"><input :id="id" v-model="form.weight_grams" type="number" step="0.01" class="form-control" /></FormField>
         <FormField label="عیار" v-slot="{ id }"><input :id="id" v-model="form.karat" type="number" class="form-control" /></FormField>
         <FormField label="اجرت (٪)" v-slot="{ id }"><input :id="id" v-model="form.ojrat_percent" type="number" step="0.5" min="0" max="100" class="form-control" /></FormField>
