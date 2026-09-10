@@ -40,6 +40,11 @@ services:
 
   frontend:
     restart: unless-stopped
+    build:
+      context: ./frontend
+      args:
+        # npmjs resets connections from this VPS's network; npmmirror is stable.
+        NPM_REGISTRY: https://registry.npmmirror.com/
     ports: !override
       - "127.0.0.1:3000:3000"
     environment:

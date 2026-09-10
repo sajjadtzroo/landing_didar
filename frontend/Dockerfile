@@ -9,7 +9,11 @@ COPY package.json package-lock.json ./
 # sharp@0.32 (via @nuxt/image → ipx) downloads libvips from GitHub releases,
 # which hangs up from Liara's build network — use the npmmirror binary mirror.
 ENV npm_config_sharp_libvips_binary_host="https://registry.npmmirror.com/-/binary/sharp-libvips"
-RUN npm ci --legacy-peer-deps
+# Overridable registry for build networks where npmjs resets connections
+# (e.g. Iranian VPS). Default unchanged for Liara/CI builds.
+ARG NPM_REGISTRY=https://registry.npmjs.org/
+RUN npm config set registry "$NPM_REGISTRY" \
+    && npm ci --legacy-peer-deps --fetch-retries 5 --fetch-retry-maxtimeout 120000
 COPY . .
 RUN npm run build
 
