@@ -1,0 +1,51 @@
+# VPS override: host Nginx proxies to loopback ports; no Caddy, no domain
+# (plain HTTP on the IP — Let's Encrypt can't issue for a bare IP).
+#   docker compose -p didar -f docker-compose.yml -f docker-compose.vps.yml \
+#     --env-file /opt/app/.env up -d --build
+# Requires compose >= 2.24 for `ports: !override`.
+
+services:
+  db:
+    restart: unless-stopped
+    ports: !override []          # internal network only
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-didar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in /opt/app/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-didar}
+
+  redis:
+    restart: unless-stopped
+    ports: !override []
+    # AOF persistence on the VPS (unlike dev): survives container restarts.
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+
+  backend:
+    restart: unless-stopped
+    ports: !override
+      - "127.0.0.1:8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-didar}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-didar}
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: prod
+      # HTTP on a bare IP — secure cookies would never be sent by the browser.
+      COOKIE_SECURE: "false"
+      COOKIE_SAMESITE: lax
+      FRONTEND_ORIGIN: http://194.5.188.21
+      ADMIN_ORDER_BASE_URL: http://194.5.188.21/admin/orders
+      ADMIN_PASSWORD: ""
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?set in /opt/app/.env}
+      SECRET_KEY: ${SECRET_KEY:?set in /opt/app/.env}
+
+  frontend:
+    restart: unless-stopped
+    ports: !override
+      - "127.0.0.1:3000:3000"
+    environment:
+      # Browser talks same-origin through Nginx (/api/v1 proxied to backend).
+      NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:?set in /opt/app/.env}
+      NUXT_API_BASE_INTERNAL: http://backend:8000/api/v1
+
+volumes:
+  redisdata:
