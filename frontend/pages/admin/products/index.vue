@@ -17,7 +17,7 @@ const blank = () => ({
   sku: '',
   image_url: '',
   weight_grams: '',
-  weight_display: '',
+  weight_max: '',
   karat: 18,
   ojrat_percent: '' as string | number,
   category: 'daily' as 'daily' | 'lux_daily' | 'luxury' | 'watch',
@@ -81,7 +81,13 @@ function startEdit(p: Product) {
     sku: p.sku,
     image_url: p.image_url ?? '',
     weight_grams: p.weight_grams ?? '',
-    weight_display: p.weight_display ?? '',
+    // weight_display holds «min-max گرم»; recover max for the numeric input
+    // (Persian or Latin digits — old data used ۱۲-۱۵).
+    weight_max: (() => {
+      const latin = (p.weight_display ?? '').replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+      const m = latin.match(/[\d.]+\s*[-–]\s*([\d.]+)/)
+      return m ? m[1] : ''
+    })(),
     karat: p.karat ?? 18,
     ojrat_percent: p.ojrat_percent ?? '',
     category: p.category ?? 'daily',
@@ -102,7 +108,11 @@ async function save() {
     sku: form.sku,
     image_url: form.image_url || null,
     weight_grams: form.weight_grams === '' ? null : Number(form.weight_grams),
-    weight_display: form.weight_display.trim() || null,
+    // Both bounds set → range string the storefront prefers over the number.
+    weight_display:
+      form.weight_grams !== '' && form.weight_max !== ''
+        ? `${Number(form.weight_grams)}-${Number(form.weight_max)} گرم`
+        : null,
     karat: form.karat ? Number(form.karat) : null,
     ojrat_percent: form.ojrat_percent === '' ? null : Number(form.ojrat_percent),
     category: form.category,
@@ -387,7 +397,8 @@ async function move(index: number, dir: -1 | 1) {
           <p class="truncate text-ink">{{ p.name }}</p>
           <p class="tnum text-xs text-ink-muted">
             {{ p.sku }}
-            <template v-if="p.weight_grams"> · {{ toFa(Number(p.weight_grams)) }} گرم</template>
+            <template v-if="p.weight_display"> · {{ toFa(p.weight_display) }}</template>
+            <template v-else-if="p.weight_grams"> · {{ toFa(Number(p.weight_grams)) }} گرم</template>
             <template v-if="p.ojrat_percent"> · اجرت {{ toFa(Number(p.ojrat_percent)) }}٪</template>
           </p>
         </div>
@@ -476,13 +487,18 @@ async function move(index: number, dir: -1 | 1) {
             تصاویر پس از ذخیره محصول بارگذاری می‌شوند.
           </p>
         </div>
-        <FormField label="وزن (گرم)" v-slot="{ id }"><input :id="id" v-model="form.weight_grams" type="number" step="0.01" class="form-control" /></FormField>
-        <FormField label="وزن نمایشی — بازه (اختیاری)" v-slot="{ id }">
-          <input :id="id" v-model="form.weight_display" class="form-control" placeholder="مثلاً ۱۵-۱۸ گرم" maxlength="40" />
-          <p class="mt-1 text-xs text-ink-muted">
-            اگر پر شود، در فروشگاه به‌جای وزن عددی نمایش داده می‌شود؛ وزن عددی برای محاسبه سفارش می‌ماند.
-          </p>
-        </FormField>
+        <div class="grid grid-cols-2 gap-3">
+          <FormField label="حداقل وزن (گرم)" v-slot="{ id }">
+            <input :id="id" v-model="form.weight_grams" type="number" step="0.01" min="0" class="form-control" placeholder="۱۵" />
+          </FormField>
+          <FormField label="حداکثر وزن (گرم) — اختیاری" v-slot="{ id }">
+            <input :id="id" v-model="form.weight_max" type="number" step="0.01" min="0" class="form-control" placeholder="۱۸" />
+          </FormField>
+        </div>
+        <p class="-mt-2 text-xs text-ink-muted">
+          اگر حداکثر پر شود، در فروشگاه بازه نمایش داده می‌شود (مثلاً «۱۵-۱۸ گرم»)؛
+          حداقلِ عددی مبنای محاسبه سفارش می‌ماند.
+        </p>
         <FormField label="عیار" v-slot="{ id }"><input :id="id" v-model="form.karat" type="number" class="form-control" /></FormField>
         <FormField label="اجرت (٪)" v-slot="{ id }"><input :id="id" v-model="form.ojrat_percent" type="number" step="0.5" min="0" max="100" class="form-control" /></FormField>
         <FormField label="دسته‌بندی" v-slot="{ id }">
