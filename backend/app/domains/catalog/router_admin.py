@@ -236,3 +236,31 @@ async def upload_product_images(
     await db.commit()
     await db.refresh(product)
     return product
+
+
+@router.delete("/products/{product_id}/images", response_model=AdminProductOut)
+async def delete_product_image(
+    product_id: str,
+    url: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Remove one photo (by its /media URL) from the gallery. image_url follows
+    the new first gallery item. Storage object is kept — same URL may be
+    referenced elsewhere (landings, portfolios) and orphans are harmless."""
+    product = await db.get(Product, product_id)
+    if not product:
+        raise HTTPException(404, detail="Product not found")
+    urls = [u for u in (product.images or []) if u != url]
+    if len(urls) == len(product.images or []):
+        # Not in the gallery — maybe it's the standalone primary image.
+        if product.image_url == url:
+            product.image_url = urls[0] if urls else None
+            await db.commit()
+            await db.refresh(product)
+            return product
+        raise HTTPException(404, detail="Image not on this product")
+    product.images = urls
+    product.image_url = urls[0] if urls else None
+    await db.commit()
+    await db.refresh(product)
+    return product

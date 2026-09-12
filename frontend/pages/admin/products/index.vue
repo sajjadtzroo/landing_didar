@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowDown, ArrowUp, FileSpreadsheet, ImageDown, Pencil, Plus, Trash2, Upload } from 'lucide-vue-next'
+import { ArrowDown, ArrowUp, FileSpreadsheet, ImageDown, Pencil, Plus, Trash2, Upload, X } from 'lucide-vue-next'
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { ImportJob, Product } from '~/types'
 import { toFa } from '~/utils/format'
@@ -191,6 +191,29 @@ function clearPending() {
   pendingPreviews.value = []
 }
 
+// Delete one gallery photo (edit mode) — image_url follows the new first item.
+async function removeGalleryImage(src: string) {
+  if (!confirm('حذف این تصویر از گالری؟')) return
+  try {
+    const updated = await apiFetch<Product>(
+      `/admin/products/${form.id}/images?url=${encodeURIComponent(src)}`,
+      { method: 'DELETE' },
+    )
+    editImages.value = updated.images ?? []
+    form.image_url = updated.image_url ?? ''
+    await refresh()
+  } catch {
+    alert('حذف تصویر ناموفق بود.')
+  }
+}
+
+// Drop a not-yet-uploaded picked file (create mode).
+function removePending(i: number) {
+  URL.revokeObjectURL(pendingPreviews.value[i])
+  pendingFiles.value.splice(i, 1)
+  pendingPreviews.value.splice(i, 1)
+}
+
 // --- Bulk CSV import (background job with progress polling) ---
 const importOpen = ref(false)
 const importFile = ref<File | null>(null)
@@ -368,10 +391,32 @@ async function move(index: number, dir: -1 | 1) {
             گالری تصاویر ({{ toFa(editing ? editImages.length : pendingFiles.length) }})
           </p>
           <div v-if="editing && editImages.length" class="flex flex-wrap gap-2">
-            <NuxtImg v-for="src in editImages" :key="src" :src="src" alt="" class="h-16 w-16 border border-line object-cover" />
+            <div v-for="src in editImages" :key="src" class="group relative">
+              <NuxtImg :src="src" alt="" class="h-16 w-16 border border-line object-cover" />
+              <button
+                type="button"
+                class="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center
+                  rounded-full bg-danger text-white opacity-90 hover:opacity-100"
+                aria-label="حذف تصویر"
+                @click="removeGalleryImage(src)"
+              >
+                <X :size="12" />
+              </button>
+            </div>
           </div>
           <div v-else-if="!editing && pendingPreviews.length" class="flex flex-wrap gap-2">
-            <img v-for="src in pendingPreviews" :key="src" :src="src" alt="" class="h-16 w-16 border border-line object-cover" />
+            <div v-for="(src, i) in pendingPreviews" :key="src" class="relative">
+              <img :src="src" alt="" class="h-16 w-16 border border-line object-cover" />
+              <button
+                type="button"
+                class="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center
+                  rounded-full bg-danger text-white opacity-90 hover:opacity-100"
+                aria-label="حذف تصویر"
+                @click="removePending(i)"
+              >
+                <X :size="12" />
+              </button>
+            </div>
           </div>
           <label class="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs text-gold-text hover:underline">
             <Upload :size="14" />

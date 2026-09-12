@@ -132,6 +132,35 @@ async def test_upload_product_gallery_multi(admin_client):
     assert len(prod["images"]) == 4  # unchanged
 
 
+async def test_delete_gallery_image(admin_client):
+    created = await admin_client.post(PRODUCTS, json={"name": "D", "sku": _sku()})
+    pid = created.json()["id"]
+    png = _png()
+    up = await admin_client.post(
+        f"{PRODUCTS}/{pid}/images",
+        files=[("files", ("a.png", png, "image/png")),
+               ("files", ("b.png", png, "image/png"))],
+    )
+    imgs = up.json()["images"]
+    assert len(imgs) == 2
+
+    # delete the first — image_url must follow the new first item
+    r = await admin_client.delete(f"{PRODUCTS}/{pid}/images", params={"url": imgs[0]})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["images"] == [imgs[1]]
+    assert body["image_url"] == imgs[1]
+
+    # delete the last — gallery empties, image_url clears
+    r2 = await admin_client.delete(f"{PRODUCTS}/{pid}/images", params={"url": imgs[1]})
+    assert r2.json()["images"] == []
+    assert r2.json()["image_url"] is None
+
+    # unknown url → 404
+    r3 = await admin_client.delete(f"{PRODUCTS}/{pid}/images", params={"url": "/media/nope.webp"})
+    assert r3.status_code == 404
+
+
 async def test_upload_image_404(admin_client):
     r = await admin_client.post(
         f"{PRODUCTS}/{uuid.uuid4()}/image",
