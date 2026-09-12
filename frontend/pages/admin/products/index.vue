@@ -17,6 +17,7 @@ const blank = () => ({
   sku: '',
   image_url: '',
   weight_grams: '',
+  weight_display: '',
   karat: 18,
   ojrat_percent: '' as string | number,
   category: 'daily' as 'daily' | 'lux_daily' | 'luxury' | 'watch',
@@ -80,6 +81,7 @@ function startEdit(p: Product) {
     sku: p.sku,
     image_url: p.image_url ?? '',
     weight_grams: p.weight_grams ?? '',
+    weight_display: p.weight_display ?? '',
     karat: p.karat ?? 18,
     ojrat_percent: p.ojrat_percent ?? '',
     category: p.category ?? 'daily',
@@ -100,6 +102,7 @@ async function save() {
     sku: form.sku,
     image_url: form.image_url || null,
     weight_grams: form.weight_grams === '' ? null : Number(form.weight_grams),
+    weight_display: form.weight_display.trim() || null,
     karat: form.karat ? Number(form.karat) : null,
     ojrat_percent: form.ojrat_percent === '' ? null : Number(form.ojrat_percent),
     category: form.category,
@@ -474,6 +477,12 @@ async function move(index: number, dir: -1 | 1) {
           </p>
         </div>
         <FormField label="وزن (گرم)" v-slot="{ id }"><input :id="id" v-model="form.weight_grams" type="number" step="0.01" class="form-control" /></FormField>
+        <FormField label="وزن نمایشی — بازه (اختیاری)" v-slot="{ id }">
+          <input :id="id" v-model="form.weight_display" class="form-control" placeholder="مثلاً ۱۵-۱۸ گرم" maxlength="40" />
+          <p class="mt-1 text-xs text-ink-muted">
+            اگر پر شود، در فروشگاه به‌جای وزن عددی نمایش داده می‌شود؛ وزن عددی برای محاسبه سفارش می‌ماند.
+          </p>
+        </FormField>
         <FormField label="عیار" v-slot="{ id }"><input :id="id" v-model="form.karat" type="number" class="form-control" /></FormField>
         <FormField label="اجرت (٪)" v-slot="{ id }"><input :id="id" v-model="form.ojrat_percent" type="number" step="0.5" min="0" max="100" class="form-control" /></FormField>
         <FormField label="دسته‌بندی" v-slot="{ id }">
