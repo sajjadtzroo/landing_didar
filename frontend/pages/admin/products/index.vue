@@ -111,20 +111,26 @@ async function save() {
       ? undefined
       : (products.value?.length ?? 0),
   }
-  if (editing.value) {
-    await apiFetch(`/admin/products/${form.id}`, { method: 'PATCH', body })
-    toast('تغییرات محصول ذخیره شد')
-  } else {
-    const created = await apiFetch<Product>('/admin/products', { method: 'POST', body })
-    if (pendingFiles.value.length) {
-      try {
-        await uploadGalleryBatch(created.id, pendingFiles.value)
-      } catch {
-        alert('محصول ساخته شد ولی بارگذاری تصاویر ناموفق بود — از دکمه بارگذاری روی ردیف محصول دوباره تلاش کنید.')
+  try {
+    if (editing.value) {
+      await apiFetch(`/admin/products/${form.id}`, { method: 'PATCH', body })
+      toast('تغییرات محصول ذخیره شد')
+    } else {
+      const created = await apiFetch<Product>('/admin/products', { method: 'POST', body })
+      if (pendingFiles.value.length) {
+        try {
+          await uploadGalleryBatch(created.id, pendingFiles.value)
+        } catch {
+          alert('محصول ساخته شد ولی بارگذاری تصاویر ناموفق بود — از دکمه بارگذاری روی ردیف محصول دوباره تلاش کنید.')
+        }
+        clearPending()
       }
-      clearPending()
+      toast('محصول اضافه شد ✓')
     }
-    toast('محصول اضافه شد ✓')
+  } catch (e: any) {
+    // Keep the sheet open so the admin can fix the field (e.g. duplicate SKU).
+    alert(e?.data?.detail || 'ذخیره ناموفق بود — دوباره تلاش کنید')
+    return
   }
   panelOpen.value = false
   await refresh()

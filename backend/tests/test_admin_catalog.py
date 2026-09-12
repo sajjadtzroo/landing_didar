@@ -78,6 +78,14 @@ async def test_product_validation(admin_client):
     assert r.status_code == 422
 
 
+async def test_duplicate_sku_is_409_not_500(admin_client):
+    sku = _sku()
+    assert (await admin_client.post(PRODUCTS, json={"name": "A", "sku": sku})).status_code == 201
+    dup = await admin_client.post(PRODUCTS, json={"name": "B", "sku": sku})
+    assert dup.status_code == 409
+    assert "SKU" in dup.json()["detail"]
+
+
 async def test_upload_product_image(admin_client):
     created = await admin_client.post(PRODUCTS, json={"name": "P", "sku": _sku()})
     pid = created.json()["id"]

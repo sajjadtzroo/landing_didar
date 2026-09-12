@@ -13,6 +13,7 @@ from fastapi import (
     UploadFile,
 )
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
@@ -126,11 +127,26 @@ async def list_products(db: AsyncSession = Depends(get_db)):
     return res.scalars().all()
 
 
+async def _commit_or_409(db: AsyncSession) -> None:
+    """Duplicate sku/slug is admin input error, not a server fault — 409 with a
+    Persian message instead of an unhandled IntegrityError 500."""
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        msg = str(exc.orig)
+        if "products_sku_key" in msg:
+            raise HTTPException(409, detail="این کد (SKU) قبلاً ثبت شده است") from exc
+        if "slug" in msg:
+            raise HTTPException(409, detail="این نامک (slug) قبلاً ثبت شده است") from exc
+        raise HTTPException(409, detail="مقدار تکراری — کد یا نامک را تغییر دهید") from exc
+
+
 @router.post("/products", response_model=AdminProductOut, status_code=201)
 async def create_product(payload: ProductCreate, db: AsyncSession = Depends(get_db)):
     product = Product(**payload.model_dump())
     db.add(product)
-    await db.commit()
+    await _commit_or_409(db)
     await db.refresh(product)
     return product
 
@@ -144,7 +160,7 @@ async def update_product(
         raise HTTPException(404, detail="Product not found")
     for k, v in payload.model_dump(exclude_unset=True).items():
         setattr(product, k, v)
-    await db.commit()
+    await _commit_or_409(db)
     await db.refresh(product)
     return product
 
