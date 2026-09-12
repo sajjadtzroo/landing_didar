@@ -44,6 +44,8 @@ services:
       args:
         # npmjs resets connections from this VPS's network; npmmirror is stable.
         NPM_REGISTRY: https://registry.npmmirror.com/
+        # IPX fetches /media sources from the compose-internal backend.
+        NUXT_IPX_MEDIA_ORIGIN: http://backend:8000
     ports: !override
       - "127.0.0.1:3000:3000"
     environment:

@@ -15,6 +15,9 @@ ARG NPM_REGISTRY=https://registry.npmjs.org/
 RUN npm config set registry "$NPM_REGISTRY" \
     && npm ci --legacy-peer-deps --fetch-retries 5 --fetch-retry-maxtimeout 120000
 COPY . .
+# IPX /media source origin (build-time; see nuxt.config image.alias).
+ARG NUXT_IPX_MEDIA_ORIGIN=
+ENV NUXT_IPX_MEDIA_ORIGIN=$NUXT_IPX_MEDIA_ORIGIN
 RUN npm run build
 
 FROM node:22-alpine

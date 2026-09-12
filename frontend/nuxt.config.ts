@@ -155,9 +155,12 @@ export default defineNuxtConfig({
       'didargold.com',
       'placehold.co',
       'didar-gold-api.liara.run',
+      'backend',
     ],
     alias: {
-      '/media': 'https://didar-gold-api.liara.run/media',
+      // Build-time switch: on the VPS the backend is reachable only on the
+      // compose network (http://backend:8000), not via the public Liara host.
+      '/media': `${process.env.NUXT_IPX_MEDIA_ORIGIN || 'https://didar-gold-api.liara.run'}/media`,
     },
   },
 })
