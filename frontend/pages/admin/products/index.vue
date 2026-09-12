@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowDown, ArrowUp, FileSpreadsheet, ImageDown, Pencil, Plus, Trash2, Upload, X } from 'lucide-vue-next'
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import type { ImportJob, Product } from '~/types'
 import { toFa } from '~/utils/format'
 
@@ -28,6 +28,33 @@ const blank = () => ({
 const form = reactive(blank())
 const editing = ref(false)
 const panelOpen = ref(false)
+const { toast } = useToast()
+
+// SKU helper: from the typed prefix (e.g. «MAL» or «MAL-1»), propose the next
+// free number among existing SKUs with that prefix. Click-to-apply hint.
+const skuSuggestion = computed(() => {
+  if (editing.value) return ''
+  const m = form.sku.trim().match(/^([A-Za-z]+)-?\d*$/)
+  if (!m) return ''
+  const prefix = m[1].toUpperCase()
+  const nums = (products.value ?? [])
+    .map(p => p.sku.match(new RegExp(`^${prefix}-(\\d+)$`, 'i')))
+    .filter(Boolean)
+    .map(mm => Number(mm![1]))
+  const next = nums.length ? Math.max(...nums) + 1 : 1
+  const suggestion = `${prefix}-${String(next).padStart(2, '0')}`
+  return suggestion === form.sku.trim().toUpperCase() ? '' : suggestion
+})
+
+// Slug follows the SKU (lowercased) while creating, until the admin edits the
+// slug by hand — then we stop touching it.
+let slugAuto = true
+watch(() => form.slug, (v) => {
+  if (v !== form.sku.toLowerCase()) slugAuto = form.slug === ''
+})
+watch(() => form.sku, (sku) => {
+  if (!editing.value && slugAuto) form.slug = sku.trim().toLowerCase()
+})
 
 // Deep link from the storefront quick-edit button: /admin/products?edit=<id>
 onMounted(() => {
@@ -41,6 +68,7 @@ function startCreate() {
   Object.assign(form, blank())
   editImages.value = []
   clearPending()
+  slugAuto = true
   editing.value = false
   panelOpen.value = true
 }
@@ -85,6 +113,7 @@ async function save() {
   }
   if (editing.value) {
     await apiFetch(`/admin/products/${form.id}`, { method: 'PATCH', body })
+    toast('تغییرات محصول ذخیره شد')
   } else {
     const created = await apiFetch<Product>('/admin/products', { method: 'POST', body })
     if (pendingFiles.value.length) {
@@ -95,6 +124,7 @@ async function save() {
       }
       clearPending()
     }
+    toast('محصول اضافه شد ✓')
   }
   panelOpen.value = false
   await refresh()
@@ -375,7 +405,17 @@ async function move(index: number, dir: -1 | 1) {
         <FormField label="نامک (slug — آدرس صفحه، مثال: atrin-necklace)" v-slot="{ id }">
           <input :id="id" v-model="form.slug" dir="ltr" class="form-control" placeholder="atrin-necklace" />
         </FormField>
-        <FormField label="کد (SKU)" v-slot="{ id }"><input :id="id" v-model="form.sku" class="form-control" /></FormField>
+        <FormField label="کد (SKU)" v-slot="{ id }">
+          <input :id="id" v-model="form.sku" dir="ltr" class="form-control" placeholder="MAL-01" />
+          <button
+            v-if="skuSuggestion"
+            type="button"
+            class="mt-1.5 text-xs text-gold-text hover:underline"
+            @click="form.sku = skuSuggestion"
+          >
+            پیشنهاد: <span class="tnum" dir="ltr">{{ skuSuggestion }}</span> (کد بعدی آزاد)
+          </button>
+        </FormField>
         <div>
           <p class="mb-1.5 text-sm">تصویر محصول</p>
           <input v-model="form.image_url" dir="ltr" class="form-control" placeholder="/media/…" />

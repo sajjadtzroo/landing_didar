@@ -85,6 +85,9 @@ if (import.meta.client) {
         </aside>
       </div>
     </Transition>
+
+    <!-- Global toast host (save confirmations etc.) -->
+    <AppToast />
   </div>
 </template>
 
