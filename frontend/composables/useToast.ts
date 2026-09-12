@@ -1,11 +1,12 @@
 /**
  * Minimal global toast queue (useState so any component can push). One host
- * (<AppToast>) renders them in an aria-live region. Auto-dismiss ~3.5s.
- * ponytail: no severity/position config until a second kind of toast needs it.
+ * (<AppToast>) renders them in an aria-live region. Auto-dismiss ~3.5s
+ * (errors linger ~5s so they can be read).
  */
 export interface Toast {
   id: number
   message: string
+  kind: 'success' | 'error'
 }
 
 let seq = 0
@@ -17,11 +18,11 @@ export function useToast() {
     toasts.value = toasts.value.filter((t) => t.id !== id)
   }
 
-  function toast(message: string) {
+  function toast(message: string, kind: 'success' | 'error' = 'success') {
     const id = ++seq
-    toasts.value = [...toasts.value, { id, message }]
+    toasts.value = [...toasts.value, { id, message, kind }]
     if (import.meta.client) {
-      setTimeout(() => dismiss(id), 3500)
+      setTimeout(() => dismiss(id), kind === 'error' ? 5000 : 3500)
     }
   }
 

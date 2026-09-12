@@ -18,8 +18,9 @@ const { toasts, dismiss } = useToast()
         <div
           v-for="t in toasts"
           :key="t.id"
-          class="pointer-events-auto flex items-center gap-3 border border-white/10 bg-navy px-4 py-3
+          class="pointer-events-auto flex items-center gap-3 border border-white/10 px-4 py-3
             text-sm text-cream shadow-luxury"
+          :class="t.kind === 'error' ? 'bg-danger' : 'bg-navy'"
         >
           <span>{{ t.message }}</span>
           <button

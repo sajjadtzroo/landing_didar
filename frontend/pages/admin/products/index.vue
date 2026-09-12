@@ -121,7 +121,7 @@ async function save() {
         try {
           await uploadGalleryBatch(created.id, pendingFiles.value)
         } catch {
-          alert('محصول ساخته شد ولی بارگذاری تصاویر ناموفق بود — از دکمه بارگذاری روی ردیف محصول دوباره تلاش کنید.')
+          toast('محصول ساخته شد ولی بارگذاری تصاویر ناموفق بود — از ردیف محصول دوباره تلاش کنید', 'error')
         }
         clearPending()
       }
@@ -129,7 +129,7 @@ async function save() {
     }
   } catch (e: any) {
     // Keep the sheet open so the admin can fix the field (e.g. duplicate SKU).
-    alert(e?.data?.detail || 'ذخیره ناموفق بود — دوباره تلاش کنید')
+    toast(e?.data?.detail || 'ذخیره ناموفق بود — دوباره تلاش کنید', 'error')
     return
   }
   panelOpen.value = false
@@ -162,7 +162,7 @@ async function pickFormImage(e: Event) {
   try {
     form.image_url = await upload(file)
   } catch {
-    alert('بارگذاری تصویر ناموفق بود.')
+    toast('بارگذاری تصویر ناموفق بود', 'error')
   } finally {
     uploadingForm.value = false
     ;(e.target as HTMLInputElement).value = ''
@@ -214,7 +214,7 @@ async function pickGallery(e: Event) {
     form.image_url = updated.image_url ?? form.image_url
     await refresh()
   } catch {
-    alert('بارگذاری تصاویر ناموفق بود.')
+    toast('بارگذاری تصاویر ناموفق بود', 'error')
   } finally {
     uploadingGallery.value = false
     ;(e.target as HTMLInputElement).value = ''
@@ -239,7 +239,7 @@ async function removeGalleryImage(src: string) {
     form.image_url = updated.image_url ?? ''
     await refresh()
   } catch {
-    alert('حذف تصویر ناموفق بود.')
+    toast('حذف تصویر ناموفق بود', 'error')
   }
 }
 
